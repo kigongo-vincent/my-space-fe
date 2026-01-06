@@ -7,12 +7,12 @@ export interface Props extends HTMLAttributes<HTMLDivElement> {
     children?: ReactNode
 }
 
-const View = ({ children, mode = "", ...rest }: Props) => {
+const View = ({ children, mode = "", style, ...rest }: Props) => {
 
     const { getBackgroundColor } = useTheme()
 
     return (
-        <div {...rest} style={{ background: mode == "" ? "" : getBackgroundColor(mode) }}>
+        <div {...rest} style={{ background: mode == "" ? "" : getBackgroundColor(mode), ...style }}>
             {children}
         </div>
     )

@@ -1,7 +1,7 @@
 import { create } from "zustand"
 
 type ThemeMode = "light" | "dark"
-type BackgroundMode = "background" | "foreground"
+type BackgroundMode = "background" | "foreground" | ""
 
 export interface ThemeStoreI {
     name: ThemeMode

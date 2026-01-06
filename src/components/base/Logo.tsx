@@ -6,10 +6,10 @@ const Logo = () => {
     return (
         <View className="flex items-center gap-2" >
 
-            <View className="h-[5vh] w-[5vh] flex items-center justify-center bg-white rounded-full" >
-                <img src={Folder} className="" height={20} width={20} />
-            </View>
-            <Text className="font-bold text-xl" value={"nline  File Explorer"} />
+            {/* <View className="h-[5vh] w-[5vh] flex items-center justify-center bg-orange-400/10 rounded" > */}
+            <img src={Folder} className="" height={20} width={20} />
+            {/* </View> */}
+            <Text className="font-bold uppercase" value={"My Space"} />
         </View>
     )
 }
