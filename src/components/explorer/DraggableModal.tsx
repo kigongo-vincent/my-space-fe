@@ -1,0 +1,188 @@
+import { useState, useRef, useEffect, ReactNode } from "react"
+import View from "../base/View"
+import Text from "../base/Text"
+import { X, Maximize2, Minimize2 } from "lucide-react"
+import IconButton from "../base/IconButton"
+import { useTheme } from "../../store/Themestore"
+import { useFileStore } from "../../store/Filestore"
+import { getImageByFileType } from "../base/Sidebar"
+import MediaPlayer from "./MediaPlayer"
+import NoteViewer from "./NoteViewer"
+import DocumentViewer from "./DocumentViewer"
+import UrlViewer from "./UrlViewer"
+
+interface Props {
+    modalId: string
+    fileId: string
+    onClose: () => void
+}
+
+const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
+    const [position, setPosition] = useState({ x: 100, y: 100 })
+    const [isDragging, setIsDragging] = useState(false)
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+    const [isMinimized, setIsMinimized] = useState(false)
+    const modalRef = useRef<HTMLDivElement>(null)
+    const { current, name } = useTheme()
+    const { getFileById } = useFileStore()
+
+    const file = getFileById(fileId)
+
+    useEffect(() => {
+        if (!isDragging) return
+
+        const handleMouseMove = (e: MouseEvent) => {
+            setPosition({
+                x: e.clientX - dragOffset.x,
+                y: e.clientY - dragOffset.y
+            })
+        }
+
+        const handleMouseUp = () => {
+            setIsDragging(false)
+        }
+
+        window.addEventListener("mousemove", handleMouseMove)
+        window.addEventListener("mouseup", handleMouseUp)
+
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove)
+            window.removeEventListener("mouseup", handleMouseUp)
+        }
+    }, [isDragging, dragOffset])
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (!modalRef.current) return
+        const rect = modalRef.current.getBoundingClientRect()
+        setDragOffset({
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        })
+        setIsDragging(true)
+    }
+
+    if (!file) return null
+
+    const renderFileContent = (): ReactNode => {
+        if (file.isFolder) {
+            return (
+                <View className="flex items-center justify-center h-full">
+                    <Text value="Folder preview not available" className="opacity-60" />
+                </View>
+            )
+        }
+
+        switch (file.type) {
+            case "audio":
+                return (
+                    <MediaPlayer
+                        file={file}
+                        audioUrl={file.thumbnail || file.url}
+                    />
+                )
+            case "video":
+                return (
+                    <MediaPlayer
+                        file={file}
+                        videoUrl={file.thumbnail || file.url}
+                    />
+                )
+            case "picture":
+                return (
+                    <View className="flex items-center justify-center h-full">
+                        <img
+                            src={file.thumbnail || getImageByFileType(file.type)}
+                            alt={file.name}
+                            className="max-w-full max-h-full object-contain"
+                        />
+                    </View>
+                )
+            case "note":
+                return <NoteViewer file={file} />
+            case "document":
+                return <DocumentViewer file={file} />
+            case "url":
+                return <UrlViewer file={file} />
+            default:
+                return (
+                    <View className="flex flex-col items-center justify-center h-full gap-4">
+                        <img
+                            src={getImageByFileType(file.type)}
+                            alt=""
+                            className="w-32 h-32 object-contain"
+                        />
+                        <Text value={file.name} className="font-semibold" />
+                        <Text value={`${file.size} ${file.sizeUnit}`} size="sm" className="opacity-60" />
+                    </View>
+                )
+        }
+    }
+
+    const isMediaFile = file && (file.type === "audio" || file.type === "video")
+
+    return (
+        <View
+            ref={modalRef}
+            mode="foreground"
+            className="fixed rounded-md flex flex-col"
+            style={{
+                left: `${position.x}px`,
+                top: `${position.y}px`,
+                width: isMinimized ? "300px" : isMediaFile ? "500px" : (file.type === "note" ? "800px" : file.type === "document" ? "900px" : "600px"),
+                height: isMinimized ? "50px" : isMediaFile ? "700px" : (file.type === "note" || file.type === "document" ? "700px" : "500px"),
+                zIndex: 1000,
+                backgroundColor: current?.foreground || current?.background,
+                boxShadow: name === "dark"
+                    ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
+                    : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
+            }}
+        >
+            {/* Header */}
+            <View
+                className="flex items-center justify-between px-4 py-3.5 border-b cursor-move"
+                style={{
+                    borderColor: current?.dark + "20"
+                }}
+                onMouseDown={handleMouseDown}
+            >
+                <View className="flex items-center gap-3">
+                    <img src={getImageByFileType(file.type)} alt="" className="w-5 h-5 flex-shrink-0" />
+                    <Text
+                        value={file.name}
+                        className="font-semibold truncate max-w-[200px]"
+                        style={{
+                            color: current?.dark,
+                            letterSpacing: "-0.01em",
+                            fontSize: "14px"
+                        }}
+                    />
+                </View>
+                <View className="flex items-center gap-1">
+                    <IconButton
+                        icon={
+                            isMinimized ? (
+                                <Maximize2 size={16} color={current?.dark} />
+                            ) : (
+                                <Minimize2 size={16} color={current?.dark} />
+                            )
+                        }
+                        action={() => setIsMinimized(!isMinimized)}
+                    />
+                    <IconButton
+                        icon={<X size={16} color={current?.dark} />}
+                        action={onClose}
+                    />
+                </View>
+            </View>
+
+            {/* Content */}
+            {!isMinimized && (
+                <View className="flex-1 overflow-hidden">
+                    {renderFileContent()}
+                </View>
+            )}
+        </View>
+    )
+}
+
+export default DraggableModal

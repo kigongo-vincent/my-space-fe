@@ -16,9 +16,10 @@ const Button = ({ title, action, color = "primary", children, className, ...rest
         <button
             style={{
                 backgroundColor: color == "primary" ? current?.primary : "",
-                color: color == "primary" ? "white" : ""
+                color: color == "primary" ? "white" : "",
+                fontSize: "13px"
             }}
-            onClick={action} className={`flex items-center font-medium p-3 rounded-lg  justify-center gap-2 ${className}`} {...rest}>
+            onClick={action} className={`flex items-center p-2.5 rounded-md justify-center gap-2 h-10 ${className}`} {...rest}>
             {title}
         </button>
     )

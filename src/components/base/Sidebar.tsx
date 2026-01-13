@@ -11,6 +11,7 @@ import othersIcon from "../../assets/categories/others.webp"
 import picturesIcon from "../../assets/categories/pictures.webp"
 import folderIcon from "../../assets/categories/folder.webp"
 import Usage from '../sidebar/Usage'
+import { useFileStore } from '../../store/Filestore'
 
 export interface Props extends HTMLAttributes<HTMLDivElement> {
 }
@@ -37,39 +38,86 @@ export const getImageByFileType = (type: fileType): string => {
 }
 
 const Sidebar = ({ className }: Props) => {
+    const { setCurrentDisk, disks, setFilterByType, filterByType } = useFileStore()
 
     const links: CategoryI[] = [
         {
             thumbNail: ComputerIcon,
-            label: "My Computer"
+            label: "My Computer",
+            action: () => {
+                setFilterByType(null)
+                setCurrentDisk(null)
+            }
         },
         {
             thumbNail: speakerIcon,
-            label: "Audio"
+            label: "Audio",
+            action: () => {
+                setFilterByType("audio")
+                if (disks.length > 0) {
+                    setCurrentDisk(disks[0]?.id || null)
+                }
+            }
         },
         {
             thumbNail: documentsIcon,
-            label: "Documents"
+            label: "Documents",
+            action: () => {
+                setFilterByType("document")
+                if (disks.length > 0) {
+                    setCurrentDisk(disks[0]?.id || null)
+                }
+            }
         },
         {
             thumbNail: cameraIcon,
-            label: "Videos"
+            label: "Videos",
+            action: () => {
+                setFilterByType("video")
+                if (disks.length > 0) {
+                    setCurrentDisk(disks[0]?.id || null)
+                }
+            }
         },
         {
             thumbNail: picturesIcon,
-            label: "Pictures"
+            label: "Pictures",
+            action: () => {
+                setFilterByType("picture")
+                if (disks.length > 0) {
+                    setCurrentDisk(disks[0]?.id || null)
+                }
+            }
         },
         {
             thumbNail: othersIcon,
-            label: "Others"
+            label: "Others",
+            action: () => {
+                setFilterByType("others")
+                if (disks.length > 0) {
+                    setCurrentDisk(disks[0]?.id || null)
+                }
+            }
         },
         {
             thumbNail: notesIcon,
-            label: "Notes"
+            label: "Notes",
+            action: () => {
+                setFilterByType("note")
+                if (disks.length > 0) {
+                    setCurrentDisk(disks[0]?.id || null)
+                }
+            }
         },
         {
             thumbNail: httpIcon,
-            label: "URLs"
+            label: "URLs",
+            action: () => {
+                setFilterByType("url")
+                if (disks.length > 0) {
+                    setCurrentDisk(disks[0]?.id || null)
+                }
+            }
         }
     ]
 
@@ -77,7 +125,18 @@ const Sidebar = ({ className }: Props) => {
         <View className={`p-4 flex flex-col justify-between ${className}`} mode='foreground'>
             <View className='grid grid-cols-2 gap-2'>
                 {
-                    links?.map((l, i) => <Category {...l} key={i} />)
+                    links?.map((l, i) => {
+                        const isActive = 
+                            (l.label === "My Computer" && filterByType === null) ||
+                            (l.label === "Audio" && filterByType === "audio") ||
+                            (l.label === "Documents" && filterByType === "document") ||
+                            (l.label === "Videos" && filterByType === "video") ||
+                            (l.label === "Pictures" && filterByType === "picture") ||
+                            (l.label === "Others" && filterByType === "others") ||
+                            (l.label === "Notes" && filterByType === "note") ||
+                            (l.label === "URLs" && filterByType === "url")
+                        return <Category {...l} key={i} isActive={isActive} />
+                    })
                 }
 
             </View>

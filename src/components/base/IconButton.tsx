@@ -6,16 +6,26 @@ export interface Props extends HTMLAttributes<HTMLButtonElement> {
     action: () => void
 }
 
-const IconButton = ({ icon, action, ...rest }: Props) => {
+const IconButton = ({ icon, action, onClick, ...rest }: Props) => {
 
     const { current } = useTheme()
 
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        if (action) {
+            action()
+        }
+        if (onClick) {
+            onClick(e)
+        }
+    }
+
     return (
         <button
+            onClick={handleClick}
             style={{
                 backgroundColor: current?.background
             }}
-            className="h-[5vh] cursor-pointer w-[5vh] flex items-center rounded-lg justify-center" {...rest}>
+            className="h-[5vh] cursor-pointer w-[5vh] flex items-center rounded-lg justify-center hover:opacity-80 transition-opacity" {...rest}>
             {icon}
         </button>
     )

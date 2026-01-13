@@ -1,4 +1,58 @@
 @import "tailwindcss";
+
+/* Animated glow effect for media players - Default (light mode) */
+.media-glow {
+  animation: glowPulseLight 3s ease-in-out infinite;
+}
+
+.media-glow-small {
+  animation: glowPulseLightSmall 3s ease-in-out infinite;
+}
+
+@keyframes glowPulseLight {
+  0%, 100% {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+@keyframes glowPulseLightSmall {
+  0%, 100% {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  }
+  50% {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+  }
+}
+
+/* Dark mode - white-ish glow animation */
+.dark .media-glow {
+  animation: glowPulseDark 3s ease-in-out infinite;
+}
+
+.dark .media-glow-small {
+  animation: glowPulseDarkSmall 3s ease-in-out infinite;
+}
+
+@keyframes glowPulseDark {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.12), 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(255, 255, 255, 0.2), 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@keyframes glowPulseDarkSmall {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.15), 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+}
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
