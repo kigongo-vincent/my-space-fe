@@ -6,6 +6,8 @@ import { X, Check, Star, Zap, Shield, HardDrive } from "lucide-react"
 import IconButton from "../base/IconButton"
 import { useTheme } from "../../store/Themestore"
 import { useUser } from "../../store/Userstore"
+import AnimatedModal from "../base/AnimatedModal"
+import { motion } from "framer-motion"
 
 interface Props {
     onClose: () => void
@@ -101,15 +103,12 @@ const StoragePurchaseModal = ({ onClose }: Props) => {
     }
 
     return (
-        <View className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={{ backdropFilter: 'blur(2px)' }}>
-            <View
-                mode="foreground"
-                className="p-6 rounded-lg min-w-[600px] max-w-[900px] flex flex-col gap-6"
-                style={{
-                    boxShadow: name === "dark" 
-                        ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
-                        : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
-                }}
+        <AnimatedModal isOpen={true} onClose={onClose} size="lg">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="p-6 flex flex-col gap-6"
             >
                 <View className="flex items-center justify-between">
                     <View className="flex flex-col gap-1">
@@ -121,14 +120,25 @@ const StoragePurchaseModal = ({ onClose }: Props) => {
 
                 <View className="grid grid-cols-2 gap-4">
                     {storagePlans.map((plan, index) => (
-                        <View
+                        <motion.div
                             key={index}
-                            mode="background"
-                            className={`p-5 rounded-lg flex flex-col gap-4 cursor-pointer transition-all relative border-2 ${
-                                selectedPlan === index 
-                                    ? 'scale-[1.02]' 
-                                    : 'hover:scale-[1.02] hover:shadow-lg'
-                            }`}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 + index * 0.1 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="p-5 rounded-lg flex flex-col gap-4 cursor-pointer relative border-2"
+                            style={{
+                                backgroundColor: current?.background,
+                                borderColor: selectedPlan === index 
+                                    ? current?.primary 
+                                    : plan.popular 
+                                        ? current?.primary + "40"
+                                        : "transparent",
+                                boxShadow: selectedPlan === index
+                                    ? `0 8px 24px ${current?.primary}30`
+                                    : undefined
+                            }}
                             style={{
                                 borderColor: selectedPlan === index 
                                     ? current?.primary 
@@ -200,29 +210,33 @@ const StoragePurchaseModal = ({ onClose }: Props) => {
                                 ))}
                             </View>
 
-                            <button
+                            <motion.button
                                 onClick={() => handlePurchase(plan)}
-                                className="mt-auto flex items-center p-2.5 rounded-md justify-center gap-2 h-10 transition-all"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="mt-auto flex items-center p-2.5 rounded-md justify-center gap-2 h-10"
                                 style={{
                                     backgroundColor: selectedPlan === index 
                                         ? current?.success 
                                         : current?.primary,
                                     color: "white",
                                     fontSize: "13px",
-                                    opacity: selectedPlan === index ? 0.9 : 1
+                                    opacity: selectedPlan === index ? 0.9 : 1,
+                                    border: 'none',
+                                    cursor: 'pointer'
                                 }}
                             >
                                 {selectedPlan === index ? "Selected" : "Select Plan"}
-                            </button>
-                        </View>
+                            </motion.button>
+                        </motion.div>
                     ))}
                 </View>
 
                 <View className="flex items-center gap-2 justify-end pt-2 border-t" style={{ borderColor: current?.dark + "15" }}>
                     <Button title="Cancel" action={onClose} />
                 </View>
-            </View>
-        </View>
+            </motion.div>
+        </AnimatedModal>
     )
 }
 

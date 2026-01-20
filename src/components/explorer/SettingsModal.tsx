@@ -5,6 +5,7 @@ import IconButton from "../base/IconButton"
 import { useTheme } from "../../store/Themestore"
 import { useUser } from "../../store/Userstore"
 import Avatar from "../base/Avatar"
+import AnimatedModal from "../base/AnimatedModal"
 import { 
     X, 
     User, 
@@ -368,15 +369,12 @@ const SettingsModal = ({ onClose }: Props) => {
 
     return (
         <>
-            <View className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={{ backdropFilter: 'blur(2px)' }}>
+            <AnimatedModal isOpen={true} onClose={onClose} size="xl">
                 <View
                     mode="foreground"
                     className="rounded-xl min-w-[900px] max-w-[1000px] w-[90vw] max-h-[85vh] overflow-hidden flex flex-row"
                     style={{
-                        border: `1px solid ${current?.dark}10`,
-                        boxShadow: name === "dark" 
-                            ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
-                            : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
+                        border: `1px solid ${current?.dark}10`
                     }}
                 >
                     {/* Sidebar */}
@@ -418,7 +416,7 @@ const SettingsModal = ({ onClose }: Props) => {
                         {renderContent()}
                     </View>
                 </View>
-            </View>
+            </AnimatedModal>
 
             {showStoragePurchase && <StoragePurchaseModal onClose={() => setShowStoragePurchase(false)} />}
         </>

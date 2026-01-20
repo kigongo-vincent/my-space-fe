@@ -17,6 +17,7 @@ import RenameDiskModal from "../../components/explorer/RenameDiskModal"
 import MergeDiskModal from "../../components/explorer/MergeDiskModal"
 import ContextMenu, { ContextMenuItem } from "../../components/explorer/ContextMenu"
 import { Trash2, Edit, Info, HardDrive, Plus, Star, StarOff, RefreshCw, GitMerge } from "lucide-react"
+import { motion } from "framer-motion"
 
 const Index = () => {
 
@@ -134,7 +135,11 @@ const Index = () => {
     // Show audio files view if filtering by audio
     if (filterByType === "audio" && !searchQuery) {
         return (
-            <View
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
                 className="h-full flex flex-col p-2 relative"
             >
                 <AudioFilesView />
@@ -151,14 +156,18 @@ const Index = () => {
 
                 {/* Background Player */}
                 <BackgroundPlayer />
-            </View>
+            </motion.div>
         )
     }
 
     // Show file explorer if disk is selected, otherwise show home
     if (currentDiskId && !searchQuery) {
         return (
-            <View
+            <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
                 className="h-full flex flex-col p-2 relative"
             >
                 <FileExplorer />
@@ -175,7 +184,7 @@ const Index = () => {
 
                 {/* Background Player */}
                 <BackgroundPlayer />
-            </View>
+            </motion.div>
         )
     }
 
@@ -183,7 +192,12 @@ const Index = () => {
     if (searchQuery && searchResults.length > 0) {
         return (
             <View className="h-full flex flex-col p-2">
-                <View className="mb-6">
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="mb-6"
+                >
                     <Text
                         value={`Search results for "${searchQuery}"`}
                         className="font-semibold mb-4 text-lg"
@@ -199,8 +213,14 @@ const Index = () => {
                     />
                     <View className="grid gap-1 grid-cols-6">
                         {searchResults.map((file, i) => (
-                            <div
+                            <motion.div
                                 key={i}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ 
+                                    duration: 0.2,
+                                    delay: i * 0.03
+                                }}
                                 onClick={() => {
                                     // Find the disk for this file
                                     const disk = disks.find(d => d.id === file.diskId)
@@ -217,57 +237,79 @@ const Index = () => {
                                     }
                                 }}
                                 className="cursor-pointer hover:opacity-80 transition-opacity"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                             >
                                 <Node
                                     label={file.name}
                                     fileType={file.type}
                                     path=""
                                 />
-                            </div>
+                            </motion.div>
                         ))}
                     </View>
-                </View>
+                </motion.div>
             </View>
         )
     }
 
     // Show home view
     return (
-        <View className="h-full flex flex-col p-2">
+        <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="h-full flex flex-col p-2"
+        >
             <View className="flex-1 gap-8 flex flex-col">
 
                 {/* disks  */}
-                <View>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                >
                     <View className="flex items-center justify-between mb-5">
                         <Text
                             value={"Available drives"}
                             className="opacity-70 text-sm uppercase tracking-wider font-medium"
                             style={{ letterSpacing: "0.1em" }}
                         />
-                        <button
+                        <motion.button
                             onClick={() => setShowCreateDisk(true)}
-                            className="px-4 py-2.5 rounded text-sm  transition-all hover:opacity-90 hover:scale-105 flex items-center gap-2"
+                            className="px-4 py-2.5 rounded text-sm flex items-center gap-2"
                             style={{
+                                backgroundColor: current?.primary,
+                                color: "white",
                                 boxShadow: name === "dark"
                                     ? `0 2px 4px rgba(0, 0, 0, 0.3)`
                                     : `0 2px 4px ${current?.dark}10`
                             }}
-                            style={{
-                                backgroundColor: current?.primary,
-                                color: "white"
-                            }}
+                            whileHover={{ scale: 1.05, opacity: 0.9 }}
+                            whileTap={{ scale: 0.95 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         >
                             <Plus size={16} />
                             <span>Add Disk</span>
-                        </button>
+                        </motion.button>
                     </View>
                     <View className="grid gap-6 grid-cols-3">
                         {
                             diskComponents?.map((d, i) => {
                                 const disk = disks.find(disk => disk.name === d.label)
                                 return (
-                                    <div
+                                    <motion.div
                                         key={i}
+                                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        transition={{ 
+                                            duration: 0.3,
+                                            delay: i * 0.1,
+                                            type: "spring",
+                                            stiffness: 300,
+                                            damping: 20
+                                        }}
                                         onClick={() => {
                                             if (disk) {
                                                 useFileStore.getState().setCurrentDisk(disk.id)
@@ -275,6 +317,8 @@ const Index = () => {
                                             }
                                         }}
                                         className="cursor-pointer"
+                                        whileHover={{ scale: 1.02, y: -4 }}
+                                        whileTap={{ scale: 0.98 }}
                                     >
                                         <Disk
                                             {...d}
@@ -289,15 +333,19 @@ const Index = () => {
                                                 }
                                             }}
                                         />
-                                    </div>
+                                    </motion.div>
                                 )
                             })
                         }
                     </View>
-                </View>
+                </motion.div>
 
                 {/* recent  */}
-                <View>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                >
                     <Text
                         value={"Recently opened"}
                         className="mb-5 opacity-70 text-sm uppercase tracking-wider font-medium"
@@ -306,19 +354,37 @@ const Index = () => {
                     <View className="grid gap-1 grid-cols-6">
                         {
                             recentlyOpened?.map((r, i) => (
-                                <Node
-                                    {...r}
+                                <motion.div
                                     key={r.fileId || i}
-                                    onClick={() => r.fileId && handleNodeClick(r.fileId)}
-                                    onContextMenu={(e) => r.fileId && handleNodeContextMenu(e, r.fileId)}
-                                />
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ 
+                                        duration: 0.2,
+                                        delay: 0.3 + (i * 0.03),
+                                        type: "spring",
+                                        stiffness: 300,
+                                        damping: 20
+                                    }}
+                                    whileHover={{ scale: 1.1, y: -4 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    <Node
+                                        {...r}
+                                        onClick={() => r.fileId && handleNodeClick(r.fileId)}
+                                        onContextMenu={(e) => r.fileId && handleNodeContextMenu(e, r.fileId)}
+                                    />
+                                </motion.div>
                             ))
                         }
                     </View>
-                </View>
+                </motion.div>
 
                 {/* pinned */}
-                <View>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.4 }}
+                >
                     <Text
                         value={"Pinned"}
                         className="mb-5 opacity-70 text-sm uppercase tracking-wider font-medium"
@@ -328,31 +394,53 @@ const Index = () => {
                         {
                             pinned.length > 0 ? (
                                 pinned.map((r, i) => (
-                                    <Node
-                                        {...r}
-                                        pinned
+                                    <motion.div
                                         key={r.fileId || i}
-                                        onClick={() => r.fileId && handleNodeClick(r.fileId)}
-                                        onContextMenu={(e) => r.fileId && handleNodeContextMenu(e, r.fileId)}
-                                    />
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ 
+                                            duration: 0.2,
+                                            delay: 0.5 + (i * 0.03),
+                                            type: "spring",
+                                            stiffness: 300,
+                                            damping: 20
+                                        }}
+                                        whileHover={{ scale: 1.1, y: -4 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        <Node
+                                            {...r}
+                                            pinned
+                                            onClick={() => r.fileId && handleNodeClick(r.fileId)}
+                                            onContextMenu={(e) => r.fileId && handleNodeContextMenu(e, r.fileId)}
+                                        />
+                                    </motion.div>
                                 ))
                             ) : (
-                                <View className="col-span-6 py-8 flex items-center justify-center">
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.3, delay: 0.5 }}
+                                    className="col-span-6 py-8 flex items-center justify-center"
+                                >
                                     <Text value="No pinned files yet. Right-click on a file to pin it." className="opacity-50 text-sm" />
-                                </View>
+                                </motion.div>
                             )
                         }
                     </View>
-                </View>
+                </motion.div>
 
             </View>
-            <View
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.6 }}
                 className="border-t flex items-center gap-2 h-14"
                 style={{ borderColor: current?.dark + "20" }}
             >
                 <img src={computerIcon} height={20} width={20} alt="" />
                 <Text value={pathname} />
-            </View>
+            </motion.div>
 
             {/* Render all open modals */}
             {openModals.map(modal => (
@@ -488,7 +576,7 @@ const Index = () => {
                     onClose={() => setMergeDiskId(null)}
                 />
             )}
-        </View>
+        </motion.div>
     )
 }
 

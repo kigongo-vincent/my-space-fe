@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react"
-import { useTheme } from "../store/Themestore"
+import { useTheme } from "../../store/Themestore"
 import { useNavigate } from "react-router"
 import { Mail, Lock, Eye, EyeOff } from "lucide-react"
 
-const Spashscreen = () => {
+const SignupSplash = () => {
     const { current } = useTheme()
     const navigate = useNavigate()
     const [showContent, setShowContent] = useState(false)
     const [time, setTime] = useState(new Date())
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
     useEffect(() => {
         // Trigger animation after mount
@@ -26,13 +28,13 @@ const Spashscreen = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        if (email.trim() && password.trim()) {
+        if (email.trim() && password.trim() && confirmPassword.trim() && password === confirmPassword) {
             navigate("/dashboard")
         }
     }
 
     const handleButtonClick = () => {
-        if (email.trim() && password.trim()) {
+        if (email.trim() && password.trim() && confirmPassword.trim() && password === confirmPassword) {
             navigate("/dashboard")
         }
     }
@@ -242,12 +244,12 @@ const Spashscreen = () => {
                         transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s"
                     }}
                 >
-                    Ease of accessing data from anywhere in the world
+                    Create your account and start organizing your digital life
                 </p>
 
             </div>
 
-            {/* Login Form - Bottom */}
+            {/* Signup Form - Bottom */}
             <div
                 className="relative z-10 pb-12 px-6 w-full max-w-md mx-auto"
                 style={{
@@ -256,8 +258,8 @@ const Spashscreen = () => {
                     transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1)"
                 }}
             >
-                <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                    {/* Email/Username Input */}
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    {/* Email Input */}
                     <div className="relative">
                         <Mail
                             size={18}
@@ -265,10 +267,10 @@ const Spashscreen = () => {
                             className="absolute left-3 top-1/2 -translate-y-1/2 opacity-70 z-10 pointer-events-none"
                         />
                         <input
-                            type="text"
+                            type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Username or Email"
+                            placeholder="Email"
                             className="splash-input w-full pl-10 pr-4 py-3 rounded outline-none transition-all"
                             style={{
                                 background: 'rgba(255, 255, 255, 0.1)',
@@ -320,6 +322,44 @@ const Spashscreen = () => {
                         </button>
                     </div>
 
+                    {/* Confirm Password Input */}
+                    <div className="relative">
+                        <Lock
+                            size={18}
+                            color="#ffffff"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 opacity-70 z-10 pointer-events-none"
+                        />
+                        <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Confirm Password"
+                            className="splash-input w-full pl-10 pr-12 py-3 rounded outline-none transition-all"
+                            style={{
+                                background: 'rgba(255, 255, 255, 0.1)',
+                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                color: '#ffffff',
+                                border: "none",
+                                backdropFilter: 'blur(20px)',
+                                WebkitBackdropFilter: 'blur(20px)',
+                                fontSize: '1rem' // 13.5px base
+                            }}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 opacity-70 hover:opacity-100 transition-opacity z-10"
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '4px'
+                            }}
+                        >
+                            {showConfirmPassword ? <EyeOff size={18} color="#ffffff" /> : <Eye size={18} color="#ffffff" />}
+                        </button>
+                    </div>
+
                     {/* Submit Button */}
                     <button
                         type="submit"
@@ -334,7 +374,7 @@ const Spashscreen = () => {
                             fontSize: '1rem' // 13.5px base
                         }}
                     >
-                        Sign In
+                        Sign Up
                     </button>
 
                     {/* Divider */}
@@ -397,15 +437,15 @@ const Spashscreen = () => {
                         </button>
                     </div>
 
-                    {/* Signup Link */}
+                    {/* Login Link */}
                     <div className="text-center mt-4">
                         <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.96rem' }}>
-                            Don't have an account?{' '}
+                            Already have an account?{' '}
                             <a
-                                href="/signup"
+                                href="/"
                                 onClick={(e) => {
                                     e.preventDefault()
-                                    navigate("/signup")
+                                    navigate("/")
                                 }}
                                 style={{
                                     color: '#ffffff',
@@ -414,7 +454,7 @@ const Spashscreen = () => {
                                     fontSize: '0.96rem'
                                 }}
                             >
-                                Sign up
+                                Sign in
                             </a>
                         </span>
                     </div>
@@ -621,4 +661,4 @@ const Spashscreen = () => {
     )
 }
 
-export default Spashscreen
+export default SignupSplash

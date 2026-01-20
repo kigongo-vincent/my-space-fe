@@ -99,7 +99,7 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.25rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -171,7 +171,7 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    font-size: 13.5px;
+    font-size: 12.5px;
   }
   body {
     @apply bg-background text-foreground;
@@ -180,4 +180,14 @@
 
 html {
   font-family: poppins, "sans-serif";
+}
+
+/* Hide scrollbars but keep functionality */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }

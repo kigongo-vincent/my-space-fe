@@ -5,6 +5,8 @@ import IconButton from "../base/IconButton"
 import { useTheme } from "../../store/Themestore"
 import { useFileStore, FileItem } from "../../store/Filestore"
 import { getImageByFileType } from "../base/Sidebar"
+import AnimatedModal from "../base/AnimatedModal"
+import { motion } from "framer-motion"
 
 interface Props {
     fileId: string
@@ -128,17 +130,13 @@ const PropertiesModal = ({ fileId, onClose }: Props) => {
     }
 
     return (
-        <View
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{ backgroundColor: current?.dark + "40", backdropFilter: 'blur(4px)' }}
-            onClick={(e) => {
-                if (e.target === e.currentTarget) onClose()
-            }}
-        >
-            <View
-                mode="foreground"
-                className="p-0 rounded-lg min-w-[520px] max-w-[640px] flex flex-col shadow-2xl"
-                style={{ maxHeight: "85vh", overflow: "hidden" }}
+        <AnimatedModal isOpen={true} onClose={onClose} size="lg">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="p-0 rounded-lg min-w-[520px] max-w-[640px] flex flex-col"
+                style={{ maxHeight: "85vh", overflow: "hidden", backgroundColor: current?.foreground }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -301,8 +299,8 @@ const PropertiesModal = ({ fileId, onClose }: Props) => {
                         Close
                     </button>
                 </View>
-            </View>
-        </View>
+            </motion.div>
+        </AnimatedModal>
     )
 }
 

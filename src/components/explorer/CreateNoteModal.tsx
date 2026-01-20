@@ -29,15 +29,15 @@ const CreateNoteModal = ({ onClose, parentId, diskId }: Props) => {
     const isFormValid = noteName.trim().length >= 3 && noteContent.trim().length > 0
 
     return (
-        <View className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={{ backdropFilter: 'blur(2px)' }}>
-            <View
-                mode="foreground"
+        <AnimatedModal isOpen={true} onClose={onClose} size="lg">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
                 className="rounded-xl min-w-[700px] max-w-[800px] w-[90vw] max-h-[85vh] overflow-hidden flex flex-col"
                 style={{
                     border: `1px solid ${current?.dark}10`,
-                    boxShadow: name === "dark" 
-                        ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
-                        : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
+                    backgroundColor: current?.foreground
                 }}
             >
                 {/* Header - Apple Notes style */}
@@ -143,8 +143,8 @@ const CreateNoteModal = ({ onClose, parentId, diskId }: Props) => {
                         Create
                     </button>
                 </View>
-            </View>
-        </View>
+            </motion.div>
+        </AnimatedModal>
     )
 }
 

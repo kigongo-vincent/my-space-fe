@@ -2,6 +2,7 @@ import { useEffect, useRef, ReactNode } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
 import { useTheme } from "../../store/Themestore"
+import { motion, AnimatePresence } from "framer-motion"
 import { 
     FolderOpen, 
     Edit, 
@@ -88,66 +89,73 @@ const ContextMenu = ({ x, y, items, onClose }: Props) => {
     }, [x, y])
 
     return (
-        <View
-            ref={menuRef}
-            mode="foreground"
-            className="fixed z-[9999] min-w-[200px] py-1 rounded-lg"
-            style={{
-                left: `${x}px`,
-                top: `${y}px`,
-                border: `1px solid ${current?.dark}15`,
-                boxShadow: name === "dark" 
-                    ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
-                    : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
-            }}
-            onClick={(e) => e.stopPropagation()}
-        >
-            {items.map((item, index) => {
-                if (item.separator) {
-                    return (
-                        <View
-                            key={index}
-                            className="h-px my-1"
-                            style={{ backgroundColor: current?.dark + "20" }}
-                        />
-                    )
-                }
+        <AnimatePresence>
+            <motion.div
+                ref={menuRef}
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                transition={{ duration: 0.15 }}
+                className="fixed z-[9999] min-w-[200px] py-1 rounded-lg"
+                style={{
+                    left: `${x}px`,
+                    top: `${y}px`,
+                    backgroundColor: current?.foreground,
+                    border: `1px solid ${current?.dark}15`,
+                    boxShadow: name === "dark" 
+                        ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
+                        : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
+                }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                {items.map((item, index) => {
+                    if (item.separator) {
+                        return (
+                            <motion.div
+                                key={index}
+                                className="h-px my-1"
+                                style={{ backgroundColor: current?.dark + "20" }}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: index * 0.02 }}
+                            />
+                        )
+                    }
 
-                return (
-                    <View
-                        key={index}
-                        className={`flex items-center gap-3 px-4 py-2 cursor-pointer hover:opacity-80 transition-opacity ${
-                            item.disabled ? "opacity-40 cursor-not-allowed" : ""
-                        }`}
-                        style={{
-                            backgroundColor: item.disabled ? "transparent" : undefined
-                        }}
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            if (!item.disabled) {
-                                item.action()
-                                onClose()
-                            }
-                        }}
-                        onMouseEnter={(e) => {
-                            if (!item.disabled) {
-                                e.currentTarget.style.backgroundColor = current?.dark + "10"
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "transparent"
-                        }}
-                    >
-                        {item.icon && (
-                            <View style={{ color: current?.dark, opacity: 0.7, display: "flex", alignItems: "center" }}>
-                                {item.icon}
-                            </View>
-                        )}
-                        <Text value={item.label} className="flex-1" />
-                    </View>
-                )
-            })}
-        </View>
+                    return (
+                        <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.02 }}
+                            className={`flex items-center gap-3 px-4 py-2 cursor-pointer ${
+                                item.disabled ? "opacity-40 cursor-not-allowed" : ""
+                            }`}
+                            style={{
+                                backgroundColor: item.disabled ? "transparent" : undefined
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                if (!item.disabled) {
+                                    item.action?.()
+                                    onClose()
+                                }
+                            }}
+                            whileHover={!item.disabled ? {
+                                backgroundColor: current?.dark + "10"
+                            } : {}}
+                        >
+                            {item.icon && (
+                                <div style={{ color: current?.dark, opacity: 0.7, display: "flex", alignItems: "center" }}>
+                                    {item.icon}
+                                </div>
+                            )}
+                            <Text value={item.label || ""} className="flex-1" />
+                        </motion.div>
+                    )
+                })}
+            </motion.div>
+        </AnimatePresence>
     )
 }
 

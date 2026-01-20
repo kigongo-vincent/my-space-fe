@@ -6,6 +6,8 @@ import { useFileStore } from "../../store/Filestore"
 import { X } from "lucide-react"
 import IconButton from "../base/IconButton"
 import { useTheme } from "../../store/Themestore"
+import AnimatedModal from "../base/AnimatedModal"
+import { motion } from "framer-motion"
 
 interface Props {
     fileId: string
@@ -38,10 +40,13 @@ const RenameModal = ({ fileId, currentName, onClose }: Props) => {
     }
 
     return (
-        <View className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={{ backdropFilter: 'blur(2px)' }}>
-            <View
-                mode="foreground"
-                className="p-6 rounded-md min-w-[400px] flex flex-col gap-4"
+        <AnimatedModal isOpen={true} onClose={onClose} size="sm">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="p-6 flex flex-col gap-4"
+                style={{ backgroundColor: current?.foreground }}
             >
                 <View className="flex items-center justify-between">
                     <Text value="Rename" className="font-semibold text-lg" />
@@ -78,8 +83,8 @@ const RenameModal = ({ fileId, currentName, onClose }: Props) => {
                     </button>
                     <Button title="Rename" action={handleRename} />
                 </View>
-            </View>
-        </View>
+            </motion.div>
+        </AnimatedModal>
     )
 }
 
