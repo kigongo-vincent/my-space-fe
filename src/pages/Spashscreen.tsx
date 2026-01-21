@@ -1,16 +1,25 @@
 import { useEffect, useState } from "react"
 import { useTheme } from "../store/Themestore"
+import { useUser } from "../store/Userstore"
 import { useNavigate } from "react-router"
-import { Mail, Lock, Eye, EyeOff } from "lucide-react"
+import AlertModal from "../components/base/AlertModal"
+import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react"
 
 const Spashscreen = () => {
     const { current } = useTheme()
+    const { login, isLoading } = useUser()
     const navigate = useNavigate()
     const [showContent, setShowContent] = useState(false)
     const [time, setTime] = useState(new Date())
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
+    const [error, setError] = useState("")
+    const [alertModal, setAlertModal] = useState<{ isOpen: boolean; message: string; type?: "error" | "success" | "info" | "warning" }>({
+        isOpen: false,
+        message: "",
+        type: "error"
+    })
 
     useEffect(() => {
         // Trigger animation after mount
@@ -24,16 +33,86 @@ const Spashscreen = () => {
         return () => clearInterval(timeInterval)
     }, [])
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (email.trim() && password.trim()) {
-            navigate("/dashboard")
-        }
-    }
+        e.stopPropagation()
+        
+        if (isLoading) return // Prevent double submission
 
-    const handleButtonClick = () => {
-        if (email.trim() && password.trim()) {
-            navigate("/dashboard")
+        if (!email.trim()) {
+            setAlertModal({
+                isOpen: true,
+                message: "Email is required",
+                type: "error"
+            })
+            return
+        }
+        
+        if (!/\S+@\S+\.\S+/.test(email)) {
+            setAlertModal({
+                isOpen: true,
+                message: "Please enter a valid email address",
+                type: "error"
+            })
+            return
+        }
+
+        if (!password.trim()) {
+            setAlertModal({
+                isOpen: true,
+                message: "Password is required",
+                type: "error"
+            })
+            return
+        }
+
+        if (password.length < 6) {
+            setAlertModal({
+                isOpen: true,
+                message: "Password must be at least 6 characters",
+                type: "error"
+            })
+            return
+        }
+
+        setError("")
+        try {
+            const result = await login(email, password)
+            
+            if (result.success) {
+                // Small delay to ensure state is updated
+                setTimeout(() => {
+                    const currentUser = useUser.getState().current
+                    if (currentUser?.role === 'admin') {
+                        navigate("/admin")
+                    } else {
+                        navigate("/dashboard")
+                    }
+                }, 100)
+            } else {
+                // Handle specific error messages
+                let errorMessage = result.error || "Login failed"
+                
+                if (errorMessage.toLowerCase().includes('invalid credentials')) {
+                    errorMessage = "Invalid email or password. Please try again."
+                } else if (errorMessage.toLowerCase().includes('suspended')) {
+                    errorMessage = "Your account has been suspended. Please contact support."
+                } else if (errorMessage.toLowerCase().includes('network') || errorMessage.toLowerCase().includes('fetch')) {
+                    errorMessage = "Network error. Please check your connection and try again."
+                }
+                
+                setAlertModal({
+                    isOpen: true,
+                    message: errorMessage,
+                    type: "error"
+                })
+            }
+        } catch (error: any) {
+            setAlertModal({
+                isOpen: true,
+                message: error?.message || "An unexpected error occurred. Please try again.",
+                type: "error"
+            })
         }
     }
 
@@ -323,18 +402,26 @@ const Spashscreen = () => {
                     {/* Submit Button */}
                     <button
                         type="submit"
-                        onClick={handleButtonClick}
-                        className="splash-button w-full py-3 rounded outline-none transition-all font-medium"
+                        disabled={isLoading}
+                        className="splash-button w-full py-3 rounded outline-none transition-all font-medium flex items-center justify-center gap-2"
                         style={{
                             background: buttonGradient,
                             backgroundImage: buttonGradient,
                             color: '#ffffff',
                             border: "none",
-                            cursor: 'pointer',
-                            fontSize: '1rem' // 13.5px base
+                            cursor: isLoading ? 'not-allowed' : 'pointer',
+                            fontSize: '1rem',
+                            opacity: isLoading ? 0.7 : 1
                         }}
                     >
-                        Sign In
+                        {isLoading ? (
+                            <>
+                                <Loader2 size={18} className="animate-spin" />
+                                <span>Signing in...</span>
+                            </>
+                        ) : (
+                            'Sign In'
+                        )}
                     </button>
 
                     {/* Divider */}
@@ -420,6 +507,13 @@ const Spashscreen = () => {
                     </div>
                 </form>
             </div>
+
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+                message={alertModal.message}
+                type={alertModal.type}
+            />
 
             <style>{`
                 @keyframes applePulse {

@@ -18,13 +18,28 @@ interface Props {
 }
 
 const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
-    const [position, setPosition] = useState({ x: 100, y: 100 })
+    const { getFileById, openModals } = useFileStore()
+    const { current, name } = useTheme()
+    
+    // Calculate initial position based on number of open modals to avoid overlapping
+    const getInitialPosition = () => {
+        const modalIndex = openModals.findIndex(m => m.id === modalId)
+        const offsetX = 100 + (modalIndex * 40)
+        const offsetY = 100 + (modalIndex * 40)
+        // Ensure modals don't go off-screen
+        const maxX = window.innerWidth - 600
+        const maxY = window.innerHeight - 500
+        return { 
+            x: Math.min(offsetX, maxX), 
+            y: Math.min(offsetY, maxY) 
+        }
+    }
+    
+    const [position, setPosition] = useState(getInitialPosition())
     const [isDragging, setIsDragging] = useState(false)
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
     const [isMinimized, setIsMinimized] = useState(false)
     const modalRef = useRef<HTMLDivElement>(null)
-    const { current, name } = useTheme()
-    const { getFileById } = useFileStore()
 
     const file = getFileById(fileId)
 
@@ -84,7 +99,7 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
                 return (
                     <MediaPlayer
                         file={file}
-                        videoUrl={file.thumbnail || file.url}
+                        videoUrl={file.url}
                     />
                 )
             case "picture":
@@ -125,6 +140,7 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
             ref={modalRef}
             mode="foreground"
             className="fixed rounded-md flex flex-col"
+            data-modal-id={modalId}
             style={{
                 left: `${position.x}px`,
                 top: `${position.y}px`,

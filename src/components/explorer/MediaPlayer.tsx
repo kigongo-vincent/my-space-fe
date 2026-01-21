@@ -14,6 +14,60 @@ interface Props {
     videoUrl?: string
 }
 
+const ThumbnailPlaceholder = ({ file }: { file: Props['file'] }) => {
+    const { current } = useTheme()
+    const [thumbnailLoaded, setThumbnailLoaded] = useState(false)
+    const [thumbnailError, setThumbnailError] = useState(false)
+
+    if (!file.thumbnail) {
+        return (
+            <View
+                className="w-[320px] h-[320px] rounded-lg flex items-center justify-center overflow-hidden media-glow"
+                style={{ 
+                    backgroundColor: current?.dark + "10"
+                }}
+            >
+                <Text value="🎵" className="text-8xl" />
+            </View>
+        )
+    }
+
+    return (
+        <View
+            className="w-[320px] h-[320px] rounded-lg flex items-center justify-center overflow-hidden media-glow relative"
+            style={{ 
+                backgroundColor: current?.dark + "10"
+            }}
+        >
+            {!thumbnailLoaded && !thumbnailError && (
+                <div 
+                    className="absolute inset-0"
+                    style={{
+                        backgroundColor: current?.dark + "10",
+                        animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                        borderRadius: "0.5rem"
+                    }}
+                />
+            )}
+            <img
+                src={file.thumbnail}
+                alt={file.name}
+                className={`w-full h-full object-cover ${thumbnailLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity`}
+                style={{
+                    backgroundSize: "cover",
+                    backgroundPosition: "center"
+                }}
+                onLoad={() => setThumbnailLoaded(true)}
+                onError={() => {
+                    setThumbnailError(true)
+                    setThumbnailLoaded(true)
+                }}
+            />
+            {thumbnailError && <Text value="🎵" className="text-8xl absolute" />}
+        </View>
+    )
+}
+
 const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
     const { current, name } = useTheme()
     const { setBackgroundPlayer } = useFileStore()
@@ -125,25 +179,26 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
         <View className="flex flex-col h-full items-center justify-center p-10 gap-8">
             {/* Album Art / Video Display */}
             {isVideo ? (
-                <video
-                    ref={videoRef}
-                    src={videoUrl}
-                    className="max-w-full max-h-[50%] rounded-lg media-glow"
-                    onPlay={() => setIsPlaying(true)}
-                    onPause={() => setIsPlaying(false)}
-                />
-            ) : (
-                <View
-                    className="w-[320px] h-[320px] rounded-lg flex items-center justify-center overflow-hidden media-glow"
-                    style={{ 
-                        backgroundColor: current?.dark + "10",
-                        backgroundImage: file.thumbnail ? `url(${file.thumbnail})` : undefined,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center"
-                    }}
-                >
-                    {!file.thumbnail && <Text value="🎵" className="text-8xl" />}
+                <View className="relative max-w-full max-h-[50%] rounded-lg media-glow overflow-hidden">
+                    {file.thumbnail && (
+                        <img
+                            src={file.thumbnail}
+                            alt={file.name}
+                            className="absolute inset-0 w-full h-full object-cover"
+                            style={{ display: isPlaying ? 'none' : 'block' }}
+                        />
+                    )}
+                    <video
+                        ref={videoRef}
+                        src={videoUrl}
+                        className="max-w-full max-h-[50%] rounded-lg"
+                        poster={file.thumbnail}
+                        onPlay={() => setIsPlaying(true)}
+                        onPause={() => setIsPlaying(false)}
+                    />
                 </View>
+            ) : (
+                <ThumbnailPlaceholder file={file} />
             )}
 
             {/* Song Title */}

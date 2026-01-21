@@ -1,9 +1,51 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
 import { useFileStore } from "../../store/Filestore"
 import { useTheme } from "../../store/Themestore"
 import { Play } from "lucide-react"
+import { Skeleton } from "../base/Skeleton"
+
+const ThumbnailPlaceholder = ({ file }: { file: ReturnType<typeof useFileStore>['getAllFilesByType'][0] }) => {
+    const { current } = useTheme()
+    const [thumbnailLoaded, setThumbnailLoaded] = useState(false)
+    const [thumbnailError, setThumbnailError] = useState(false)
+
+    if (!file.thumbnail) {
+        return (
+            <View className="w-14 h-14 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm"
+                style={{
+                    backgroundColor: current?.dark + "10"
+                }}
+            >
+                <Text value="🎵" className="text-2xl" />
+            </View>
+        )
+    }
+
+    return (
+        <View className="w-14 h-14 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm relative"
+            style={{
+                backgroundColor: current?.dark + "10"
+            }}
+        >
+            {!thumbnailLoaded && !thumbnailError && (
+                <Skeleton width="100%" height="100%" rounded className="absolute inset-0" />
+            )}
+            <img
+                src={file.thumbnail}
+                alt={file.name}
+                className={`w-full h-full object-cover ${thumbnailLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity`}
+                onLoad={() => setThumbnailLoaded(true)}
+                onError={() => {
+                    setThumbnailError(true)
+                    setThumbnailLoaded(true)
+                }}
+            />
+            {thumbnailError && <Text value="🎵" className="text-2xl absolute" />}
+        </View>
+    )
+}
 
 const AudioFilesView = () => {
     const { getAllFilesByType, openFileModal, disks, setBackgroundPlayer } = useFileStore()
@@ -75,16 +117,7 @@ const AudioFilesView = () => {
                             e.currentTarget.style.transform = "translateX(0)"
                         }}
                     >
-                        <View className="w-14 h-14 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm"
-                            style={{
-                                backgroundColor: current?.dark + "10",
-                                backgroundImage: file.thumbnail ? `url(${file.thumbnail})` : undefined,
-                                backgroundSize: "cover",
-                                backgroundPosition: "center"
-                            }}
-                        >
-                            {!file.thumbnail && <Text value="🎵" className="text-2xl" />}
-                        </View>
+                        <ThumbnailPlaceholder file={file} />
 
                         <View className="flex-1 min-w-0">
                             <Text

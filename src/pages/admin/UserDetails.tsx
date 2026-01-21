@@ -70,15 +70,8 @@ const UserDetails = () => {
 
     const primaryColors = getPrimaryColorVariations(current?.primary || "#EE7E06")
     
-    // Mock activity data for the user
-    const activityData = [
-        { month: 'Jan', uploads: 12, downloads: 8 },
-        { month: 'Feb', uploads: 15, downloads: 10 },
-        { month: 'Mar', uploads: 18, downloads: 12 },
-        { month: 'Apr', uploads: 20, downloads: 15 },
-        { month: 'May', uploads: 22, downloads: 18 },
-        { month: 'Jun', uploads: 25, downloads: 20 }
-    ]
+    // Activity data for the user - should be fetched from API
+    const activityData: { month: string; uploads: number; downloads: number }[] = []
 
     const storagePercentage = user.storage && user.storage.total > 0 
         ? (user.storage.used / user.storage.total) * 100 

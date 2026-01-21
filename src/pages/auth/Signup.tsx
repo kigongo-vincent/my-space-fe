@@ -4,11 +4,14 @@ import View from "../../components/base/View"
 import Text from "../../components/base/Text"
 import Button from "../../components/base/Button"
 import { useTheme } from "../../store/Themestore"
+import { useUser } from "../../store/Userstore"
 import Logo from "../../components/base/Logo"
+import AlertModal from "../../components/base/AlertModal"
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react"
 
 const Signup = () => {
     const { current, name } = useTheme()
+    const { register, isLoading } = useUser()
     const navigate = useNavigate()
     const [username, setUsername] = useState("")
     const [email, setEmail] = useState("")
@@ -17,15 +20,26 @@ const Signup = () => {
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [errors, setErrors] = useState<{ [key: string]: string }>({})
+    const [alertModal, setAlertModal] = useState<{ isOpen: boolean; message: string; type?: "error" | "success" | "info" | "warning" }>({
+        isOpen: false,
+        message: "",
+        type: "error"
+    })
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        e.stopPropagation()
+        
+        if (isLoading) return // Prevent double submission
+
         const newErrors: { [key: string]: string } = {}
 
         if (!username.trim()) {
             newErrors.username = "Username is required"
         } else if (username.length < 3) {
             newErrors.username = "Username must be at least 3 characters"
+        } else if (username.length > 30) {
+            newErrors.username = "Username must be less than 30 characters"
         }
 
         if (!email.trim()) {
@@ -38,9 +52,13 @@ const Signup = () => {
             newErrors.password = "Password is required"
         } else if (password.length < 6) {
             newErrors.password = "Password must be at least 6 characters"
+        } else if (password.length > 128) {
+            newErrors.password = "Password is too long"
         }
 
-        if (password !== confirmPassword) {
+        if (!confirmPassword.trim()) {
+            newErrors.confirmPassword = "Please confirm your password"
+        } else if (password !== confirmPassword) {
             newErrors.confirmPassword = "Passwords do not match"
         }
 
@@ -49,8 +67,60 @@ const Signup = () => {
             return
         }
 
-        // Simulate signup
-        navigate("/dashboard")
+        setErrors({})
+        try {
+            const result = await register(username, email, password)
+            
+            if (result.success) {
+                // Small delay to ensure state is updated
+                setTimeout(() => {
+                    const currentUser = useUser.getState().current
+                    if (currentUser?.role === 'admin') {
+                        navigate("/admin")
+                    } else {
+                        navigate("/dashboard")
+                    }
+                }, 100)
+            } else {
+                // Handle specific error messages
+                let errorMessage = result.error || "Registration failed"
+                
+                if (errorMessage.toLowerCase().includes('email already exists') || errorMessage.toLowerCase().includes('already exists')) {
+                    errorMessage = "An account with this email already exists. Please use a different email or try logging in."
+                    setAlertModal({
+                        isOpen: true,
+                        message: errorMessage,
+                        type: "error"
+                    })
+                } else if (errorMessage.toLowerCase().includes('username') && errorMessage.toLowerCase().includes('taken')) {
+                    errorMessage = "This username is already taken. Please choose another."
+                    setAlertModal({
+                        isOpen: true,
+                        message: errorMessage,
+                        type: "error"
+                    })
+                } else if (errorMessage.toLowerCase().includes('network') || errorMessage.toLowerCase().includes('fetch')) {
+                    errorMessage = "Network error. Please check your connection and try again."
+                    setAlertModal({
+                        isOpen: true,
+                        message: errorMessage,
+                        type: "error"
+                    })
+                } else {
+                    setAlertModal({
+                        isOpen: true,
+                        message: errorMessage,
+                        type: "error"
+                    })
+                }
+            }
+        } catch (error: any) {
+            setAlertModal({
+                isOpen: true,
+                message: error?.message || "An unexpected error occurred. Please try again.",
+                type: "error"
+            })
+        }
     }
 
     return (
@@ -224,7 +294,15 @@ const Signup = () => {
 
                     <Button 
                         title="Create Account" 
-                        action={handleSubmit}
+                        action={() => {
+                            const form = document.querySelector('form')
+                            if (form) {
+                                const event = new Event('submit', { bubbles: true, cancelable: true })
+                                form.dispatchEvent(event)
+                            }
+                        }}
+                        loading={isLoading}
+                        disabled={isLoading}
                     />
 
                     <View className="flex items-center gap-3 my-2">
@@ -283,6 +361,13 @@ const Signup = () => {
                     </View>
                 </form>
             </View>
+
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+                message={alertModal.message}
+                type={alertModal.type}
+            />
         </View>
     )
 }

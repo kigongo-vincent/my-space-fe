@@ -31,21 +31,8 @@ const ActivityLog = () => {
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
 
-    // Mock activity data
-    const activities: ActivityItem[] = useMemo(() => [
-        { id: 1, timestamp: "2024-06-15 14:30:22", user: "kigongo vincent", action: "Storage Updated", type: "storage", details: "Updated storage for john doe from 10 GB to 15 GB" },
-        { id: 2, timestamp: "2024-06-15 13:15:10", user: "kigongo vincent", action: "User Suspended", type: "user", details: "Suspended user bob wilson" },
-        { id: 3, timestamp: "2024-06-15 12:45:33", user: "jane smith", action: "File Uploaded", type: "system", details: "Uploaded document.pdf (2.5 MB)" },
-        { id: 4, timestamp: "2024-06-15 11:20:15", user: "kigongo vincent", action: "Storage Updated", type: "storage", details: "Updated storage for jane smith from 20 GB to 25 GB" },
-        { id: 5, timestamp: "2024-06-15 10:05:42", user: "john doe", action: "Login Attempt", type: "security", details: "Successful login from IP 192.168.1.100" },
-        { id: 6, timestamp: "2024-06-14 16:30:18", user: "kigongo vincent", action: "User Created", type: "user", details: "Created new user account for alice brown" },
-        { id: 7, timestamp: "2024-06-14 15:20:45", user: "jane smith", action: "File Deleted", type: "system", details: "Deleted old_backup.zip (150 MB)" },
-        { id: 8, timestamp: "2024-06-14 14:10:30", user: "kigongo vincent", action: "Storage Updated", type: "storage", details: "Updated storage for alice brown from 5 GB to 10 GB" },
-        { id: 9, timestamp: "2024-06-14 13:05:12", user: "john doe", action: "File Uploaded", type: "system", details: "Uploaded presentation.pptx (8.2 MB)" },
-        { id: 10, timestamp: "2024-06-14 12:00:00", user: "bob wilson", action: "Login Attempt", type: "security", details: "Failed login attempt from IP 192.168.1.105" },
-        { id: 11, timestamp: "2024-06-14 11:30:15", user: "kigongo vincent", action: "User Unsuspended", type: "user", details: "Unsuspended user alice brown" },
-        { id: 12, timestamp: "2024-06-14 10:15:30", user: "jane smith", action: "File Downloaded", type: "system", details: "Downloaded report.xlsx (1.2 MB)" }
-    ], [])
+    // Activity data - should be fetched from API
+    const activities: ActivityItem[] = useMemo(() => [], [])
 
     const filteredActivities = useMemo(() => {
         return activities.filter(activity => {

@@ -124,13 +124,23 @@ const PropertiesModal = ({ fileId, onClose }: Props) => {
         }
     }
 
+    // Get image URL for the preview - use thumbnail if available, otherwise fallback to type icon
+    const getPreviewImageUrl = () => {
+        // For pictures, videos, and audio, use thumbnail if available
+        if ((file.type === "picture" || file.type === "video" || file.type === "audio") && file.thumbnail) {
+            return file.thumbnail
+        }
+        // Fallback to type-based icon
+        return getImageByFileType(file.type)
+    }
+
     const getTypeLabel = () => {
         if (file.isFolder) return "Folder"
         return file.type.charAt(0).toUpperCase() + file.type.slice(1)
     }
 
     return (
-        <AnimatedModal isOpen={true} onClose={onClose} size="lg">
+        <AnimatedModal isOpen={true} onClose={onClose} size="lg" position="center">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -156,14 +166,29 @@ const PropertiesModal = ({ fileId, onClose }: Props) => {
                     {/* File Preview Section */}
                     <View className="flex items-center gap-5 mb-6 pb-6 border-b" style={{ borderColor: current?.dark + "15" }}>
                         <View 
-                            className="w-20 h-20 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: current?.primary + "10" }}
+                            className="w-20 h-20 rounded-lg flex items-center justify-center overflow-hidden"
+                            style={{ 
+                                backgroundColor: current?.primary + "10",
+                                backgroundImage: (file.type === "picture" || file.type === "video" || file.type === "audio") && file.thumbnail 
+                                    ? `url(${file.thumbnail})` 
+                                    : undefined,
+                                backgroundSize: "cover",
+                                backgroundPosition: "center"
+                            }}
                         >
-                            <img
-                                src={getImageByFileType(file.type)}
-                                alt=""
-                                className="w-16 h-16 object-contain"
-                            />
+                            {(file.type === "picture" || file.type === "video" || file.type === "audio") && file.thumbnail ? (
+                                <img
+                                    src={file.thumbnail}
+                                    alt={file.name}
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <img
+                                    src={getPreviewImageUrl()}
+                                    alt=""
+                                    className="w-16 h-16 object-contain"
+                                />
+                            )}
                         </View>
                         <View className="flex-1 min-w-0">
                             <Text 

@@ -6,6 +6,7 @@ import { useFileStore } from "../../store/Filestore"
 import { X, FileText, Sparkles } from "lucide-react"
 import IconButton from "../base/IconButton"
 import { useTheme } from "../../store/Themestore"
+import AnimatedModal from "../base/AnimatedModal"
 
 interface Props {
     onClose: () => void
@@ -29,15 +30,13 @@ const CreateNoteModal = ({ onClose, parentId, diskId }: Props) => {
     const isFormValid = noteName.trim().length >= 3 && noteContent.trim().length > 0
 
     return (
-        <AnimatedModal isOpen={true} onClose={onClose} size="lg">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="rounded-xl min-w-[700px] max-w-[800px] w-[90vw] max-h-[85vh] overflow-hidden flex flex-col"
+        <AnimatedModal isOpen={true} onClose={onClose} size="lg" position="center">
+            <div
+                className="rounded-xl min-w-[700px] max-w-[800px] max-h-[85vh] overflow-hidden flex flex-col"
                 style={{
                     border: `1px solid ${current?.dark}10`,
-                    backgroundColor: current?.foreground
+                    backgroundColor: current?.foreground,
+                    width: 'auto'
                 }}
             >
                 {/* Header - Apple Notes style */}
@@ -143,7 +142,7 @@ const CreateNoteModal = ({ onClose, parentId, diskId }: Props) => {
                         Create
                     </button>
                 </View>
-            </motion.div>
+            </div>
         </AnimatedModal>
     )
 }

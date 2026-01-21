@@ -40,7 +40,7 @@ const RenameModal = ({ fileId, currentName, onClose }: Props) => {
     }
 
     return (
-        <AnimatedModal isOpen={true} onClose={onClose} size="sm">
+        <AnimatedModal isOpen={true} onClose={onClose} size="md" position="center">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

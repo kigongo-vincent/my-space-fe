@@ -18,7 +18,8 @@ import {
     Key,
     Trash2,
     Download,
-    Upload as UploadIcon
+    Upload as UploadIcon,
+    LogOut
 } from "lucide-react"
 import Button from "../../components/base/Button"
 import StoragePurchaseModal from "../../components/explorer/StoragePurchaseModal"
@@ -36,9 +37,14 @@ interface CategoryItem {
 const Settings = () => {
     const navigate = useNavigate()
     const { current, name, toggleTheme } = useTheme()
-    const { current: user, usage } = useUser()
+    const { current: user, usage, logout } = useUser()
     const [activeCategory, setActiveCategory] = useState<SettingsCategory>("account")
     const [showStoragePurchase, setShowStoragePurchase] = useState(false)
+
+    const handleLogout = () => {
+        logout()
+        navigate('/')
+    }
 
     const categories: CategoryItem[] = [
         { id: "account", label: "Account", icon: <User size={20} /> },
@@ -95,6 +101,22 @@ const Settings = () => {
                                     <View className="flex items-center gap-3">
                                         <UploadIcon size={18} color={current?.primary} />
                                         <Text value="Change Profile Picture" />
+                                    </View>
+                                </button>
+                            </View>
+                        </View>
+
+                        <View className="border-t pt-6" style={{ borderColor: current?.dark + "20" }}>
+                            <Text value="Account Actions" className="font-semibold mb-4" />
+                            <View className="flex flex-col gap-3">
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center justify-between p-4 rounded-lg hover:opacity-80 transition-opacity text-left"
+                                    style={{ backgroundColor: current?.dark + "08" }}
+                                >
+                                    <View className="flex items-center gap-3">
+                                        <LogOut size={18} color={current?.error || "#ef4444"} />
+                                        <Text value="Logout" style={{ color: current?.error || "#ef4444" }} className="font-medium" />
                                     </View>
                                 </button>
                             </View>

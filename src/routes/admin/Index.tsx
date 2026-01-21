@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router'
+import { Route, Routes, Navigate } from 'react-router'
 import AdminDashboard from '../../pages/admin/Dashboard'
 import UserManagement from '../../pages/admin/UserManagement'
 import UserDetails from '../../pages/admin/UserDetails'
@@ -7,6 +7,7 @@ import Analytics from '../../pages/admin/Analytics'
 import ActivityLog from '../../pages/admin/ActivityLog'
 import AdminSettings from '../../pages/admin/AdminSettings'
 import AdminLayout from '../../components/admin/AdminLayout'
+import NotFound from '../../pages/NotFound'
 
 const AdminRoutes = () => {
     return (
@@ -19,6 +20,7 @@ const AdminRoutes = () => {
                 <Route path="/analytics" Component={Analytics} />
                 <Route path="/activity" Component={ActivityLog} />
                 <Route path="/settings" Component={AdminSettings} />
+                <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>
         </AdminLayout>
     )

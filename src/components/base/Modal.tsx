@@ -3,9 +3,6 @@ import View from './View'
 import Text from './Text'
 import { Pause, Play, SkipBack, SkipForward } from 'lucide-react'
 
-// test 
-import TestAudio from "../../assets/test/audio.mp3"
-
 const Modal = () => {
 
     const audioRef = useRef<HTMLAudioElement>(null)
@@ -50,7 +47,7 @@ const Modal = () => {
                 </View>
 
                 {/* audio  */}
-                <audio src={TestAudio} ref={audioRef}></audio>
+                <audio ref={audioRef}></audio>
 
                 {/* controls  */}
                 <View className='flex text-white items-center gap-4 justify-center'>

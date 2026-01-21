@@ -5,6 +5,7 @@ import { getImageByFileType } from "../base/Sidebar"
 import { useTheme } from "../../store/Themestore"
 import { MoreVertical } from "lucide-react"
 import { useState } from "react"
+import { Skeleton } from "../base/Skeleton"
 
 interface Props {
     file: FileItemType
@@ -34,6 +35,8 @@ const FileItem = ({
     const { current } = useTheme()
     const [isHovered, setIsHovered] = useState(false)
     const [isDragging, setIsDragging] = useState(false)
+    const [thumbnailLoaded, setThumbnailLoaded] = useState(false)
+    const [thumbnailError, setThumbnailError] = useState(false)
 
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault()
@@ -133,11 +136,40 @@ const FileItem = ({
                 {...dragProps}
             >
                 {file.type === "picture" ? (
-                    <img 
-                        src={getImageUrl()} 
-                        alt={file.name} 
-                        className="w-8 h-8 object-cover rounded" 
-                    />
+                    <>
+                        {!thumbnailLoaded && !thumbnailError && (
+                            <Skeleton width="32px" height="32px" rounded className="absolute" />
+                        )}
+                        <img 
+                            src={getImageUrl()} 
+                            alt={file.name} 
+                            className={`w-8 h-8 object-cover rounded ${thumbnailLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity`}
+                            onLoad={() => setThumbnailLoaded(true)}
+                            onError={() => {
+                                setThumbnailError(true)
+                                setThumbnailLoaded(true)
+                            }}
+                        />
+                    </>
+                ) : (file.type === "video" && file.thumbnail) ? (
+                    <>
+                        {!thumbnailLoaded && !thumbnailError && (
+                            <Skeleton width="32px" height="32px" rounded className="absolute" />
+                        )}
+                        <img 
+                            src={file.thumbnail} 
+                            alt={file.name} 
+                            className={`w-8 h-8 object-cover rounded ${thumbnailLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity`}
+                            onLoad={() => setThumbnailLoaded(true)}
+                            onError={() => {
+                                setThumbnailError(true)
+                                setThumbnailLoaded(true)
+                            }}
+                        />
+                        {thumbnailError && (
+                            <img src={getImageByFileType(file.type)} alt="" className="w-8 h-8 object-contain" />
+                        )}
+                    </>
                 ) : (
                     <img src={getImageByFileType(file.type)} alt="" className="w-8 h-8 object-contain" />
                 )}
@@ -183,11 +215,44 @@ const FileItem = ({
         >
             <View className="relative h-[10vh] w-[10vh]">
                 {file.type === "picture" ? (
-                    <img
-                        className="h-full w-full object-cover rounded"
-                        src={getImageUrl()}
-                        alt={file.name}
-                    />
+                    <>
+                        {!thumbnailLoaded && !thumbnailError && (
+                            <Skeleton width="100%" height="100%" rounded className="absolute inset-0" />
+                        )}
+                        <img
+                            className={`h-full w-full object-cover rounded ${thumbnailLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity`}
+                            src={getImageUrl()}
+                            alt={file.name}
+                            onLoad={() => setThumbnailLoaded(true)}
+                            onError={() => {
+                                setThumbnailError(true)
+                                setThumbnailLoaded(true)
+                            }}
+                        />
+                    </>
+                ) : (file.type === "video" && file.thumbnail) ? (
+                    <>
+                        {!thumbnailLoaded && !thumbnailError && (
+                            <Skeleton width="100%" height="100%" rounded className="absolute inset-0" />
+                        )}
+                        <img
+                            className={`h-full w-full object-cover rounded ${thumbnailLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity`}
+                            src={file.thumbnail}
+                            alt={file.name}
+                            onLoad={() => setThumbnailLoaded(true)}
+                            onError={() => {
+                                setThumbnailError(true)
+                                setThumbnailLoaded(true)
+                            }}
+                        />
+                        {thumbnailError && (
+                            <img
+                                className="h-full w-full object-contain"
+                                src={getImageByFileType(file.type)}
+                                alt=""
+                            />
+                        )}
+                    </>
                 ) : (
                     <img
                         className="h-full w-full object-contain"

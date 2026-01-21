@@ -2,7 +2,7 @@ import { useLocation } from "react-router"
 import View from "../../components/base/View"
 import Text from "../../components/base/Text"
 import computerIcon from "../../assets/categories/computer.webp"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Disk, { DiskI } from "../../components/home/Disk"
 import Node, { RecentlyOpenedI } from "../../components/base/Node"
 import FileExplorer from "../../components/explorer/FileExplorer"
@@ -15,8 +15,9 @@ import CreateDiskModal from "../../components/explorer/CreateDiskModal"
 import DiskDetailsModal from "../../components/explorer/DiskDetailsModal"
 import RenameDiskModal from "../../components/explorer/RenameDiskModal"
 import MergeDiskModal from "../../components/explorer/MergeDiskModal"
+import ResizeDiskModal from "../../components/explorer/ResizeDiskModal"
 import ContextMenu, { ContextMenuItem } from "../../components/explorer/ContextMenu"
-import { Trash2, Edit, Info, HardDrive, Plus, Star, StarOff, RefreshCw, GitMerge } from "lucide-react"
+import { Trash2, Edit, Info, HardDrive, Plus, Star, StarOff, RefreshCw, GitMerge, Maximize2 } from "lucide-react"
 import { motion } from "framer-motion"
 
 const Index = () => {
@@ -24,6 +25,7 @@ const Index = () => {
     const { pathname } = useLocation()
     const {
         currentDiskId,
+        currentPath,
         disks,
         openModals,
         closeFileModal,
@@ -42,8 +44,37 @@ const Index = () => {
         getPathForFile,
         setCurrentPath,
         deleteDisk,
-        formatDisk
+        formatDisk,
+        fetchDisks,
+        isLoading
     } = useFileStore()
+
+    useEffect(() => {
+        // Fetch disks when component mounts
+        if (disks.length === 0) {
+            fetchDisks()
+        }
+    }, [fetchDisks, disks.length])
+
+    // Restore navigation when disks are loaded and we have a persisted path
+    useEffect(() => {
+        if (disks.length > 0 && currentDiskId && currentPath.length > 0) {
+            // Verify the disk exists and restore navigation
+            const disk = disks.find(d => d.id === currentDiskId)
+            if (disk) {
+                setShowHome(false)
+                // The path is already set from localStorage, we just need to ensure files are loaded
+                // setCurrentDisk will handle fetching files if needed
+            } else {
+                // Disk doesn't exist, clear persisted state
+                setCurrentDisk(null)
+            }
+        } else if (currentDiskId && disks.length > 0) {
+            // We have a disk but no path, just make sure we're not showing home
+            setShowHome(false)
+        }
+    }, [disks, currentDiskId, currentPath, setCurrentDisk])
+
     const { current, name } = useTheme()
     const [showHome, setShowHome] = useState(!currentDiskId)
     const [showCreateDisk, setShowCreateDisk] = useState(false)
@@ -51,14 +82,24 @@ const Index = () => {
     const [showDiskDetails, setShowDiskDetails] = useState<string | null>(null)
     const [renameDiskId, setRenameDiskId] = useState<string | null>(null)
     const [mergeDiskId, setMergeDiskId] = useState<string | null>(null)
+    const [resizeDiskId, setResizeDiskId] = useState<string | null>(null)
     const [nodeContextMenu, setNodeContextMenu] = useState<{ x: number; y: number; fileId: string } | null>(null)
 
     // Convert store disks to component format
-    const diskComponents: DiskI[] = disks.map(d => ({
-        id: parseInt(d.id.split('-')[1]) || 0,
-        label: d.name,
-        usage: d.usage
-    }))
+    const diskComponents: DiskI[] = disks.map(d => {
+        // Try to parse ID as number, fallback to splitting if it contains '-'
+        let numericId = 0
+        if (d.id.includes('-')) {
+            numericId = parseInt(d.id.split('-')[1]) || parseInt(d.id) || 0
+        } else {
+            numericId = parseInt(d.id) || 0
+        }
+        return {
+            id: numericId,
+            label: d.name,
+            usage: d.usage
+        }
+    })
 
     // Get recently opened files (last 6 files that were opened)
     const getRecentlyOpened = (): RecentlyOpenedI[] => {
@@ -300,7 +341,7 @@ const Index = () => {
                                 const disk = disks.find(disk => disk.name === d.label)
                                 return (
                                     <motion.div
-                                        key={i}
+                                        key={disk?.id || `disk-${i}`}
                                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         transition={{ 
@@ -322,13 +363,19 @@ const Index = () => {
                                     >
                                         <Disk
                                             {...d}
-                                            onMenuClick={(e, diskId) => {
+                                            onMenuClick={(e, diskIdNum) => {
                                                 e.stopPropagation()
-                                                if (disk) {
+                                                // Find disk by matching the numeric ID or the full ID
+                                                const matchingDisk = disks.find(d => 
+                                                    d.id === diskIdNum.toString() || 
+                                                    parseInt(d.id) === diskIdNum ||
+                                                    parseInt(d.id.split('-')[1]) === diskIdNum
+                                                )
+                                                if (matchingDisk) {
                                                     setDiskContextMenu({
                                                         x: e.clientX,
                                                         y: e.clientY,
-                                                        diskId: disk.id
+                                                        diskId: matchingDisk.id
                                                     })
                                                 }
                                             }}
@@ -435,11 +482,52 @@ const Index = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3, delay: 0.6 }}
-                className="border-t flex items-center gap-2 h-14"
+                className="border-t flex items-center gap-2 h-14 px-4"
                 style={{ borderColor: current?.dark + "20" }}
             >
                 <img src={computerIcon} height={20} width={20} alt="" />
-                <Text value={pathname} />
+                {currentDiskId ? (() => {
+                    const disk = disks.find(d => d.id === currentDiskId)
+                    if (!disk) return <Text value={pathname} />
+                    
+                    // Build path breadcrumb - always show disk name, then folders in path
+                    const pathParts: string[] = [disk.name]
+                    currentPath.forEach(folderId => {
+                        const folder = getFileById(folderId)
+                        if (folder) {
+                            pathParts.push(folder.name)
+                        } else {
+                            // If folder not found, show a placeholder (shouldn't happen, but fallback)
+                            pathParts.push(`Folder ${folderId.slice(0, 8)}...`)
+                        }
+                    })
+                    
+                    // Only show path if we have at least the disk name
+                    if (pathParts.length === 0) {
+                        return <Text value={pathname} />
+                    }
+                    
+                    return (
+                        <View className="flex items-center gap-1 flex-1 overflow-hidden">
+                            {pathParts.map((part, index) => (
+                                <View key={index} className="flex items-center gap-1">
+                                    <Text 
+                                        value={part} 
+                                        className={index === 0 ? "font-medium" : ""}
+                                        style={{ 
+                                            color: index === 0 ? current?.dark : current?.dark + "CC"
+                                        }}
+                                    />
+                                    {index < pathParts.length - 1 && (
+                                        <Text value="/" className="opacity-40 mx-0.5" />
+                                    )}
+                                </View>
+                            ))}
+                        </View>
+                    )
+                })() : (
+                    <Text value={pathname} />
+                )}
             </motion.div>
 
             {/* Render all open modals */}
@@ -523,6 +611,14 @@ const Index = () => {
                                 setDiskContextMenu(null)
                             }
                         },
+                        {
+                            label: "Resize",
+                            icon: <Maximize2 size={16} />,
+                            action: () => {
+                                setResizeDiskId(diskContextMenu.diskId)
+                                setDiskContextMenu(null)
+                            }
+                        },
                         { separator: true },
                         {
                             label: "Format",
@@ -574,6 +670,14 @@ const Index = () => {
                 <MergeDiskModal
                     sourceDiskId={mergeDiskId}
                     onClose={() => setMergeDiskId(null)}
+                />
+            )}
+
+            {/* Resize Disk Modal */}
+            {resizeDiskId && (
+                <ResizeDiskModal
+                    diskId={resizeDiskId}
+                    onClose={() => setResizeDiskId(null)}
                 />
             )}
         </motion.div>

@@ -4,20 +4,32 @@ import View from "../../components/base/View"
 import Text from "../../components/base/Text"
 import Button from "../../components/base/Button"
 import { useTheme } from "../../store/Themestore"
+import { useUser } from "../../store/Userstore"
 import Logo from "../../components/base/Logo"
+import AlertModal from "../../components/base/AlertModal"
 import { Mail, Lock, Eye, EyeOff } from "lucide-react"
 
 const Login = () => {
     const { current, name } = useTheme()
+    const { login, isLoading } = useUser()
     const navigate = useNavigate()
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
-    const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+    const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({})
+    const [alertModal, setAlertModal] = useState<{ isOpen: boolean; message: string; type?: "error" | "success" | "info" | "warning" }>({
+        isOpen: false,
+        message: "",
+        type: "error"
+    })
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        const newErrors: { email?: string; password?: string } = {}
+        e.stopPropagation()
+        
+        if (isLoading) return // Prevent double submission
+
+        const newErrors: { email?: string; password?: string; general?: string } = {}
 
         if (!email.trim()) {
             newErrors.email = "Email is required"
@@ -36,8 +48,45 @@ const Login = () => {
             return
         }
 
-        // Simulate login
-        navigate("/dashboard")
+        setErrors({})
+        try {
+            const result = await login(email, password)
+            
+            if (result.success) {
+                // Small delay to ensure state is updated
+                setTimeout(() => {
+                    const currentUser = useUser.getState().current
+                    if (currentUser?.role === 'admin') {
+                        navigate("/admin")
+                    } else {
+                        navigate("/dashboard")
+                    }
+                }, 100)
+            } else {
+                // Handle specific error messages
+                let errorMessage = result.error || "Login failed"
+                
+                if (errorMessage.toLowerCase().includes('invalid credentials')) {
+                    errorMessage = "Invalid email or password. Please try again."
+                } else if (errorMessage.toLowerCase().includes('suspended')) {
+                    errorMessage = "Your account has been suspended. Please contact support."
+                } else if (errorMessage.toLowerCase().includes('network') || errorMessage.toLowerCase().includes('fetch')) {
+                    errorMessage = "Network error. Please check your connection and try again."
+                }
+                
+                setAlertModal({
+                    isOpen: true,
+                    message: errorMessage,
+                    type: "error"
+                })
+            }
+        } catch (error: any) {
+            setAlertModal({
+                isOpen: true,
+                message: error?.message || "An unexpected error occurred. Please try again.",
+                type: "error"
+            })
+        }
     }
 
     return (
@@ -149,7 +198,15 @@ const Login = () => {
 
                     <Button 
                         title="Sign In" 
-                        action={handleSubmit}
+                        action={() => {
+                            const form = document.querySelector('form')
+                            if (form) {
+                                const event = new Event('submit', { bubbles: true, cancelable: true })
+                                form.dispatchEvent(event)
+                            }
+                        }}
+                        loading={isLoading}
+                        disabled={isLoading}
                     />
 
                     <View className="flex items-center gap-3 my-2">
@@ -208,6 +265,13 @@ const Login = () => {
                     </View>
                 </form>
             </View>
+
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+                message={alertModal.message}
+                type={alertModal.type}
+            />
         </View>
     )
 }

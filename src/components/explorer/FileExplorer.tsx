@@ -392,9 +392,22 @@ const FileExplorer = () => {
                 action: () => handleFileClick(file.id, file.isFolder)
             },
             {
-                label: "Open in new tab",
+                label: "Open in new window",
                 icon: <FolderOpen size={16} />,
-                action: () => openFileModal(file.id),
+                action: () => {
+                    if (file.url) {
+                        // If file has a URL (uploaded file), open it in new window
+                        window.open(file.url, '_blank', 'noopener,noreferrer')
+                    } else if (file.type === "url" && file.url) {
+                        // URL files
+                        window.open(file.url, '_blank', 'noopener,noreferrer')
+                    } else {
+                        // For other files, open the file modal in a new window
+                        // Create a URL with the file ID that opens in a new window
+                        const fileUrl = `${window.location.origin}${window.location.pathname}?file=${file.id}`
+                        window.open(fileUrl, '_blank', 'noopener,noreferrer')
+                    }
+                },
                 disabled: file.isFolder
             },
             { separator: true },

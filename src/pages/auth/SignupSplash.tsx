@@ -1,18 +1,28 @@
 import { useEffect, useState } from "react"
 import { useTheme } from "../../store/Themestore"
+import { useUser } from "../../store/Userstore"
 import { useNavigate } from "react-router"
-import { Mail, Lock, Eye, EyeOff } from "lucide-react"
+import AlertModal from "../../components/base/AlertModal"
+import { Mail, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react"
 
 const SignupSplash = () => {
     const { current } = useTheme()
+    const { register, isLoading } = useUser()
     const navigate = useNavigate()
     const [showContent, setShowContent] = useState(false)
     const [time, setTime] = useState(new Date())
+    const [username, setUsername] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    const [error, setError] = useState("")
+    const [alertModal, setAlertModal] = useState<{ isOpen: boolean; message: string; type?: "error" | "success" | "info" | "warning" }>({
+        isOpen: false,
+        message: "",
+        type: "error"
+    })
 
     useEffect(() => {
         // Trigger animation after mount
@@ -26,16 +36,189 @@ const SignupSplash = () => {
         return () => clearInterval(timeInterval)
     }, [])
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        if (email.trim() && password.trim() && confirmPassword.trim() && password === confirmPassword) {
-            navigate("/dashboard")
+        e.stopPropagation()
+        
+        // Return early if already prevented or loading
+        if (e.defaultPrevented || isLoading) return
+        
+        // Prevent any navigation or reload
+        if (e.nativeEvent) {
+            e.nativeEvent.preventDefault()
+            e.nativeEvent.stopImmediatePropagation()
         }
-    }
+        
+        if (!username.trim()) {
+            setAlertModal({
+                isOpen: true,
+                message: "Username is required",
+                type: "error"
+            })
+            return
+        }
+        
+        if (username.length < 3) {
+            setAlertModal({
+                isOpen: true,
+                message: "Username must be at least 3 characters",
+                type: "error"
+            })
+            return
+        }
+        
+        if (username.length > 30) {
+            setAlertModal({
+                isOpen: true,
+                message: "Username must be less than 30 characters",
+                type: "error"
+            })
+            return
+        }
+        
+        if (!email.trim()) {
+            setAlertModal({
+                isOpen: true,
+                message: "Email is required",
+                type: "error"
+            })
+            return
+        }
+        
+        if (!/\S+@\S+\.\S+/.test(email)) {
+            setAlertModal({
+                isOpen: true,
+                message: "Please enter a valid email address",
+                type: "error"
+            })
+            return
+        }
+        
+        if (!password.trim()) {
+            setAlertModal({
+                isOpen: true,
+                message: "Password is required",
+                type: "error"
+            })
+            return
+        }
+        
+        if (password.length < 6) {
+            setAlertModal({
+                isOpen: true,
+                message: "Password must be at least 6 characters",
+                type: "error"
+            })
+            return
+        }
+        
+        if (password.length > 128) {
+            setAlertModal({
+                isOpen: true,
+                message: "Password is too long",
+                type: "error"
+            })
+            return
+        }
+        
+        if (!confirmPassword.trim()) {
+            setAlertModal({
+                isOpen: true,
+                message: "Please confirm your password",
+                type: "error"
+            })
+            return
+        }
+        
+        if (password !== confirmPassword) {
+            setAlertModal({
+                isOpen: true,
+                message: "Passwords do not match",
+                type: "error"
+            })
+            return
+        }
 
-    const handleButtonClick = () => {
-        if (email.trim() && password.trim() && confirmPassword.trim() && password === confirmPassword) {
-            navigate("/dashboard")
+        setError("")
+        try {
+            const result = await register(username, email, password)
+            
+            if (result.success) {
+                // Small delay to ensure state is updated
+                setTimeout(() => {
+                    const currentUser = useUser.getState().current
+                    if (currentUser?.role === 'admin') {
+                        navigate("/admin")
+                    } else {
+                        navigate("/dashboard")
+                    }
+                }, 100)
+            } else {
+                // Handle specific error messages
+                let errorMessage = result.error || "Registration failed"
+                
+                // Parse error message if it's a JSON string (handle cases where error is stringified JSON)
+                if (typeof errorMessage === 'string') {
+                    // Try to parse if it looks like JSON
+                    if (errorMessage.trim().startsWith('{') || errorMessage.trim().startsWith('"')) {
+                        try {
+                            const parsed = JSON.parse(errorMessage)
+                            errorMessage = parsed.error || parsed.message || errorMessage
+                        } catch {
+                            // If parsing fails, try to extract error from string
+                            const match = errorMessage.match(/"error"\s*:\s*"([^"]+)"/)
+                            if (match) {
+                                errorMessage = match[1]
+                            }
+                        }
+                    }
+                }
+                
+                // Format user-friendly messages
+                if (errorMessage.toLowerCase().includes('email already exists') || errorMessage.toLowerCase().includes('already exists')) {
+                    errorMessage = "An account with this email already exists. Please use a different email or try logging in."
+                } else if (errorMessage.toLowerCase().includes('username') && errorMessage.toLowerCase().includes('taken')) {
+                    errorMessage = "This username is already taken. Please choose another."
+                } else if (errorMessage.toLowerCase().includes('network') || errorMessage.toLowerCase().includes('fetch')) {
+                    errorMessage = "Network error. Please check your connection and try again."
+                }
+                
+                setAlertModal({
+                    isOpen: true,
+                    message: errorMessage,
+                    type: "error"
+                })
+            }
+        } catch (error: any) {
+            let errorMessage = error?.message || "An unexpected error occurred. Please try again."
+            
+            // Parse error message if it's a JSON string
+            if (typeof errorMessage === 'string') {
+                // Try to parse if it looks like JSON
+                if (errorMessage.trim().startsWith('{') || errorMessage.trim().startsWith('"')) {
+                    try {
+                        const parsed = JSON.parse(errorMessage)
+                        errorMessage = parsed.error || parsed.message || errorMessage
+                    } catch {
+                        // If parsing fails, try to extract error from string
+                        const match = errorMessage.match(/"error"\s*:\s*"([^"]+)"/)
+                        if (match) {
+                            errorMessage = match[1]
+                        }
+                    }
+                }
+            }
+            
+            // Format user-friendly messages
+            if (errorMessage.toLowerCase().includes('email already exists') || errorMessage.toLowerCase().includes('already exists')) {
+                errorMessage = "An account with this email already exists. Please use a different email or try logging in."
+            }
+            
+            setAlertModal({
+                isOpen: true,
+                message: errorMessage,
+                type: "error"
+            })
         }
     }
 
@@ -258,7 +441,40 @@ const SignupSplash = () => {
                     transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1)"
                 }}
             >
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <form 
+                    onSubmit={handleSubmit}
+                    className="flex flex-col gap-4"
+                    noValidate
+                    action="javascript:void(0)"
+                >
+                    {/* Username Input */}
+                    <div className="relative">
+                        <User
+                            size={18}
+                            color="#ffffff"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 opacity-70 z-10 pointer-events-none"
+                        />
+                        <input
+                            type="text"
+                            value={username}
+                            onChange={(e) => {
+                                setUsername(e.target.value)
+                                setError("")
+                            }}
+                            placeholder="Username"
+                            className="splash-input w-full pl-10 pr-4 py-3 rounded outline-none transition-all"
+                            style={{
+                                background: 'rgba(255, 255, 255, 0.1)',
+                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                color: '#ffffff',
+                                border: "none",
+                                backdropFilter: 'blur(20px)',
+                                WebkitBackdropFilter: 'blur(20px)',
+                                fontSize: '1rem'
+                            }}
+                        />
+                    </div>
+
                     {/* Email Input */}
                     <div className="relative">
                         <Mail
@@ -269,7 +485,10 @@ const SignupSplash = () => {
                         <input
                             type="email"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={(e) => {
+                                setEmail(e.target.value)
+                                setError("")
+                            }}
                             placeholder="Email"
                             className="splash-input w-full pl-10 pr-4 py-3 rounded outline-none transition-all"
                             style={{
@@ -362,19 +581,44 @@ const SignupSplash = () => {
 
                     {/* Submit Button */}
                     <button
-                        type="submit"
-                        onClick={handleButtonClick}
-                        className="splash-button w-full py-3 rounded outline-none transition-all font-medium"
+                        type="button"
+                        disabled={isLoading}
+                        onClick={async (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            
+                            // Manually trigger form submission handler
+                            const form = e.currentTarget.closest('form') as HTMLFormElement
+                            if (form && !isLoading) {
+                                const fakeEvent = {
+                                    preventDefault: () => {},
+                                    stopPropagation: () => {},
+                                    defaultPrevented: false,
+                                    nativeEvent: e.nativeEvent
+                                } as React.FormEvent<HTMLFormElement>
+                                
+                                await handleSubmit(fakeEvent)
+                            }
+                        }}
+                        className="splash-button w-full py-3 rounded outline-none transition-all font-medium flex items-center justify-center gap-2"
                         style={{
                             background: buttonGradient,
                             backgroundImage: buttonGradient,
                             color: '#ffffff',
                             border: "none",
-                            cursor: 'pointer',
-                            fontSize: '1rem' // 13.5px base
+                            cursor: isLoading ? 'not-allowed' : 'pointer',
+                            fontSize: '1rem',
+                            opacity: isLoading ? 0.7 : 1
                         }}
                     >
-                        Sign Up
+                        {isLoading ? (
+                            <>
+                                <Loader2 size={18} className="animate-spin" />
+                                <span>Signing up...</span>
+                            </>
+                        ) : (
+                            'Sign Up'
+                        )}
                     </button>
 
                     {/* Divider */}
@@ -460,6 +704,13 @@ const SignupSplash = () => {
                     </div>
                 </form>
             </div>
+
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+                message={alertModal.message}
+                type={alertModal.type}
+            />
 
             <style>{`
                 @keyframes applePulse {

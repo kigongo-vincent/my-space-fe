@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
 import Button from "../base/Button"
@@ -7,7 +7,8 @@ import { X, AlertCircle, CheckCircle, Info } from "lucide-react"
 import IconButton from "../base/IconButton"
 import { useTheme } from "../../store/Themestore"
 import { useUser } from "../../store/Userstore"
-import { getAvailableSpaceGB, convertToGB } from "../../utils/storage"
+import { convertToGB } from "../../utils/storage"
+import AlertModal from "../base/AlertModal"
 
 interface Props {
     onClose: () => void
@@ -15,19 +16,39 @@ interface Props {
 
 const CreateDiskModal = ({ onClose }: Props) => {
     const { usage } = useUser()
-    const availableSpaceGB = getAvailableSpaceGB(usage)
+    const { disks } = useFileStore()
+    
+    // Calculate total allocated storage across all disks
+    const calculateTotalAllocatedGB = (): number => {
+        let totalAllocatedGB = 0
+        disks.forEach(disk => {
+            totalAllocatedGB += convertToGB(disk.usage.total, disk.usage.unit)
+        })
+        return totalAllocatedGB
+    }
+    
+    // Calculate available space for new disk creation
+    // Available = User's total storage limit - Total allocated across all disks
+    const getUserTotalGB = (): number => {
+        return convertToGB(usage.total, usage.unit)
+    }
+    
+    // Use useMemo to recalculate when disks array changes
+    const totalAllocatedGB = useMemo(() => calculateTotalAllocatedGB(), [disks])
+    const userTotalGB = useMemo(() => getUserTotalGB(), [usage])
+    const availableForNewDiskGB = useMemo(() => Math.max(0, userTotalGB - totalAllocatedGB), [userTotalGB, totalAllocatedGB])
     
     // Convert available space to the selected unit for default/max values
     const getAvailableInUnit = (unit: "GB" | "MB" | "TB"): number => {
         switch (unit) {
             case "MB":
-                return availableSpaceGB * 1024
+                return availableForNewDiskGB * 1024
             case "GB":
-                return availableSpaceGB
+                return availableForNewDiskGB
             case "TB":
-                return availableSpaceGB / 1024
+                return availableForNewDiskGB / 1024
             default:
-                return availableSpaceGB
+                return availableForNewDiskGB
         }
     }
     
@@ -37,7 +58,12 @@ const CreateDiskModal = ({ onClose }: Props) => {
     const [diskName, setDiskName] = useState("")
     const [totalStorage, setTotalStorage] = useState(defaultStorage > 0 ? defaultStorage.toFixed(2) : "")
     const [errors, setErrors] = useState<{ name?: string; size?: string }>({})
-    const { createDisk, disks } = useFileStore()
+    const [alertModal, setAlertModal] = useState<{ isOpen: boolean; message: string; type?: "error" | "success" | "info" | "warning" }>({
+        isOpen: false,
+        message: "",
+        type: "error"
+    })
+    const { createDisk } = useFileStore()
     const { current, name } = useTheme()
     
     // Update default value when unit changes
@@ -113,7 +139,7 @@ const CreateDiskModal = ({ onClose }: Props) => {
         }
     }
 
-    const handleCreate = () => {
+    const handleCreate = async () => {
         const nameError = validateName(diskName)
         const sizeError = validateSize(totalStorage, unit)
         
@@ -122,9 +148,38 @@ const CreateDiskModal = ({ onClose }: Props) => {
             return
         }
 
-        const storage = parseFloat(totalStorage)
-        createDisk(diskName.trim(), storage, unit)
-        onClose()
+        try {
+            const storage = parseFloat(totalStorage)
+            await createDisk(diskName.trim(), storage, unit)
+            onClose()
+        } catch (error: any) {
+            let errorMessage = error?.message || "Failed to create disk"
+            
+            // Parse error message if it's a JSON string
+            if (typeof errorMessage === 'string' && errorMessage.includes('{')) {
+                try {
+                    const parsed = JSON.parse(errorMessage)
+                    errorMessage = parsed.error || parsed.message || errorMessage
+                } catch {
+                    // If parsing fails, try to extract error from string
+                    const match = errorMessage.match(/"error"\s*:\s*"([^"]+)"/)
+                    if (match) {
+                        errorMessage = match[1]
+                    }
+                }
+            }
+            
+            // Handle specific error messages
+            if (errorMessage.toLowerCase().includes('insufficient storage') || errorMessage.toLowerCase().includes('exceed')) {
+                // Keep the backend error message as it contains available space info
+            }
+            
+            setAlertModal({
+                isOpen: true,
+                message: errorMessage,
+                type: "error"
+            })
+        }
     }
 
     const isFormValid = !errors.name && !errors.size && diskName.trim() && totalStorage.trim()
@@ -241,11 +296,18 @@ const CreateDiskModal = ({ onClose }: Props) => {
                     style={{ backgroundColor: current?.primary + "10" }}
                 >
                     <Info size={16} color={current?.primary} className="mt-0.5 flex-shrink-0" />
-                    <Text 
-                        value="You can add more storage later, but cannot reduce the allocated size." 
-                        size="sm" 
-                        className="opacity-80"
-                    />
+                    <View className="flex flex-col gap-1">
+                        <Text 
+                            value={`Allocated: ${totalAllocatedGB.toFixed(2)} GB / ${userTotalGB.toFixed(2)} GB`}
+                            size="sm" 
+                            className="opacity-80"
+                        />
+                        <Text 
+                            value="Creating additional disks partitions your storage. Total allocated across all disks cannot exceed your storage limit." 
+                            size="sm" 
+                            className="opacity-80"
+                        />
+                    </View>
                 </View>
 
                 <View className="flex items-center gap-2 justify-end pt-2">
@@ -274,6 +336,13 @@ const CreateDiskModal = ({ onClose }: Props) => {
                     </button>
                 </View>
             </View>
+
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+                message={alertModal.message}
+                type={alertModal.type}
+            />
         </View>
     )
 }

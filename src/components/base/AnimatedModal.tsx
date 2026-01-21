@@ -74,7 +74,7 @@ const AnimatedModal = ({ isOpen, onClose, children, size = "md", position = "cen
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* Backdrop */}
+                    {/* Backdrop - only opacity animation */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -90,57 +90,95 @@ const AnimatedModal = ({ isOpen, onClose, children, size = "md", position = "cen
                         onClick={onClose}
                     />
                     
-                    {/* Modal */}
-                    <motion.div
-                        {...positionVariants}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className={position === "center" ? sizeClasses[size] : undefined}
-                        style={{
-                            position: 'fixed',
-                            ...(position === "center" && {
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                maxHeight: '90vh',
-                                width: 'auto'
-                            }),
-                            ...(position === "right" && {
-                                right: 0,
-                                top: 0,
-                                bottom: 0,
-                                width: '400px',
-                                maxHeight: '100vh'
-                            }),
-                            ...(position === "left" && {
-                                left: 0,
-                                top: 0,
-                                bottom: 0,
-                                width: '400px',
-                                maxHeight: '100vh'
-                            }),
-                            ...(position === "top" && {
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                maxHeight: '90vh'
-                            }),
-                            ...(position === "bottom" && {
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                maxHeight: '90vh'
-                            }),
-                            zIndex: 9999,
-                            backgroundColor: current?.foreground,
-                            borderRadius: position === "center" ? '0.5rem' : position === "right" || position === "left" ? '0' : '0.5rem',
-                            boxShadow: name === "dark"
-                                ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
-                                : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {children}
-                    </motion.div>
+                    {/* Container for center positioning using flexbox */}
+                    {position === "center" ? (
+                        <div
+                            style={{
+                                position: 'fixed',
+                                top: '0px',
+                                left: '0px',
+                                right: '0px',
+                                bottom: '0px',
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 9999,
+                                pointerEvents: 'none',
+                                margin: 0,
+                                padding: 0,
+                                boxSizing: 'border-box'
+                            }}
+                        >
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                                className={sizeClasses[size]}
+                                style={{
+                                    maxHeight: '90vh',
+                                    width: 'auto',
+                                    pointerEvents: 'auto',
+                                    backgroundColor: current?.foreground,
+                                    borderRadius: '0.5rem',
+                                    margin: '0 auto',
+                                    padding: 0,
+                                    boxSizing: 'border-box',
+                                    boxShadow: name === "dark"
+                                        ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
+                                        : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {children}
+                            </motion.div>
+                        </div>
+                    ) : (
+                        <motion.div
+                            {...positionVariants}
+                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                            style={{
+                                position: 'fixed',
+                                ...(position === "right" && {
+                                    right: 0,
+                                    top: 0,
+                                    bottom: 0,
+                                    width: '400px',
+                                    maxHeight: '100vh'
+                                }),
+                                ...(position === "left" && {
+                                    left: 0,
+                                    top: 0,
+                                    bottom: 0,
+                                    width: '400px',
+                                    maxHeight: '100vh'
+                                }),
+                                ...(position === "top" && {
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    maxHeight: '90vh'
+                                }),
+                                ...(position === "bottom" && {
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    maxHeight: '90vh'
+                                }),
+                                zIndex: 9999,
+                                backgroundColor: current?.foreground,
+                                borderRadius: position === "right" || position === "left" ? '0' : '0.5rem',
+                                boxShadow: name === "dark"
+                                    ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
+                                    : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {children}
+                        </motion.div>
+                    )}
                 </>
             )}
         </AnimatePresence>

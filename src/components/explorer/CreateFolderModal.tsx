@@ -20,20 +20,24 @@ const CreateFolderModal = ({ onClose, parentId, diskId }: Props) => {
     const { createFolder } = useFileStore()
     const { current, name } = useTheme()
 
-    const handleCreate = () => {
+    const handleCreate = async () => {
         if (folderName.trim()) {
-            createFolder(folderName.trim(), parentId, diskId)
-            onClose()
+            try {
+                await createFolder(folderName.trim(), parentId, diskId)
+                onClose()
+            } catch (error) {
+                // Error is already handled in createFolder
+            }
         }
     }
 
     return (
-        <AnimatedModal isOpen={true} onClose={onClose} size="sm">
+        <AnimatedModal isOpen={true} onClose={onClose} size="md" position="center">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="p-6 flex flex-col gap-4"
+                className="p-6 flex flex-col gap-4 min-w-[400px]"
                 style={{ backgroundColor: current?.foreground }}
             >
                 <View className="flex items-center justify-between">

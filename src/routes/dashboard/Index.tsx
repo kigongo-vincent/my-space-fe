@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router"
+import { Route, Routes, Navigate } from "react-router"
 import Dashboard from "../../pages/dashboard/Index"
 import Layout from "../../components/base/Layout"
 
@@ -7,6 +7,7 @@ const Index = () => {
         <Layout>
             <Routes>
                 <Route path="/" Component={Dashboard} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
         </Layout>
     )
