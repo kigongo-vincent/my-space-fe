@@ -35,7 +35,7 @@ const PictureViewer = ({ file }: Props) => {
                 await refreshFileURL(file.id)
                 const updatedFile = getFileById(file.id)
                 if (updatedFile?.url || updatedFile?.thumbnail) {
-                    setImageUrl(updatedFile.thumbnail || updatedFile.url)
+                    setImageUrl(updatedFile.thumbnail || updatedFile.url || null)
                     setRetryCount(prev => prev + 1)
                     setError(false)
                     return

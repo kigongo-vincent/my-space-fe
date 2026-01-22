@@ -70,7 +70,7 @@ const ThumbnailPlaceholder = ({ file }: { file: Props['file'] }) => {
 
 const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
     const { current, name } = useTheme()
-    const { setBackgroundPlayer, getFileById, getCurrentFolderFiles, openFileModal, updateFileModal, findModalByFileId, getPathForFile } = useFileStore()
+    const { setBackgroundPlayer, getFileById, getCurrentFolderFiles, openFileModal, updateFileModal, findModalByFileId } = useFileStore()
     const audioRef = useRef<HTMLAudioElement>(null)
     const videoRef = useRef<HTMLVideoElement>(null)
     const videoContainerRef = useRef<HTMLDivElement>(null)
@@ -84,10 +84,8 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
     const [isBuffering, setIsBuffering] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [isFullscreen, setIsFullscreen] = useState(false)
-    const [bufferedRanges, setBufferedRanges] = useState<{ start: number; end: number }[]>([])
     const [networkSpeed, setNetworkSpeed] = useState<'slow' | 'medium' | 'fast'>('medium')
     const [preloadStrategy, setPreloadStrategy] = useState<'none' | 'metadata' | 'auto'>('metadata')
-    const [playbackLatency, setPlaybackLatency] = useState<number>(0)
     const isVideo = !!videoUrl
 
     const mediaRef = isVideo ? videoRef : audioRef
@@ -302,7 +300,6 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
         // Monitor buffered ranges for intelligent buffering
         const updateBufferedRanges = () => {
             if (!media || !media.buffered || media.buffered.length === 0) {
-                setBufferedRanges([])
                 return
             }
 
@@ -313,7 +310,6 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                     end: media.buffered.end(i)
                 })
             }
-            setBufferedRanges(ranges)
 
             // Check if we need to buffer more (Netflix-style: buffer ahead)
             const currentTime = media.currentTime
@@ -387,10 +383,9 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
         }
 
         const handlePlay = () => {
-            // Spotify-style: Measure playback latency
+            // Spotify-style: Measure playback latency (for debugging)
             if (playStartTimeRef.current > 0) {
                 const latency = Date.now() - playStartTimeRef.current
-                setPlaybackLatency(latency)
                 // Log for benchmarking (can be removed in production)
                 if (latency > 200) {
                     console.warn(`High playback latency: ${latency}ms (target: <200ms)`)
@@ -537,7 +532,10 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                     .then(() => {
                         // Playback started successfully
                         const latency = Date.now() - playStartTimeRef.current
-                        setPlaybackLatency(latency)
+                        // Log for benchmarking (can be removed in production)
+                        if (latency > 200) {
+                            console.warn(`High playback latency: ${latency}ms (target: <200ms)`)
+                        }
                     })
                     .catch((error) => {
                         console.error('Playback failed:', error)
@@ -625,9 +623,6 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                         onLoadStart={() => {
                             setIsLoading(true)
                             setIsBuffering(true)
-                        }}
-                        onProgress={() => {
-                            updateBufferedRanges()
                         }}
                         style={{ 
                             width: '100%',
@@ -917,9 +912,6 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                     onLoadStart={() => {
                         setIsLoading(true)
                         setIsBuffering(true)
-                    }}
-                    onProgress={() => {
-                        updateBufferedRanges()
                     }}
                     // Spotify-style: Optimize for low latency
                     style={{

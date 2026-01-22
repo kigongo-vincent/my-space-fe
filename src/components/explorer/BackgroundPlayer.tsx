@@ -9,7 +9,7 @@ import RangeInput from "../base/RangeInput"
 import { FileItem } from "../../store/Filestore"
 
 const BackgroundPlayer = () => {
-    const { backgroundPlayerFileId, getFileById, setBackgroundPlayer, openFileModal, getCurrentFolderFiles, getPathForFile } = useFileStore()
+    const { backgroundPlayerFileId, getFileById, setBackgroundPlayer, openFileModal, getCurrentFolderFiles } = useFileStore()
     const { current, name } = useTheme()
     const audioRef = useRef<HTMLAudioElement>(null)
     const [isPlaying, setIsPlaying] = useState(false)
@@ -20,7 +20,6 @@ const BackgroundPlayer = () => {
     const [isBuffering, setIsBuffering] = useState(false)
     const [networkSpeed, setNetworkSpeed] = useState<'slow' | 'medium' | 'fast'>('medium')
     const [preloadStrategy, setPreloadStrategy] = useState<'none' | 'metadata' | 'auto'>('metadata')
-    const [playbackLatency, setPlaybackLatency] = useState<number>(0)
     const nextTrackPreloadRef = useRef<HTMLAudioElement | null>(null)
     const playStartTimeRef = useRef<number>(0)
 
@@ -191,10 +190,13 @@ const BackgroundPlayer = () => {
         }
         
         const handlePlay = () => {
-            // Spotify-style: Measure playback latency
+            // Spotify-style: Measure playback latency (for debugging)
             if (playStartTimeRef.current > 0) {
                 const latency = Date.now() - playStartTimeRef.current
-                setPlaybackLatency(latency)
+                // Log for benchmarking (can be removed in production)
+                if (latency > 200) {
+                    console.warn(`High playback latency: ${latency}ms (target: <200ms)`)
+                }
             }
             
             setIsPlaying(true)
@@ -323,7 +325,6 @@ const BackgroundPlayer = () => {
                 playPromise
                     .then(() => {
                         const latency = Date.now() - playStartTimeRef.current
-                        setPlaybackLatency(latency)
                         if (latency > 200) {
                             console.warn(`High playback latency: ${latency}ms (target: <200ms)`)
                         }
