@@ -3,10 +3,12 @@ import View from "../base/View"
 import Text from "../base/Text"
 import { FileItem, useFileStore } from "../../store/Filestore"
 import { useTheme } from "../../store/Themestore"
+import { formatFileSize } from "../../utils/storage"
 import { FileText, Download, ExternalLink, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react"
 import IconButton from "../base/IconButton"
 import { Document, Page, pdfjs } from "react-pdf"
 import DocViewer, { DocViewerRenderers } from "react-doc-viewer"
+import { resolveFileUrl } from "../../utils/fileUrlResolver"
 
 // Configure PDF.js worker
 if (typeof window !== 'undefined') {
@@ -28,7 +30,7 @@ const DocumentViewer = ({ file }: Props) => {
     const [numPages, setNumPages] = useState<number | null>(null)
     const [pageNumber, setPageNumber] = useState(1)
     const [scale, setScale] = useState(1.0)
-    const [fileUrl, setFileUrl] = useState(file.url)
+    const [fileUrl, setFileUrl] = useState<string | null>(null)
     const [retryCount, setRetryCount] = useState(0)
 
     const getFileExtension = () => {
@@ -80,12 +82,19 @@ const DocumentViewer = ({ file }: Props) => {
         setError("Failed to load PDF document")
     }
 
-    // Update fileUrl when file.url changes
+    // Update fileUrl when file changes (resolves local file first)
     useEffect(() => {
-        setFileUrl(file.url)
-        setRetryCount(0)
-        setError(null)
-    }, [file.url, file.id])
+        resolveFileUrl(file).then(url => {
+            setFileUrl(url)
+            setRetryCount(0)
+            setError(null)
+        }).catch(() => {
+            // Fallback to server URL if resolution fails
+            setFileUrl(file.url || null)
+            setRetryCount(0)
+            setError(null)
+        })
+    }, [file.url, file.id, file.deviceId])
 
     const goToPrevPage = () => {
         if (pageNumber > 1) {
@@ -232,7 +241,7 @@ const DocumentViewer = ({ file }: Props) => {
             <View className="flex flex-col items-center justify-center h-full gap-4 p-8">
                 <FileText size={64} color={current?.primary} />
                 <Text value={file.name} className="font-semibold text-lg" />
-                <Text value={`${file.size} ${file.sizeUnit}`} size="sm" className="opacity-60" />
+                <Text value={formatFileSize(file.size, file.sizeUnit)} size="sm" className="opacity-60" />
                 <button
                     onClick={handleDownload}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg transition-opacity hover:opacity-80"

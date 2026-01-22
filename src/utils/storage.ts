@@ -29,6 +29,14 @@ export const formatStorage = (value: number, unit: string): string => {
 }
 
 /**
+ * Format file size to 2 decimal places
+ */
+export const formatFileSize = (size: number | undefined, sizeUnit: string | undefined): string => {
+    if (!size || !sizeUnit) return "0 KB"
+    return `${size.toFixed(2)} ${sizeUnit}`
+}
+
+/**
  * Calculate total storage usage from all disks
  */
 export const calculateTotalStorage = (disks: Disk[]): UsageI => {

@@ -56,6 +56,7 @@ const FileExplorer = () => {
         selectFile,
         selectedFiles,
         visitedPaths,
+        highlightedFileId,
     } = useFileStore()
 
     const { current } = useTheme()
@@ -590,6 +591,11 @@ const FileExplorer = () => {
     }, [currentDiskId, currentPath, uploadFile])
 
     const handleFileClick = (fileId: string, isFolder: boolean) => {
+        // Clear highlight when any file is clicked
+        if (highlightedFileId) {
+            useFileStore.getState().setHighlightedFile(null)
+        }
+        
         if (isFolder) {
             navigateToFolder(fileId)
         } else {
@@ -1146,21 +1152,31 @@ const FileExplorer = () => {
                             </View>
                         ) : (
                             <View className={viewMode === "grid" ? "grid grid-cols-6 gap-4 p-2" : "flex flex-col gap-1"}>
-                                {files.map((file) => (
-                                    <FileItemComponent
-                                        key={file.id}
-                                        file={file}
-                                        viewMode={viewMode}
-                                        onClick={() => handleFileClick(file.id, file.isFolder)}
-                                        onContextMenu={handleContextMenu}
-                                        onDragStart={handleFolderDragStart}
-                                        onDragEnd={handleFolderDragEnd}
-                                        onDragOver={handleFolderDragOver}
-                                        onDragLeave={handleFolderDragLeave}
-                                        onDrop={handleFolderDrop}
-                                        isDragOver={dragOverFolderId === file.id}
-                                    />
-                                ))}
+                                {(() => {
+                                    // Separate highlighted file from others
+                                    const highlightedFile = highlightedFileId ? files.find(f => f.id === highlightedFileId) : null
+                                    const otherFiles = files.filter(f => f.id !== highlightedFileId)
+                                    
+                                    // Sort: highlighted file first, then others
+                                    const sortedFiles = highlightedFile ? [highlightedFile, ...otherFiles] : files
+                                    
+                                    return sortedFiles.map((file) => (
+                                        <FileItemComponent
+                                            key={file.id}
+                                            file={file}
+                                            viewMode={viewMode}
+                                            onClick={() => handleFileClick(file.id, file.isFolder)}
+                                            onContextMenu={handleContextMenu}
+                                            onDragStart={handleFolderDragStart}
+                                            onDragEnd={handleFolderDragEnd}
+                                            onDragOver={handleFolderDragOver}
+                                            onDragLeave={handleFolderDragLeave}
+                                            onDrop={handleFolderDrop}
+                                            isDragOver={dragOverFolderId === file.id}
+                                            isHighlighted={highlightedFileId === file.id}
+                                        />
+                                    ))
+                                })()}
                             </View>
                         )}
                     </View>

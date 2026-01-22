@@ -6,11 +6,13 @@ import IconButton from "../base/IconButton"
 import { useTheme } from "../../store/Themestore"
 import { useFileStore } from "../../store/Filestore"
 import { getImageByFileType } from "../base/Sidebar"
+import { formatFileSize } from "../../utils/storage"
 import MediaPlayer from "./MediaPlayer"
 import NoteViewer from "./NoteViewer"
 import DocumentViewer from "./DocumentViewer"
 import UrlViewer from "./UrlViewer"
 import PictureViewer from "./PictureViewer"
+import { resolveFileUrl } from "../../utils/fileUrlResolver"
 
 interface Props {
     modalId: string
@@ -40,9 +42,36 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
     const [isDragging, setIsDragging] = useState(false)
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
     const [isMinimized, setIsMinimized] = useState(false)
+    const [resolvedAudioUrl, setResolvedAudioUrl] = useState<string | null>(null)
+    const [resolvedVideoUrl, setResolvedVideoUrl] = useState<string | null>(null)
     const modalRef = useRef<HTMLDivElement>(null)
 
     const file = getFileById(fileId)
+
+    // Resolve file URLs (local first, then server)
+    useEffect(() => {
+        if (!file) return
+
+        if (file.type === "audio") {
+            resolveFileUrl(file).then(url => {
+                setResolvedAudioUrl(url || file.thumbnail || file.url || null)
+            }).catch(() => {
+                setResolvedAudioUrl(file.thumbnail || file.url || null)
+            })
+        } else if (file.type === "video") {
+            resolveFileUrl(file).then(url => {
+                setResolvedVideoUrl(url || file.url || null)
+            }).catch(() => {
+                setResolvedVideoUrl(file.url || null)
+            })
+        }
+    }, [file?.id, file?.url, file?.thumbnail, file?.deviceId, file?.type])
+
+    // Update position when fileId changes (for next/prev navigation)
+    useEffect(() => {
+        // Reset minimized state when file changes
+        setIsMinimized(false)
+    }, [fileId])
 
     useEffect(() => {
         if (!isDragging) return
@@ -93,14 +122,14 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
                 return (
                     <MediaPlayer
                         file={file}
-                        audioUrl={file.thumbnail || file.url}
+                        audioUrl={resolvedAudioUrl || file.thumbnail || file.url}
                     />
                 )
             case "video":
                 return (
                     <MediaPlayer
                         file={file}
-                        videoUrl={file.url}
+                        videoUrl={resolvedVideoUrl || file.url}
                     />
                 )
             case "picture":
@@ -122,7 +151,7 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
                             className="w-32 h-32 object-contain"
                         />
                         <Text value={file.name} className="font-semibold" />
-                        <Text value={`${file.size} ${file.sizeUnit}`} size="sm" className="opacity-60" />
+                        <Text value={formatFileSize(file.size, file.sizeUnit)} size="sm" className="opacity-60" />
                     </View>
                 )
         }
@@ -160,11 +189,17 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
                     <img src={getImageByFileType(file.type)} alt="" className="w-5 h-5 flex-shrink-0" />
                     <Text
                         value={file.name}
-                        className="font-semibold truncate max-w-[200px]"
+                        className="font-semibold max-w-[200px]"
                         style={{
                             color: current?.dark,
                             letterSpacing: "-0.01em",
-                            fontSize: "14px"
+                            fontSize: "14px",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            wordBreak: "break-word",
+                            lineHeight: "1.2"
                         }}
                     />
                 </View>

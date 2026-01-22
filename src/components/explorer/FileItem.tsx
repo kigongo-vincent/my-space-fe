@@ -4,8 +4,10 @@ import { FileItem as FileItemType } from "../../store/Filestore"
 import { getImageByFileType } from "../base/Sidebar"
 import { useTheme } from "../../store/Themestore"
 import { MoreVertical } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Skeleton } from "../base/Skeleton"
+import { motion } from "framer-motion"
+import { formatFileSize } from "../../utils/storage"
 
 interface Props {
     file: FileItemType
@@ -18,6 +20,7 @@ interface Props {
     onDragLeave?: (e: React.DragEvent) => void
     onDrop?: (e: React.DragEvent, file: FileItemType) => void
     isDragOver?: boolean
+    isHighlighted?: boolean
 }
 
 const FileItem = ({ 
@@ -30,7 +33,8 @@ const FileItem = ({
     onDragOver,
     onDragLeave,
     onDrop,
-    isDragOver = false
+    isDragOver = false,
+    isHighlighted = false
 }: Props) => {
     const { current } = useTheme()
     const [isHovered, setIsHovered] = useState(false)
@@ -114,11 +118,11 @@ const FileItem = ({
     } : {}
 
     if (viewMode === "list") {
-        return (
+        const listItem = (
             <View
                 className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:opacity-80 transition-all ${
                     isDragging ? "opacity-50" : ""
-                } ${isDragOver ? "ring-2 ring-offset-2" : ""}`}
+                } ${isDragOver ? "ring-2 ring-offset-2" : ""} ${isHighlighted ? "ring-2" : ""}`}
                 mode="background"
                 style={{
                     ...(isDragOver ? {
@@ -126,6 +130,13 @@ const FileItem = ({
                         borderWidth: "2px",
                         borderStyle: "dashed",
                         backgroundColor: current?.primary + "10"
+                    } : {}),
+                    ...(isHighlighted ? {
+                        borderColor: current?.primary,
+                        borderWidth: "1px",
+                        borderStyle: "solid",
+                        backgroundColor: current?.primary + "15",
+                        boxShadow: `0 0 0 1px ${current?.primary}20`
                     } : {}),
                     ...(isDragging ? { opacity: 0.5 } : {})
                 }}
@@ -154,14 +165,24 @@ const FileItem = ({
                 ) : (
                     <img src={getImageByFileType(file.type)} alt="" className="w-8 h-8 object-contain" />
                 )}
-                <View className="flex-1">
-                    <Text value={file.name} className="font-medium" />
+                <View className="flex-1 min-w-0">
+                    <Text 
+                        value={file.name} 
+                        className="font-medium line-clamp-2" 
+                        style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            wordBreak: "break-word"
+                        }}
+                    />
                     {!file.isFolder && file.size && (
-                        <Text value={`${file.size} ${file.sizeUnit}`} size="sm" className="opacity-60" />
+                        <Text value={formatFileSize(file.size, file.sizeUnit)} size="sm" className="opacity-60" />
                     )}
                 </View>
                 <Text
-                    value={file.modifiedAt.toLocaleDateString()}
+                    value={file.modifiedAt ? file.modifiedAt.toLocaleDateString() : "N/A"}
                     size="sm"
                     className="opacity-60 min-w-[100px]"
                 />
@@ -170,6 +191,20 @@ const FileItem = ({
                 )}
             </View>
         )
+        
+        if (isHighlighted) {
+            return (
+                <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    {listItem}
+                </motion.div>
+            )
+        }
+        
+        return listItem
     }
 
     return (
@@ -222,7 +257,15 @@ const FileItem = ({
             <Text
                 value={file.name}
                 size="sm"
-                className="text-center max-w-[10vh] truncate"
+                className="text-center max-w-[10vh]"
+                style={{
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    wordBreak: "break-word",
+                    lineHeight: "1.2"
+                }}
             />
         </View>
     )

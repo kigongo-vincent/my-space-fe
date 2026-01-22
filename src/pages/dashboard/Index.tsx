@@ -20,6 +20,7 @@ import ContextMenu from "../../components/explorer/ContextMenu"
 import { FileItem } from "../../store/Filestore"
 import RenameModal from "../../components/explorer/RenameModal"
 import PropertiesModal from "../../components/explorer/PropertiesModal"
+import FileItemComponent from "../../components/explorer/FileItem"
 import { Trash2, Edit, Info, HardDrive, Plus, Star, StarOff, RefreshCw, GitMerge, Maximize2, Search, FolderOpen, Copy, Scissors } from "lucide-react"
 import { motion } from "framer-motion"
 import { Skeleton } from "../../components/base/Skeleton"
@@ -319,6 +320,82 @@ const Index = () => {
         )
     }
 
+    // Helper function to navigate to parent folder of a search result
+    const navigateToParentFolder = async (file: FileItem) => {
+        try {
+            console.log("Navigating to parent folder for file:", file.name, "Path:", file.path, "ParentId:", file.parentId)
+            
+            // Clear search query to show the file explorer
+            useFileStore.getState().setSearchQuery("")
+            
+            // Find the disk for this file
+            const disk = disks.find(d => d.id === file.diskId)
+            if (!disk) {
+                console.error("Disk not found for file:", file)
+                return
+            }
+
+            // Set the current disk and fetch all files to build complete tree
+            await setCurrentDisk(disk.id)
+            
+            // Wait a bit for files to load
+            await new Promise(resolve => setTimeout(resolve, 300))
+            
+            // Use the path from backend if available
+            if (file.path && file.path.length > 0) {
+                // Path is array of folder IDs from root to parent
+                // Set the current path directly
+                useFileStore.getState().setCurrentPath(file.path)
+                
+                // Navigate to the last folder in the path (the parent folder)
+                const parentFolderId = file.path[file.path.length - 1]
+                console.log("Navigating to parent folder ID:", parentFolderId)
+                
+                // Set the file to highlight after navigation
+                useFileStore.getState().setHighlightedFile(file.id)
+                
+                await navigateToFolder(parentFolderId)
+                
+                // Clear highlight after 5 seconds
+                setTimeout(() => {
+                    useFileStore.getState().setHighlightedFile(null)
+                }, 5000)
+            } else if (file.parentId) {
+                // Fallback: try to navigate to parent folder if path not available
+                const parentFile = useFileStore.getState().getFileById(file.parentId)
+                if (parentFile && parentFile.isFolder) {
+                    console.log("Navigating to parent folder ID (fallback):", file.parentId)
+                    
+                    // Set the file to highlight after navigation
+                    useFileStore.getState().setHighlightedFile(file.id)
+                    
+                    await navigateToFolder(file.parentId)
+                    
+                    // Clear highlight after 5 seconds
+                    setTimeout(() => {
+                        useFileStore.getState().setHighlightedFile(null)
+                    }, 5000)
+                } else {
+                    // Parent not found, try to build path
+                    const path = useFileStore.getState().getPathForFile(file.parentId)
+                    if (path.length > 0) {
+                        useFileStore.getState().setCurrentPath(path)
+                        const lastFolderId = path[path.length - 1]
+                        await navigateToFolder(lastFolderId)
+                    } else {
+                        // Fallback: navigate to root
+                        useFileStore.getState().setCurrentPath([])
+                    }
+                }
+            } else {
+                // No parent, navigate to root
+                useFileStore.getState().setCurrentPath([])
+            }
+        } catch (error) {
+            console.error("Error navigating to parent folder:", error)
+        }
+    }
+
     // Show search results if we have results (even if still searching backend)
     if (searchQuery && displaySearchResults.length > 0) {
         return (
@@ -342,72 +419,37 @@ const Index = () => {
                         className="opacity-65 text-sm mb-4"
                         style={{ letterSpacing: "0.02em" }}
                     />
-                    <View className="grid gap-1 grid-cols-6">
+                    <View className="flex flex-col gap-1">
                         {displaySearchResults.map((file, i) => (
                             <motion.div
-                                key={i}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
+                                key={`${file.diskId}-${file.id}-${i}`}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
                                 transition={{ 
                                     duration: 0.2,
-                                    delay: i * 0.03
+                                    delay: i * 0.02
                                 }}
                             >
-                                <Node
-                                    label={file.name}
-                                    fileType={file.type}
-                                    path=""
-                                    fileId={file.id}
-                                    pinned={isPinned(file.id)}
-                                    onClick={async () => {
-                                        // Find the disk for this file
-                                        const disk = disks.find(d => d.id === file.diskId)
-                                        if (!disk) return
-
-                                        // Set the current disk and fetch all files to build complete tree
-                                        await setCurrentDisk(disk.id)
-                                        
-                                        // Wait a bit for files to load
-                                        await new Promise(resolve => setTimeout(resolve, 200))
-                                        
-                                        // Build path to the file's parent folder
-                                        if (file.parentId) {
-                                            // Try to navigate to parent folder
-                                            const parentFile = useFileStore.getState().getFileById(file.parentId)
-                                            if (parentFile && parentFile.isFolder) {
-                                                await navigateToFolder(file.parentId)
-                                            } else {
-                                                // Parent not found, try to build path
-                                                const path = useFileStore.getState().getPathForFile(file.parentId)
-                                                if (path.length > 0) {
-                                                    useFileStore.getState().setCurrentPath(path)
-                                                } else {
-                                                    // Fallback: navigate to root
-                                                    useFileStore.getState().setCurrentPath([])
-                                                }
-                                            }
-                                        } else {
-                                            // No parent, navigate to root
-                                            useFileStore.getState().setCurrentPath([])
-                                        }
-                                        
-                                        // Small delay to ensure navigation is complete
-                                        await new Promise(resolve => setTimeout(resolve, 100))
-                                        
-                                        // Now open the file or navigate to folder
-                                        if (!file.isFolder) {
-                                            openFileModal(file.id)
-                                        } else {
-                                            await navigateToFolder(file.id)
-                                        }
+                                <FileItemComponent
+                                    file={file}
+                                    viewMode="list"
+                                    onClick={() => {
+                                        console.log("Search result clicked:", file.name, file.path)
+                                        navigateToParentFolder(file).catch(err => {
+                                            console.error("Navigation error:", err)
+                                        })
                                     }}
-                                    onContextMenu={(e) => {
+                                    onContextMenu={(e, file) => {
+                                        // Right-click also opens parent folder (same as left-click)
                                         e.preventDefault()
                                         e.stopPropagation()
-                                        setSearchResultContextMenu({
-                                            x: e.clientX,
-                                            y: e.clientY,
-                                            file: file
+                                        if (e.nativeEvent) {
+                                            e.nativeEvent.preventDefault()
+                                            e.nativeEvent.stopPropagation()
+                                        }
+                                        console.log("Search result right-clicked:", file.name, file.path)
+                                        navigateToParentFolder(file).catch(err => {
+                                            console.error("Navigation error:", err)
                                         })
                                     }}
                                 />

@@ -3,9 +3,7 @@ import View from '../base/View'
 import { Cloudy } from 'lucide-react'
 import Text from '../base/Text'
 import { useTheme } from '../../store/Themestore'
-import Button from '../base/Button'
 import { useState } from 'react'
-import StoragePurchaseModal from '../explorer/StoragePurchaseModal'
 import RequestStorageModal from '../explorer/RequestStorageModal'
 import RequestDecrementModal from '../explorer/RequestDecrementModal'
 
@@ -18,7 +16,6 @@ const Usage = () => {
 
     const { usage } = useUser()
     const { current } = useTheme()
-    const [showPurchase, setShowPurchase] = useState(false)
     const [showIncrementRequest, setShowIncrementRequest] = useState(false)
     const [showDecrementRequest, setShowDecrementRequest] = useState(false)
 
@@ -34,7 +31,6 @@ const Usage = () => {
             </View>
             {usage && <Text value={`${usage.used.toFixed(2)}${usage.unit} used of  ${usage.total.toFixed(2)}${usage.unit}`} />}
             <View className='flex flex-col gap-2'>
-                <Button title='purchase more' action={() => setShowPurchase(true)} />
                 <View className='flex gap-2'>
                     <button
                         onClick={() => setShowIncrementRequest(true)}
@@ -60,7 +56,6 @@ const Usage = () => {
                     </button>
                 </View>
             </View>
-            {showPurchase && <StoragePurchaseModal onClose={() => setShowPurchase(false)} />}
             {showIncrementRequest && <RequestStorageModal onClose={() => setShowIncrementRequest(false)} />}
             {showDecrementRequest && <RequestDecrementModal onClose={() => setShowDecrementRequest(false)} />}
         </View>

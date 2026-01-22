@@ -187,7 +187,8 @@ export const api = {
     file: File,
     diskId: string,
     parentId?: string | null,
-    onProgress?: (progress: number, uploadedBytes: number) => void
+    onProgress?: (progress: number, uploadedBytes: number) => void,
+    deviceId?: string
   ): Promise<{ fileId: number; uploadUrl: string; s3Key: string }> {
     const params = new URLSearchParams({
       diskId,
@@ -195,6 +196,9 @@ export const api = {
     })
     if (parentId) {
       params.append('parentId', parentId)
+    }
+    if (deviceId) {
+      params.append('deviceId', deviceId)
     }
 
     // Use POST as the backend expects POST for /upload-url

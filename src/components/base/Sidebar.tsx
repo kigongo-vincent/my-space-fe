@@ -44,16 +44,16 @@ const Sidebar = ({ className }: Props) => {
         {
             thumbNail: ComputerIcon,
             label: "My Computer",
-            action: () => {
-                setFilterByType(null)
+            action: async () => {
+                await setFilterByType(null)
                 setCurrentDisk(null)
             }
         },
         {
             thumbNail: speakerIcon,
             label: "Audio",
-            action: () => {
-                setFilterByType("audio")
+            action: async () => {
+                await setFilterByType("audio")
                 if (disks.length > 0) {
                     setCurrentDisk(disks[0]?.id || null)
                 }
@@ -62,8 +62,8 @@ const Sidebar = ({ className }: Props) => {
         {
             thumbNail: documentsIcon,
             label: "Documents",
-            action: () => {
-                setFilterByType("document")
+            action: async () => {
+                await setFilterByType("document")
                 if (disks.length > 0) {
                     setCurrentDisk(disks[0]?.id || null)
                 }
@@ -72,8 +72,8 @@ const Sidebar = ({ className }: Props) => {
         {
             thumbNail: cameraIcon,
             label: "Videos",
-            action: () => {
-                setFilterByType("video")
+            action: async () => {
+                await setFilterByType("video")
                 if (disks.length > 0) {
                     setCurrentDisk(disks[0]?.id || null)
                 }
@@ -82,8 +82,8 @@ const Sidebar = ({ className }: Props) => {
         {
             thumbNail: picturesIcon,
             label: "Pictures",
-            action: () => {
-                setFilterByType("picture")
+            action: async () => {
+                await setFilterByType("picture")
                 if (disks.length > 0) {
                     setCurrentDisk(disks[0]?.id || null)
                 }
@@ -92,8 +92,8 @@ const Sidebar = ({ className }: Props) => {
         {
             thumbNail: othersIcon,
             label: "Others",
-            action: () => {
-                setFilterByType("others")
+            action: async () => {
+                await setFilterByType("others")
                 if (disks.length > 0) {
                     setCurrentDisk(disks[0]?.id || null)
                 }
@@ -102,8 +102,8 @@ const Sidebar = ({ className }: Props) => {
         {
             thumbNail: notesIcon,
             label: "Notes",
-            action: () => {
-                setFilterByType("note")
+            action: async () => {
+                await setFilterByType("note")
                 if (disks.length > 0) {
                     setCurrentDisk(disks[0]?.id || null)
                 }
@@ -112,8 +112,8 @@ const Sidebar = ({ className }: Props) => {
         {
             thumbNail: httpIcon,
             label: "URLs",
-            action: () => {
-                setFilterByType("url")
+            action: async () => {
+                await setFilterByType("url")
                 if (disks.length > 0) {
                     setCurrentDisk(disks[0]?.id || null)
                 }

@@ -2,10 +2,11 @@ import { useState, useRef, useEffect } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
 import { useTheme } from "../../store/Themestore"
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Minimize2 } from "lucide-react"
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Minimize2, Maximize2, Minimize } from "lucide-react"
 import { FileItem } from "../../store/Filestore"
 import { useFileStore } from "../../store/Filestore"
 import RangeInput from "../base/RangeInput"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface Props {
     file: FileItem
@@ -69,9 +70,10 @@ const ThumbnailPlaceholder = ({ file }: { file: Props['file'] }) => {
 
 const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
     const { current, name } = useTheme()
-    const { setBackgroundPlayer } = useFileStore()
+    const { setBackgroundPlayer, getFileById, getCurrentFolderFiles, openFileModal, updateFileModal, findModalByFileId, getPathForFile } = useFileStore()
     const audioRef = useRef<HTMLAudioElement>(null)
     const videoRef = useRef<HTMLVideoElement>(null)
+    const videoContainerRef = useRef<HTMLDivElement>(null)
     const [isPlaying, setIsPlaying] = useState(false)
     const [currentTime, setCurrentTime] = useState(0)
     const [duration, setDuration] = useState(0)
@@ -79,40 +81,442 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
     const [isMuted, setIsMuted] = useState(false)
     const [playbackRate, setPlaybackRate] = useState(1)
     const [showVolumeSlider, setShowVolumeSlider] = useState(false)
+    const [isBuffering, setIsBuffering] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+    const [isFullscreen, setIsFullscreen] = useState(false)
+    const [bufferedRanges, setBufferedRanges] = useState<{ start: number; end: number }[]>([])
+    const [networkSpeed, setNetworkSpeed] = useState<'slow' | 'medium' | 'fast'>('medium')
+    const [preloadStrategy, setPreloadStrategy] = useState<'none' | 'metadata' | 'auto'>('metadata')
+    const [playbackLatency, setPlaybackLatency] = useState<number>(0)
     const isVideo = !!videoUrl
 
     const mediaRef = isVideo ? videoRef : audioRef
+    const nextFileRef = useRef<FileItem | null>(null)
+    const prefetchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const playStartTimeRef = useRef<number>(0)
+    const nextTrackPreloadRef = useRef<HTMLAudioElement | null>(null)
+
+    // Detect network speed
+    useEffect(() => {
+        if ('connection' in navigator) {
+            const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection
+            if (connection) {
+                const updateNetworkSpeed = () => {
+                    const effectiveType = connection.effectiveType || '4g'
+                    const downlink = connection.downlink || 10
+                    
+                    if (effectiveType === 'slow-2g' || effectiveType === '2g' || downlink < 0.5) {
+                        setNetworkSpeed('slow')
+                        setPreloadStrategy('metadata')
+                    } else if (effectiveType === '3g' || downlink < 2) {
+                        setNetworkSpeed('medium')
+                        setPreloadStrategy('metadata')
+                    } else {
+                        setNetworkSpeed('fast')
+                        setPreloadStrategy('auto')
+                    }
+                }
+                
+                updateNetworkSpeed()
+                connection.addEventListener('change', updateNetworkSpeed)
+                
+                return () => {
+                    connection.removeEventListener('change', updateNetworkSpeed)
+                }
+            }
+        }
+    }, [])
+
+    // Get files of the same type in the same folder
+    const getSiblingFiles = (): FileItem[] => {
+        // Try to get files from current folder view first
+        const currentFiles = getCurrentFolderFiles()
+        const sameTypeInCurrentFolder = currentFiles.filter(f => 
+            !f.isFolder && 
+            f.type === file.type
+        )
+        
+        // If we found files in current folder, use those
+        if (sameTypeInCurrentFolder.length > 0) {
+            return sameTypeInCurrentFolder.filter(f => f.id !== file.id)
+        }
+        
+        // Otherwise, try to get from parent folder
+        if (file.parentId) {
+            const parentFile = getFileById(file.parentId)
+            if (parentFile && parentFile.children) {
+                return parentFile.children.filter(f => 
+                    !f.isFolder && 
+                    f.type === file.type && 
+                    f.id !== file.id
+                )
+            }
+        }
+        
+        return []
+    }
+
+    const siblingFiles = getSiblingFiles()
+    // Include current file in the list for proper indexing, then sort by name
+    const allFiles = [...siblingFiles, file].sort((a, b) => a.name.localeCompare(b.name))
+    const currentIndex = allFiles.findIndex(f => f.id === file.id)
+    
+    // Get next and previous files
+    const getNextFile = (): FileItem | null => {
+        if (allFiles.length <= 1) return null
+        const nextIndex = (currentIndex + 1) % allFiles.length
+        return allFiles[nextIndex] || null
+    }
+
+    const getPreviousFile = (): FileItem | null => {
+        if (allFiles.length <= 1) return null
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : allFiles.length - 1
+        return allFiles[prevIndex] || null
+    }
+
+    // Spotify-style: Preload next track for instant switching
+    const preloadNextTrack = (nextFile: FileItem) => {
+        if (!nextFile.url || isVideo) return
+        
+        // Create hidden audio element to preload next track
+        if (nextTrackPreloadRef.current) {
+            nextTrackPreloadRef.current.pause()
+            nextTrackPreloadRef.current.src = ''
+            nextTrackPreloadRef.current.load()
+        }
+        
+        const preloadAudio = document.createElement('audio')
+        preloadAudio.preload = 'auto'
+        preloadAudio.src = nextFile.url
+        preloadAudio.volume = 0 // Silent preload
+        preloadAudio.load() // Start loading immediately
+        
+        nextTrackPreloadRef.current = preloadAudio
+        
+        // Pre-connect to next track URL (DNS + TCP handshake)
+        if ('dns-prefetch' in document.createElement('link')) {
+            const link = document.createElement('link')
+            link.rel = 'dns-prefetch'
+            link.href = new URL(nextFile.url, window.location.origin).origin
+            document.head.appendChild(link)
+        }
+    }
+
+    const playNext = () => {
+        const nextFile = getNextFile()
+        if (nextFile) {
+            // Stop current playback immediately (Spotify-style: no fade)
+            const media = mediaRef.current
+            if (media) {
+                media.pause()
+                media.currentTime = 0
+            }
+            
+            // Check if current file is in a modal, if so update it instead of opening new one
+            const currentModal = findModalByFileId(file.id)
+            if (currentModal) {
+                updateFileModal(currentModal.id, nextFile.id)
+            } else {
+                openFileModal(nextFile.id)
+            }
+        }
+    }
+
+    const playPrevious = () => {
+        const prevFile = getPreviousFile()
+        if (prevFile) {
+            // Stop current playback immediately (Spotify-style: no fade)
+            const media = mediaRef.current
+            if (media) {
+                media.pause()
+                media.currentTime = 0
+            }
+            
+            // Check if current file is in a modal, if so update it instead of opening new one
+            const currentModal = findModalByFileId(file.id)
+            if (currentModal) {
+                updateFileModal(currentModal.id, prevFile.id)
+            } else {
+                openFileModal(prevFile.id)
+            }
+        }
+    }
+
+    // Fullscreen functionality
+    const toggleFullscreen = () => {
+        if (!isVideo || !videoContainerRef.current) return
+
+        if (!isFullscreen) {
+            if (videoContainerRef.current.requestFullscreen) {
+                videoContainerRef.current.requestFullscreen()
+            } else if ((videoContainerRef.current as any).webkitRequestFullscreen) {
+                (videoContainerRef.current as any).webkitRequestFullscreen()
+            } else if ((videoContainerRef.current as any).mozRequestFullScreen) {
+                (videoContainerRef.current as any).mozRequestFullScreen()
+            } else if ((videoContainerRef.current as any).msRequestFullscreen) {
+                (videoContainerRef.current as any).msRequestFullscreen()
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen()
+            } else if ((document as any).webkitExitFullscreen) {
+                (document as any).webkitExitFullscreen()
+            } else if ((document as any).mozCancelFullScreen) {
+                (document as any).mozCancelFullScreen()
+            } else if ((document as any).msExitFullscreen) {
+                (document as any).msExitFullscreen()
+            }
+        }
+    }
+
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement)
+        }
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange)
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange)
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange)
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange)
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
+            document.removeEventListener('mozfullscreenchange', handleFullscreenChange)
+            document.removeEventListener('MSFullscreenChange', handleFullscreenChange)
+        }
+    }, [])
 
     useEffect(() => {
         const media = mediaRef.current
         if (!media) return
 
+        setIsLoading(true)
+
+        // Set preload strategy based on network
+        media.preload = preloadStrategy
+
         // Set initial playback rate
         media.playbackRate = playbackRate
 
-        const updateTime = () => setCurrentTime(media.currentTime)
-        const updateDuration = () => setDuration(media.duration)
+        // Monitor buffered ranges for intelligent buffering
+        const updateBufferedRanges = () => {
+            if (!media || !media.buffered || media.buffered.length === 0) {
+                setBufferedRanges([])
+                return
+            }
+
+            const ranges: { start: number; end: number }[] = []
+            for (let i = 0; i < media.buffered.length; i++) {
+                ranges.push({
+                    start: media.buffered.start(i),
+                    end: media.buffered.end(i)
+                })
+            }
+            setBufferedRanges(ranges)
+
+            // Check if we need to buffer more (Netflix-style: buffer ahead)
+            const currentTime = media.currentTime
+            const bufferedEnd = ranges.length > 0 ? Math.max(...ranges.map(r => r.end)) : 0
+            const bufferAhead = bufferedEnd - currentTime
+
+            // If buffer is low and we're playing, trigger more buffering
+            if (isPlaying && bufferAhead < 5 && networkSpeed !== 'slow') {
+                // Try to load more by seeking slightly ahead (triggers buffering)
+                if (media.readyState < 3) {
+                    media.load()
+                }
+            }
+        }
+
+        // Throttled time update for better performance
+        let lastTimeUpdate = 0
+        const updateTime = () => {
+            const now = Date.now()
+            if (now - lastTimeUpdate >= 100) { // Update every 100ms instead of every frame
+                setCurrentTime(media.currentTime)
+                updateBufferedRanges()
+                lastTimeUpdate = now
+            }
+        }
+        
+        const updateDuration = () => {
+            setDuration(media.duration)
+            setIsLoading(false)
+            
+            // Spotify-style: Aggressive preloading for next track
+            const nextFile = getNextFile()
+            if (nextFile && networkSpeed !== 'slow') {
+                nextFileRef.current = nextFile
+                
+                // For audio, preload next track immediately (Spotify-style)
+                if (!isVideo && nextFile.url) {
+                    preloadNextTrack(nextFile)
+                    
+                    // Also use prefetch as backup
+                    const link = document.createElement('link')
+                    link.rel = 'prefetch'
+                    link.href = nextFile.url
+                    document.head.appendChild(link)
+                } else if (isVideo && nextFile.url) {
+                    // For video, just prefetch
+                    const link = document.createElement('link')
+                    link.rel = 'prefetch'
+                    link.href = nextFile.url
+                    document.head.appendChild(link)
+                }
+            }
+        }
+
         const handleEnded = () => {
             setIsPlaying(false)
             setCurrentTime(0)
+            // Auto-play next file if available
+            const nextFile = getNextFile()
+            if (nextFile) {
+                setTimeout(() => {
+                    // Check if current file is in a modal, if so update it instead of opening new one
+                    const currentModal = findModalByFileId(file.id)
+                    if (currentModal) {
+                        updateFileModal(currentModal.id, nextFile.id)
+                    } else {
+                        openFileModal(nextFile.id)
+                    }
+                }, 500)
+            }
         }
-        const handlePlay = () => setIsPlaying(true)
-        const handlePause = () => setIsPlaying(false)
 
-        media.addEventListener("timeupdate", updateTime)
+        const handlePlay = () => {
+            // Spotify-style: Measure playback latency
+            if (playStartTimeRef.current > 0) {
+                const latency = Date.now() - playStartTimeRef.current
+                setPlaybackLatency(latency)
+                // Log for benchmarking (can be removed in production)
+                if (latency > 200) {
+                    console.warn(`High playback latency: ${latency}ms (target: <200ms)`)
+                }
+            }
+            
+            setIsPlaying(true)
+            setIsBuffering(false)
+            // Switch to auto preload when playing starts (YouTube-style)
+            if (preloadStrategy !== 'auto' && networkSpeed !== 'slow') {
+                setPreloadStrategy('auto')
+                media.preload = 'auto'
+            }
+        }
+
+        const handlePause = () => setIsPlaying(false)
+        
+        const handleWaiting = () => {
+            setIsBuffering(true)
+            // Aggressively try to buffer more
+            if (media.readyState < 3) {
+                media.load()
+            }
+        }
+
+        const handleCanPlay = () => {
+            // Spotify-style: Start playing immediately when canplay fires (minimal buffer)
+            // Don't wait for canplaythrough - this reduces latency significantly
+            setIsBuffering(false)
+            setIsLoading(false)
+            
+            // For audio, try to start playing immediately if user clicked play
+            if (!isVideo && !isPlaying && media.readyState >= 2) {
+                // Audio is ready to play, but wait for user interaction
+                // The play() will be called by user action
+            }
+        }
+
+        const handleCanPlayThrough = () => {
+            setIsBuffering(false)
+            setIsLoading(false)
+            // File is fully buffered - preload next track now
+            const nextFile = getNextFile()
+            if (nextFile && !isVideo) {
+                preloadNextTrack(nextFile)
+            }
+        }
+
+        const handleLoadStart = () => {
+            setIsLoading(true)
+            setIsBuffering(true)
+        }
+
+        const handleProgress = () => {
+            updateBufferedRanges()
+        }
+
+        // Use requestAnimationFrame for smooth time updates (better performance)
+        let rafId: number | null = null
+        const updateTimeWithRAF = () => {
+            updateTime()
+            if (isPlaying) {
+                rafId = requestAnimationFrame(updateTimeWithRAF)
+            }
+        }
+
+        // Event listeners
         media.addEventListener("loadedmetadata", updateDuration)
         media.addEventListener("ended", handleEnded)
         media.addEventListener("play", handlePlay)
         media.addEventListener("pause", handlePause)
+        media.addEventListener("waiting", handleWaiting)
+        media.addEventListener("canplay", handleCanPlay)
+        media.addEventListener("canplaythrough", handleCanPlayThrough)
+        media.addEventListener("loadstart", handleLoadStart)
+        media.addEventListener("progress", handleProgress)
+
+        // Start RAF-based time updates when playing
+        if (isPlaying) {
+            rafId = requestAnimationFrame(updateTimeWithRAF)
+        }
+
+        // Prefetch next file when current file is 80% complete (Netflix-style)
+        const checkAndPrefetch = () => {
+            if (media.duration && media.currentTime / media.duration > 0.8) {
+                const nextFile = getNextFile()
+                if (nextFile && nextFile.url && !prefetchTimeoutRef.current) {
+                    prefetchTimeoutRef.current = setTimeout(() => {
+                        // Prefetch next file
+                        const link = document.createElement('link')
+                        link.rel = 'prefetch'
+                        link.href = nextFile.url!
+                        document.head.appendChild(link)
+                        prefetchTimeoutRef.current = null
+                    }, 1000)
+                }
+            }
+        }
+
+        const progressInterval = setInterval(() => {
+            checkAndPrefetch()
+            updateBufferedRanges()
+        }, 2000) // Check every 2 seconds
 
         return () => {
-            media.removeEventListener("timeupdate", updateTime)
             media.removeEventListener("loadedmetadata", updateDuration)
             media.removeEventListener("ended", handleEnded)
             media.removeEventListener("play", handlePlay)
             media.removeEventListener("pause", handlePause)
+            media.removeEventListener("waiting", handleWaiting)
+            media.removeEventListener("canplay", handleCanPlay)
+            media.removeEventListener("canplaythrough", handleCanPlayThrough)
+            media.removeEventListener("loadstart", handleLoadStart)
+            media.removeEventListener("progress", handleProgress)
+            
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId)
+            }
+            
+            clearInterval(progressInterval)
+            
+            if (prefetchTimeoutRef.current) {
+                clearTimeout(prefetchTimeoutRef.current)
+            }
         }
-    }, [isVideo, audioUrl, videoUrl, playbackRate])
+    }, [isVideo, audioUrl, videoUrl, playbackRate, file.id, preloadStrategy, networkSpeed, isPlaying])
 
     const togglePlay = () => {
         const media = mediaRef.current
@@ -121,7 +525,25 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
         if (isPlaying) {
             media.pause()
         } else {
-            media.play()
+            // Spotify-style: Measure latency from click to playback
+            playStartTimeRef.current = Date.now()
+            
+            // Start playback immediately
+            const playPromise = media.play()
+            
+            // Handle promise rejection (autoplay policies)
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        // Playback started successfully
+                        const latency = Date.now() - playStartTimeRef.current
+                        setPlaybackLatency(latency)
+                    })
+                    .catch((error) => {
+                        console.error('Playback failed:', error)
+                        setIsPlaying(false)
+                    })
+            }
         }
         setIsPlaying(!isPlaying)
     }
@@ -169,17 +591,95 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
     const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0
 
     return (
-        <View className="flex flex-col h-full items-center justify-center p-10 gap-8">
+        <View className={`flex flex-col ${isVideo ? 'h-full' : 'h-full'} items-center ${isVideo ? 'justify-start' : 'justify-center'} p-10 gap-8 overflow-auto`}>
             {/* Album Art / Video Display */}
             {isVideo ? (
-                <View className="relative max-w-full max-h-[50%] rounded-lg media-glow overflow-hidden">
+                <View 
+                    ref={videoContainerRef}
+                    className="relative rounded-lg media-glow overflow-hidden"
+                    style={{ 
+                        position: 'relative', 
+                        display: 'flex',
+                        width: '100%',
+                        maxWidth: '800px',
+                        justifyContent: 'center'
+                    }}
+                >
                     <video
                         ref={videoRef}
                         src={videoUrl}
-                        className="max-w-full max-h-[50%] rounded-lg"
+                        className="rounded-lg"
+                        preload={preloadStrategy}
+                        playsInline
                         onPlay={() => setIsPlaying(true)}
                         onPause={() => setIsPlaying(false)}
+                        onWaiting={() => setIsBuffering(true)}
+                        onCanPlay={() => {
+                            setIsBuffering(false)
+                            setIsLoading(false)
+                        }}
+                        onCanPlayThrough={() => {
+                            setIsBuffering(false)
+                            setIsLoading(false)
+                        }}
+                        onLoadStart={() => {
+                            setIsLoading(true)
+                            setIsBuffering(true)
+                        }}
+                        onProgress={() => {
+                            updateBufferedRanges()
+                        }}
+                        style={{ 
+                            width: '100%',
+                            height: 'auto',
+                            display: 'block',
+                            maxHeight: '70vh'
+                        }}
                     />
+                    {/* Loading/Buffering overlay */}
+                    <AnimatePresence>
+                        {(isLoading || isBuffering) && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 flex items-center justify-center"
+                                style={{
+                                    backgroundColor: current?.dark + "40",
+                                    borderRadius: "0.5rem"
+                                }}
+                            >
+                                <View className="flex flex-col items-center gap-2">
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                        className="w-12 h-12 rounded-full border-4"
+                                        style={{
+                                            borderColor: current?.primary + "30",
+                                            borderTopColor: current?.primary,
+                                        }}
+                                    />
+                                    <Text 
+                                        value={isLoading ? "Loading..." : "Buffering..."} 
+                                        size="sm" 
+                                        className="opacity-80"
+                                    />
+                                </View>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                    {/* Fullscreen button for video */}
+                    <button
+                        onClick={toggleFullscreen}
+                        className="absolute top-2 right-2 p-2 rounded-lg hover:opacity-90 transition-opacity z-10"
+                        style={{
+                            backgroundColor: current?.dark + "60",
+                            color: "white"
+                        }}
+                        title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                    >
+                        {isFullscreen ? <Minimize size={20} /> : <Maximize2 size={20} />}
+                    </button>
                 </View>
             ) : (
                 <ThumbnailPlaceholder file={file} />
@@ -220,6 +720,18 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
             {/* Control Buttons */}
             <View className="flex items-center justify-center gap-8">
                 <button
+                    onClick={playPrevious}
+                    disabled={!getPreviousFile()}
+                    className="p-3 hover:opacity-70 transition-opacity rounded-full hover:bg-opacity-10 disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{ 
+                        color: current?.dark,
+                        backgroundColor: current?.dark + "08"
+                    }}
+                    title="Previous track"
+                >
+                    <SkipBack size={22} />
+                </button>
+                <button
                     onClick={() => {
                         const media = mediaRef.current
                         if (media) {
@@ -233,11 +745,12 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                     }}
                     title="Skip back 10s"
                 >
-                    <SkipBack size={22} />
+                    <SkipBack size={18} />
                 </button>
                 <button
                     onClick={togglePlay}
-                    className="rounded-full hover:scale-105 transition-all flex items-center justify-center"
+                    disabled={isLoading}
+                    className="rounded-full hover:scale-105 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
                         boxShadow: name === "dark" 
                             ? `0 10px 15px -3px rgba(0, 0, 0, 0.3)`
@@ -249,7 +762,17 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                     }}
                     title={isPlaying ? "Pause" : "Play"}
                 >
-                    {isPlaying ? <Pause size={36} fill="white" /> : <Play size={36} fill="white" />}
+                    {isLoading ? (
+                        <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            className="w-8 h-8 rounded-full border-2 border-white border-t-transparent"
+                        />
+                    ) : isPlaying ? (
+                        <Pause size={36} fill="white" />
+                    ) : (
+                        <Play size={36} fill="white" />
+                    )}
                 </button>
                 <button
                     onClick={() => {
@@ -264,6 +787,18 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                         backgroundColor: current?.dark + "08"
                     }}
                     title="Skip forward 10s"
+                >
+                    <SkipForward size={18} />
+                </button>
+                <button
+                    onClick={playNext}
+                    disabled={!getNextFile()}
+                    className="p-3 hover:opacity-70 transition-opacity rounded-full hover:bg-opacity-10 disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{ 
+                        color: current?.dark,
+                        backgroundColor: current?.dark + "08"
+                    }}
+                    title="Next track"
                 >
                     <SkipForward size={22} />
                 </button>
@@ -366,8 +901,31 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                 <audio
                     ref={audioRef}
                     src={audioUrl}
+                    preload={preloadStrategy}
+                    crossOrigin="anonymous"
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
+                    onWaiting={() => setIsBuffering(true)}
+                    onCanPlay={() => {
+                        setIsBuffering(false)
+                        setIsLoading(false)
+                    }}
+                    onCanPlayThrough={() => {
+                        setIsBuffering(false)
+                        setIsLoading(false)
+                    }}
+                    onLoadStart={() => {
+                        setIsLoading(true)
+                        setIsBuffering(true)
+                    }}
+                    onProgress={() => {
+                        updateBufferedRanges()
+                    }}
+                    // Spotify-style: Optimize for low latency
+                    style={{
+                        // Ensure audio element is ready
+                        display: 'block'
+                    }}
                 />
             )}
         </View>

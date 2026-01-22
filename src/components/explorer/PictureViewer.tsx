@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import View from "../base/View"
 import { FileItem, useFileStore } from "../../store/Filestore"
 import { getImageByFileType } from "../base/Sidebar"
+import { resolveFileUrl } from "../../utils/fileUrlResolver"
 
 interface Props {
     file: FileItem
@@ -9,15 +10,23 @@ interface Props {
 
 const PictureViewer = ({ file }: Props) => {
     const { refreshFileURL, getFileById } = useFileStore()
-    const [imageUrl, setImageUrl] = useState(file.thumbnail || file.url)
+    const [imageUrl, setImageUrl] = useState<string | null>(null)
     const [retryCount, setRetryCount] = useState(0)
     const [error, setError] = useState(false)
 
     useEffect(() => {
-        setImageUrl(file.thumbnail || file.url)
-        setRetryCount(0)
-        setError(false)
-    }, [file.id, file.thumbnail, file.url])
+        // Resolve file URL (checks local first, then server)
+        resolveFileUrl(file).then(url => {
+            setImageUrl(url)
+            setRetryCount(0)
+            setError(false)
+        }).catch(() => {
+            // Fallback to server URL if resolution fails
+            setImageUrl(file.thumbnail || file.url || null)
+            setRetryCount(0)
+            setError(false)
+        })
+    }, [file.id, file.thumbnail, file.url, file.deviceId])
 
     const handleError = async () => {
         // Try to refresh URL if it's a 403 or loading error

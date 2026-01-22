@@ -173,10 +173,16 @@ const FolderNode = ({
                 <Text
                     value={file.name}
                     size="sm"
-                    className="flex-1 truncate"
+                    className="flex-1"
                     style={{
                         color: isCurrentFolder ? current?.primary : current?.dark,
-                        opacity: isCurrentFolder ? 1 : 0.8
+                        opacity: isCurrentFolder ? 1 : 0.8,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        wordBreak: "break-word",
+                        lineHeight: "1.2"
                     }}
                 />
             </View>

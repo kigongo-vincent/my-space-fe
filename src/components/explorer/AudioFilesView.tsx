@@ -2,6 +2,7 @@ import { useMemo, useState } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
 import { useFileStore, FileItem } from "../../store/Filestore"
+import { formatFileSize } from "../../utils/storage"
 import { useTheme } from "../../store/Themestore"
 import { Play } from "lucide-react"
 import { Skeleton } from "../base/Skeleton"
@@ -138,7 +139,7 @@ const AudioFilesView = () => {
 
                         {file.size && (
                             <Text
-                                value={`${file.size} ${file.sizeUnit}`}
+                                value={formatFileSize(file.size, file.sizeUnit)}
                                 size="sm"
                                 className="opacity-60 min-w-[70px] text-right font-medium"
                                 style={{ letterSpacing: "0.02em" }}

@@ -5,6 +5,8 @@ import api from "../utils/api"
 import { useUploadStore } from "./UploadStore"
 import { useBackgroundJobStore } from "./BackgroundJobStore"
 import { getFileTypeFromExtension } from "../utils/fileTypes"
+import { getDeviceId } from "../utils/deviceFingerprint"
+import { storeLocalFile } from "../utils/localFileStorage"
 
 export interface FileItem {
     id: string
@@ -21,6 +23,8 @@ export interface FileItem {
     isPinned?: boolean
     thumbnail?: string
     url?: string
+    deviceId?: string
+    path?: string[] // Array of parent folder IDs from root to parent
 }
 
 export interface Disk {
@@ -33,6 +37,7 @@ export interface Disk {
     }
     createdAt: Date
     files: FileItem[]
+    filteredFiles?: FileItem[] // Files filtered by type from backend
 }
 
 export interface FileStoreI {
@@ -52,6 +57,7 @@ export interface FileStoreI {
     addVisitedPath: (path: string) => void
     searchResults: FileItem[] // Backend search results
     isSearching: boolean // Loading state for search
+    highlightedFileId: string | null // File ID to highlight (from search navigation)
     folderCache: Map<string, FileItem[]> // Cache for folder files: key = "diskId:parentId", value = FileItem[]
     getCachedFiles: (diskId: string, parentId: string | null) => FileItem[] | null
     setCachedFiles: (diskId: string, parentId: string | null, files: FileItem[]) => void
@@ -80,9 +86,12 @@ export interface FileStoreI {
     clearSelection: () => void
     setViewMode: (mode: "grid" | "list" | "gallery3d") => void
     setSearchQuery: (query: string) => void
-    setFilterByType: (type: fileType | null) => void
+    setHighlightedFile: (fileId: string | null) => void
+    setFilterByType: (type: fileType | null) => Promise<void>
     openFileModal: (fileId: string) => void
+    updateFileModal: (modalId: string, fileId: string) => void
     closeFileModal: (modalId: string) => void
+    findModalByFileId: (fileId: string) => { id: string; fileId: string } | null
     getCurrentFolderFiles: () => FileItem[]
     getFileById: (fileId: string) => FileItem | null
     getPathForFile: (fileId: string) => string[]
@@ -292,6 +301,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
     })(),
     searchResults: [],
     isSearching: false,
+    highlightedFileId: null,
     folderCache: new Map<string, FileItem[]>(),
     
     getCachedFiles: (diskId: string, parentId: string | null): FileItem[] | null => {
@@ -368,6 +378,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                             sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                             thumbnail: f.thumbnail,
                             url: f.url || f.content, // Use content for notes
+                            deviceId: f.deviceId,
                         }))
                         
                         return {
@@ -452,6 +463,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                                         sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                                         thumbnail: f.thumbnail,
                                         url: f.url || f.content,
+                                        deviceId: f.deviceId,
                                     }))
                                 
                                 // Cache the final folder's files
@@ -550,6 +562,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                     sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                     thumbnail: f.thumbnail,
                     url: f.url || f.content,
+                    deviceId: f.deviceId,
                 }))
 
                 // Cache the root files
@@ -648,6 +661,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                     sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                     thumbnail: f.thumbnail,
                     url: f.url || f.content,
+                    deviceId: f.deviceId,
                 }))
 
                 // Cache the files
@@ -771,9 +785,10 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                         modifiedAt: new Date(f.updatedAt),
                         size: f.size,
                         sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
-                        thumbnail: f.thumbnail,
-                        url: f.url,
-                    }))
+                            thumbnail: f.thumbnail,
+                            url: f.url,
+                            deviceId: f.deviceId,
+                        }))
                     
                     return {
                         ...d,
@@ -843,6 +858,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                             sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                             thumbnail: f.thumbnail,
                             url: f.url || f.content,
+                            deviceId: f.deviceId,
                         }))
                         
                         return {
@@ -937,9 +953,10 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                         modifiedAt: new Date(f.updatedAt),
                         size: f.size,
                         sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
-                        thumbnail: f.thumbnail,
-                        url: f.url,
-                    }))
+                            thumbnail: f.thumbnail,
+                            url: f.url,
+                            deviceId: f.deviceId,
+                        }))
                     
                     return {
                         id: d.id.toString(),
@@ -1156,6 +1173,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                 thumbnail: f.thumbnail,
                 url: f.url || f.content, // Use content for notes
+                deviceId: f.deviceId,
             }))
 
             // Update disk with files from backend
@@ -1208,6 +1226,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                 thumbnail: f.thumbnail,
                 url: f.url || f.content,
+                deviceId: f.deviceId,
             }))
 
             const updatedDisks = get().disks.map(disk => {
@@ -1264,9 +1283,10 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 modifiedAt: new Date(f.updatedAt),
                 size: f.size,
                 sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
-                thumbnail: f.thumbnail,
-                url: f.url,
-            }))
+                            thumbnail: f.thumbnail,
+                            url: f.url,
+                            deviceId: f.deviceId,
+                        }))
 
             // Update disk with files from backend
             const updatedDisks = get().disks.map(d => {
@@ -1364,6 +1384,9 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         useBackgroundJobStore.getState().addJob(job)
 
         try {
+            // Get device ID for tracking
+            const deviceId = getDeviceId()
+
             // Upload to backend with progress tracking
             const result = await api.uploadWithPresignedURL(
                 file,
@@ -1375,13 +1398,24 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                         progress: Math.round(progress),
                         message: `Uploading "${file.name}"... ${Math.round(progress)}%`
                     })
-                }
+                },
+                deviceId
             )
 
             // Verify result has valid fileId
             if (!result || !result.fileId) {
                 throw new Error("Upload completed but no file ID was returned")
             }
+
+            // Store local file for fast preview (async, don't wait)
+            storeLocalFile(
+                result.fileId.toString(),
+                file.name,
+                fileType,
+                file
+            ).catch(() => {
+                // Ignore errors - this is a performance optimization
+            })
 
             // Mark upload as completed
             useUploadStore.getState().updateUploadStatus(uploadId, "completed", undefined, result.fileId)
@@ -1407,6 +1441,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 sizeUnit: newFile.sizeUnit as "KB" | "MB" | "GB",
                 thumbnail: newFile.thumbnail,
                 url: newFile.url,
+                deviceId: newFile.deviceId,
             }
 
             // Update disk by merging the new file into existing files (replace optimistic, add real)
@@ -1522,6 +1557,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                 thumbnail: f.thumbnail,
                 url: f.url || f.content,
+                deviceId: f.deviceId,
             }))
 
             // Update cache
@@ -1574,6 +1610,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                 thumbnail: f.thumbnail,
                 url: f.url || f.content,
+                deviceId: f.deviceId,
             }))
 
             // Update cache
@@ -1635,14 +1672,83 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         }
     },
 
-    setFilterByType: (type: fileType | null) => {
+    setFilterByType: async (type: fileType | null) => {
         set({ filterByType: type, currentPath: [] })
+        
+        // If filtering by type, fetch all files of that type from backend
+        if (type) {
+            try {
+                const files = await api.get<any[]>(`/files/by-type/${type}`)
+                
+                // Map backend files to frontend format
+                const mappedFiles: FileItem[] = files.map((f: any) => ({
+                    id: f.id.toString(),
+                    name: f.name,
+                    type: f.type as fileType,
+                    isFolder: f.isFolder,
+                    isPinned: f.isPinned || false,
+                    parentId: f.parentId ? f.parentId.toString() : null,
+                    diskId: f.diskId.toString(),
+                    createdAt: new Date(f.createdAt),
+                    modifiedAt: new Date(f.updatedAt),
+                    size: f.size,
+                    sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
+                    thumbnail: f.thumbnail,
+                    url: f.url || f.content,
+                    deviceId: f.deviceId,
+                }))
+                
+                // Store filtered files in a special cache key
+                const { disks } = get()
+                const updatedDisks = disks.map(disk => {
+                    // For filtered view, we show files from all disks
+                    // Store them in the first disk's cache temporarily
+                    if (disk.id === disks[0]?.id) {
+                        return {
+                            ...disk,
+                            filteredFiles: mappedFiles,
+                        }
+                    }
+                    return disk
+                })
+                
+                set({ disks: updatedDisks })
+            } catch (error) {
+                console.error("Failed to fetch files by type:", error)
+                // Fallback to local filtering if API fails
+            }
+        } else {
+            // Clear filtered files when filter is removed
+            const { disks } = get()
+            const updatedDisks = disks.map(disk => ({
+                ...disk,
+                filteredFiles: undefined,
+            }))
+            set({ disks: updatedDisks })
+        }
+    },
+
+    setHighlightedFile: (fileId: string | null) => {
+        set({ highlightedFileId: fileId })
     },
 
     openFileModal: (fileId: string) => {
         // Generate unique modal ID with timestamp and random component
         const modalId = `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         set({ openModals: [...get().openModals, { id: modalId, fileId }] })
+    },
+
+    updateFileModal: (modalId: string, fileId: string) => {
+        set({
+            openModals: get().openModals.map(m =>
+                m.id === modalId ? { ...m, fileId } : m
+            )
+        })
+    },
+
+    findModalByFileId: (fileId: string) => {
+        const modal = get().openModals.find(m => m.fileId === fileId)
+        return modal || null
     },
 
     closeFileModal: (modalId: string) => {
@@ -1656,8 +1762,13 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         const disk = disks.find(d => d.id === currentDiskId)
         if (!disk) return []
 
-        // If filtering by type, return all files of that type across all disks
+        // If filtering by type, return files from backend query (stored in filteredFiles)
         if (filterByType) {
+            // Check if we have filtered files from backend
+            if (disk.filteredFiles && disk.filteredFiles.length > 0) {
+                return disk.filteredFiles
+            }
+            // Fallback to local filtering if backend query hasn't completed yet
             return get().getAllFilesByType(filterByType)
         }
 
@@ -1871,6 +1982,8 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                         sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                         thumbnail: f.thumbnail,
                         url: f.url,
+                        deviceId: f.deviceId,
+                        path: f.path ? f.path.map((id: number) => id.toString()) : [],
                     }))
                 } catch (error) {
                     console.error(`Failed to search disk ${disk.id}:`, error)
