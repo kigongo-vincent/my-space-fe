@@ -4,6 +4,7 @@ import { useTheme } from './store/Themestore'
 import { AppSplash } from './components/auth/AppSplash'
 import BackgroundJobModal from './components/explorer/BackgroundJobModal'
 import UploadModal from './components/explorer/UploadModal'
+import StorageReductionWorkflow from './components/explorer/StorageReductionWorkflow'
 
 const App = () => {
   const { current, name } = useTheme()
@@ -25,6 +26,7 @@ const App = () => {
         <Index />
         <BackgroundJobModal />
         <UploadModal />
+        <StorageReductionWorkflow />
       </div>
     </AppSplash>
   )

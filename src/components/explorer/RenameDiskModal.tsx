@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
-import Button from "../base/Button"
 import { useFileStore } from "../../store/Filestore"
 import { X, AlertCircle, CheckCircle } from "lucide-react"
 import IconButton from "../base/IconButton"
@@ -113,7 +112,7 @@ const RenameDiskModal = ({ diskId, currentName, onClose }: Props) => {
                         </View>
                     )}
                     {!error && newName && (
-                        <Text value={`${newName.length}/50 characters`} size="xs" className="opacity-50" />
+                        <Text value={`${newName.length}/50 characters`} size="sm" className="opacity-50" />
                     )}
                 </View>
 

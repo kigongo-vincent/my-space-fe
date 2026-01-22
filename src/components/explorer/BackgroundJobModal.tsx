@@ -134,7 +134,7 @@ const JobItem = ({ job, onClose }: JobItemProps) => {
           </View>
           <Text
             value={`${job.progress}%`}
-            size="xs"
+            size="sm"
             className="opacity-70 text-right"
             style={{ color: current?.dark }}
           />

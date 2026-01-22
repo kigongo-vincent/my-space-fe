@@ -17,7 +17,7 @@ const SignupSplash = () => {
     const [confirmPassword, setConfirmPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-    const [error, setError] = useState("")
+    const [_error, setError] = useState("")
     const [alertModal, setAlertModal] = useState<{ isOpen: boolean; message: string; type?: "error" | "success" | "info" | "warning" }>({
         isOpen: false,
         message: "",
@@ -594,8 +594,20 @@ const SignupSplash = () => {
                                     preventDefault: () => {},
                                     stopPropagation: () => {},
                                     defaultPrevented: false,
-                                    nativeEvent: e.nativeEvent
-                                } as React.FormEvent<HTMLFormElement>
+                                    nativeEvent: e.nativeEvent,
+                                    currentTarget: form,
+                                    target: form,
+                                    bubbles: false,
+                                    cancelable: false,
+                                    timeStamp: Date.now(),
+                                    type: 'submit',
+                                    isTrusted: false,
+                                    eventPhase: 0,
+                                    stopImmediatePropagation: () => {},
+                                    isDefaultPrevented: () => false,
+                                    isPropagationStopped: () => false,
+                                    persist: () => {}
+                                } as unknown as React.FormEvent<HTMLFormElement>
                                 
                                 await handleSubmit(fakeEvent)
                             }

@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
-import Button from "../base/Button"
 import { useFileStore } from "../../store/Filestore"
 import { X, AlertCircle, CheckCircle, Info } from "lucide-react"
 import IconButton from "../base/IconButton"
@@ -30,6 +29,7 @@ const CreateDiskModal = ({ onClose }: Props) => {
     // Calculate available space for new disk creation
     // Available = User's total storage limit - Total allocated across all disks
     const getUserTotalGB = (): number => {
+        if (!usage) return 0
         return convertToGB(usage.total, usage.unit)
     }
     
@@ -230,7 +230,7 @@ const CreateDiskModal = ({ onClose }: Props) => {
                         </View>
                     )}
                     {!errors.name && diskName && (
-                        <Text value={`${diskName.length}/50 characters`} size="xs" className="opacity-50" />
+                        <Text value={`${diskName.length}/50 characters`} size="sm" className="opacity-50" />
                     )}
                 </View>
 
@@ -284,7 +284,7 @@ const CreateDiskModal = ({ onClose }: Props) => {
                     {!errors.size && totalStorage && (
                         <Text 
                             value={`Available: ${getAvailableInUnit(unit).toFixed(2)} ${unit}`} 
-                            size="xs" 
+                            size="sm" 
                             className="opacity-50" 
                         />
                     )}

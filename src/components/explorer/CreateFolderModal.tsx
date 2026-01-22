@@ -18,7 +18,7 @@ interface Props {
 const CreateFolderModal = ({ onClose, parentId, diskId }: Props) => {
     const [folderName, setFolderName] = useState("")
     const { createFolder } = useFileStore()
-    const { current, name } = useTheme()
+    const { current } = useTheme()
 
     const handleCreate = async () => {
         if (folderName.trim()) {

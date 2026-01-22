@@ -3,7 +3,6 @@ import Text from "../base/Text"
 import { FileItem } from "../../store/Filestore"
 import { useTheme } from "../../store/Themestore"
 import { ExternalLink, Globe, Copy, Check } from "lucide-react"
-import IconButton from "../base/IconButton"
 import { useState } from "react"
 
 interface Props {

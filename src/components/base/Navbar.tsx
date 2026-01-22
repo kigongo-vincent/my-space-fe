@@ -77,7 +77,7 @@ const Navbar = () => {
                                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} 
                                 className="cursor-pointer"
                             >
-                                <Avatar path={user?.current?.photo} fallback={{ text: user.getInitials(user?.current?.username) }} />
+                                <Avatar path={user?.current?.photo} fallback={{ text: user.getInitials(user?.current?.username || "") }} />
                             </View>
                             
                             <AnimatePresence>

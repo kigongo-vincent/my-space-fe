@@ -10,6 +10,7 @@ import MediaPlayer from "./MediaPlayer"
 import NoteViewer from "./NoteViewer"
 import DocumentViewer from "./DocumentViewer"
 import UrlViewer from "./UrlViewer"
+import PictureViewer from "./PictureViewer"
 
 interface Props {
     modalId: string
@@ -104,13 +105,7 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
                 )
             case "picture":
                 return (
-                    <View className="flex items-center justify-center h-full">
-                        <img
-                            src={file.thumbnail || getImageByFileType(file.type)}
-                            alt={file.name}
-                            className="max-w-full max-h-full object-contain"
-                        />
-                    </View>
+                    <PictureViewer file={file} />
                 )
             case "note":
                 return <NoteViewer file={file} />

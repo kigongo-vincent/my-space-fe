@@ -19,7 +19,7 @@ const Signup = () => {
     const [confirmPassword, setConfirmPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-    const [errors, setErrors] = useState<{ [key: string]: string }>({})
+    const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({})
     const [alertModal, setAlertModal] = useState<{ isOpen: boolean; message: string; type?: "error" | "success" | "info" | "warning" }>({
         isOpen: false,
         message: "",

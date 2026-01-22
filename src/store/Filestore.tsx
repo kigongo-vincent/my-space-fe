@@ -48,6 +48,14 @@ export interface FileStoreI {
     pinnedFiles: string[]
     backgroundPlayerFileId: string | null
     isLoading: boolean
+    visitedPaths: string[] // Array of full path strings (e.g., "DiskName\Folder1\Folder2")
+    addVisitedPath: (path: string) => void
+    searchResults: FileItem[] // Backend search results
+    isSearching: boolean // Loading state for search
+    folderCache: Map<string, FileItem[]> // Cache for folder files: key = "diskId:parentId", value = FileItem[]
+    getCachedFiles: (diskId: string, parentId: string | null) => FileItem[] | null
+    setCachedFiles: (diskId: string, parentId: string | null, files: FileItem[]) => void
+    clearFolderCache: (diskId?: string) => void
     
     // Actions
     fetchDisks: () => Promise<void>
@@ -79,6 +87,7 @@ export interface FileStoreI {
     getFileById: (fileId: string) => FileItem | null
     getPathForFile: (fileId: string) => string[]
     searchFiles: (query: string) => FileItem[]
+    searchFilesBackend: (query: string) => Promise<void>
     copyFiles: (fileIds: string[]) => void
     cutFiles: (fileIds: string[]) => void
     pasteFiles: (targetFolderId: string | null, targetDiskId: string) => void
@@ -86,6 +95,7 @@ export interface FileStoreI {
     isPinned: (fileId: string) => boolean
     getAllFilesByType: (type: fileType) => FileItem[]
     setBackgroundPlayer: (fileId: string | null) => void
+    refreshFileURL: (fileId: string) => Promise<void>
 }
 
 // Helper function to build file tree
@@ -175,9 +185,6 @@ const calculateDiskUsage = (files: FileItem[], diskUnit: "GB" | "MB" | "TB" | "P
     // Convert to disk's unit
     let usage = 0
     switch (diskUnit) {
-        case "KB":
-            usage = totalSizeInBytes / 1024
-            break
         case "MB":
             usage = totalSizeInBytes / (1024 * 1024)
             break
@@ -190,6 +197,8 @@ const calculateDiskUsage = (files: FileItem[], diskUnit: "GB" | "MB" | "TB" | "P
         case "PB":
             usage = totalSizeInBytes / (1024 * 1024 * 1024 * 1024 * 1024)
             break
+        default:
+            usage = totalSizeInBytes / (1024 * 1024 * 1024) // Default to GB
     }
 
     return parseFloat(usage.toFixed(2))
@@ -273,6 +282,56 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
     pinnedFiles: [],
     backgroundPlayerFileId: null,
     isLoading: false,
+    visitedPaths: (() => {
+        try {
+            const saved = localStorage.getItem('visitedPaths')
+            return saved ? JSON.parse(saved) : []
+        } catch {
+            return []
+        }
+    })(),
+    searchResults: [],
+    isSearching: false,
+    folderCache: new Map<string, FileItem[]>(),
+    
+    getCachedFiles: (diskId: string, parentId: string | null): FileItem[] | null => {
+        const { folderCache } = get()
+        const key = `${diskId}:${parentId || 'root'}`
+        return folderCache.get(key) || null
+    },
+    
+    setCachedFiles: (diskId: string, parentId: string | null, files: FileItem[]) => {
+        const { folderCache } = get()
+        const key = `${diskId}:${parentId || 'root'}`
+        const updatedCache = new Map(folderCache)
+        updatedCache.set(key, files)
+        set({ folderCache: updatedCache })
+    },
+    
+    clearFolderCache: (diskId?: string) => {
+        const { folderCache } = get()
+        if (diskId) {
+            // Clear cache for specific disk
+            const updatedCache = new Map(folderCache)
+            for (const [key] of updatedCache.entries()) {
+                if (key.startsWith(`${diskId}:`)) {
+                    updatedCache.delete(key)
+                }
+            }
+            set({ folderCache: updatedCache })
+        } else {
+            // Clear all cache
+            set({ folderCache: new Map() })
+        }
+    },
+    
+    addVisitedPath: (path: string) => {
+        const { visitedPaths } = get()
+        // Remove if already exists and add to front (most recent first)
+        const updated = [path, ...visitedPaths.filter(p => p !== path)].slice(0, 20) // Keep last 20
+        set({ visitedPaths: updated })
+        localStorage.setItem('visitedPaths', JSON.stringify(updated))
+    },
 
     fetchDisks: async () => {
         try {
@@ -338,6 +397,11 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                     }
                 })
             )
+            
+            // Cache root files for all disks after fetching
+            disksWithFiles.forEach(disk => {
+                get().setCachedFiles(disk.id, null, disk.files)
+            })
 
             set({ disks: disksWithFiles, isLoading: false })
             
@@ -373,20 +437,25 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                             // Fetch files for the final folder to ensure contents are loaded
                             try {
                                 const finalFolderFiles = await api.get<any[]>(`/files/disk/${persistedDiskId}?parentId=${finalFolderId}`)
-                                const mappedFinalFiles: FileItem[] = finalFolderFiles.map((f: any) => ({
-                                    id: f.id.toString(),
-                                    name: f.name,
-                                    type: f.type as fileType,
-                                    isFolder: f.isFolder,
-                                    parentId: f.parentId ? f.parentId.toString() : null,
-                                    diskId: currentDiskId,
-                                    createdAt: new Date(f.createdAt),
-                                    modifiedAt: new Date(f.updatedAt),
-                                    size: f.size,
-                                    sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
-                                    thumbnail: f.thumbnail,
-                                    url: f.url || f.content,
-                                }))
+                                const mappedFinalFiles: FileItem[] = finalFolderFiles
+                                    .filter(() => currentDiskId !== null)
+                                    .map((f: any) => ({
+                                        id: f.id.toString(),
+                                        name: f.name,
+                                        type: f.type as fileType,
+                                        isFolder: f.isFolder,
+                                        parentId: f.parentId ? f.parentId.toString() : null,
+                                        diskId: currentDiskId!,
+                                        createdAt: new Date(f.createdAt),
+                                        modifiedAt: new Date(f.updatedAt),
+                                        size: f.size,
+                                        sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
+                                        thumbnail: f.thumbnail,
+                                        url: f.url || f.content,
+                                    }))
+                                
+                                // Cache the final folder's files
+                                get().setCachedFiles(persistedDiskId, finalFolderId, mappedFinalFiles)
                                 
                                 // Get current state after previous updates
                                 const currentState = get()
@@ -453,6 +522,19 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         
         // If disk is selected, fetch its files
         if (diskId) {
+            // Check cache first
+            const cachedFiles = get().getCachedFiles(diskId, null)
+            if (cachedFiles) {
+                const updatedDisks = get().disks.map(d => {
+                    if (d.id === diskId) {
+                        return { ...d, files: cachedFiles }
+                    }
+                    return d
+                })
+                set({ disks: updatedDisks })
+                return
+            }
+            
             try {
                 const files = await api.get<any[]>(`/files/disk/${diskId}`)
                 const mappedFiles: FileItem[] = files.map((f: any) => ({
@@ -469,6 +551,9 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                     thumbnail: f.thumbnail,
                     url: f.url || f.content,
                 }))
+
+                // Cache the root files
+                get().setCachedFiles(diskId, null, mappedFiles)
 
                 const updatedDisks = get().disks.map(d => {
                     if (d.id === diskId) {
@@ -488,6 +573,23 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         set({ currentPath: path })
         // Persist to localStorage
         localStorage.setItem('currentPath', JSON.stringify(path))
+        
+        // Track visited path
+        const { disks, currentDiskId } = get()
+        if (currentDiskId) {
+            const disk = disks.find(d => d.id === currentDiskId)
+            if (disk) {
+                const pathParts: string[] = [disk.name]
+                path.forEach(folderId => {
+                    const folder = get().getFileById(folderId)
+                    if (folder) {
+                        pathParts.push(folder.name)
+                    }
+                })
+                const fullPath = pathParts.join("\\")
+                get().addVisitedPath(fullPath)
+            }
+        }
     },
 
     navigateToFolder: async (folderId: string) => {
@@ -499,6 +601,34 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             
             // Persist to localStorage
             localStorage.setItem('currentPath', JSON.stringify(newPath))
+            
+            // Check cache first
+            const cachedFiles = get().getCachedFiles(file.diskId, folderId)
+            if (cachedFiles) {
+                // Use cached files and update disk tree
+                const updatedDisks = get().disks.map(d => {
+                    if (d.id === file.diskId) {
+                        const flatExisting = flattenFiles(d.files)
+                        const existingIds = new Set(flatExisting.map(f => f.id))
+                        
+                        const updatedFlat = flatExisting.map(existingFile => {
+                            const updated = cachedFiles.find(f => f.id === existingFile.id)
+                            return updated || existingFile
+                        })
+                        
+                        const newFiles = cachedFiles.filter(f => !existingIds.has(f.id))
+                        const allFiles = [...updatedFlat, ...newFiles]
+                        
+                        return {
+                            ...d,
+                            files: buildFileTree(allFiles),
+                        }
+                    }
+                    return d
+                })
+                set({ disks: updatedDisks })
+                return
+            }
             
             // Fetch files for the folder from backend
             try {
@@ -519,6 +649,9 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                     thumbnail: f.thumbnail,
                     url: f.url || f.content,
                 }))
+
+                // Cache the files
+                get().setCachedFiles(file.diskId, folderId, mappedFiles)
 
                 // Update disk with files from backend - merge into existing tree structure
                 const updatedDisks = get().disks.map(d => {
@@ -1000,7 +1133,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         try {
             const parentIdNum = parentId ? parseInt(parentId) : undefined
             const noteName = name.endsWith('.md') ? name : `${name}.md`
-            const response = await api.post<any>(`/files/note?diskId=${diskId}`, {
+            await api.post<any>(`/files/note?diskId=${diskId}`, {
                 name: noteName,
                 content,
                 parentId: parentIdNum,
@@ -1110,7 +1243,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         try {
             const parentIdNum = parentId ? parseInt(parentId) : undefined
             const urlName = name.endsWith('.url') ? name : `${name}.url`
-            const response = await api.post<any>(`/files/url?diskId=${diskId}`, {
+            await api.post<any>(`/files/url?diskId=${diskId}`, {
                 name: urlName,
                 url,
                 parentId: parentIdNum,
@@ -1369,6 +1502,9 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         try {
             await api.delete(`/files/${fileId}`)
 
+            // Clear cache for the parent folder
+            get().clearFolderCache(file.diskId)
+
             // Refresh files from backend for the disk
             const files = await api.get<any[]>(`/files/disk/${file.diskId}${file.parentId ? `?parentId=${file.parentId}` : ''}`)
             
@@ -1387,6 +1523,9 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 thumbnail: f.thumbnail,
                 url: f.url || f.content,
             }))
+
+            // Update cache
+            get().setCachedFiles(file.diskId, file.parentId, mappedFiles)
 
             const updatedDisks = get().disks.map(disk => {
                 if (disk.id === file.diskId) {
@@ -1415,6 +1554,9 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         try {
             await api.put(`/files/${fileId}`, { name: newName })
 
+            // Clear cache for the parent folder
+            get().clearFolderCache(file.diskId)
+
             // Refresh files from backend
             const files = await api.get<any[]>(`/files/disk/${file.diskId}${file.parentId ? `?parentId=${file.parentId}` : ''}`)
             
@@ -1433,6 +1575,9 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 thumbnail: f.thumbnail,
                 url: f.url || f.content,
             }))
+
+            // Update cache
+            get().setCachedFiles(file.diskId, file.parentId, mappedFiles)
 
             const updatedDisks = get().disks.map(disk => {
                 if (disk.id === file.diskId) {
@@ -1473,7 +1618,21 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
     },
 
     setSearchQuery: (query: string) => {
-        set({ searchQuery: query })
+        const trimmedQuery = query.trim()
+        
+        // Clear search results if query is empty
+        if (!trimmedQuery) {
+            set({ searchQuery: "", searchResults: [], isSearching: false })
+        } else {
+            // Set searching state immediately when query is entered (before debounce)
+            // This ensures skeleton shows right away, even before backend search starts
+            // Clear previous results to show skeleton
+            set({ 
+                searchQuery: query, 
+                isSearching: true, 
+                searchResults: [] 
+            })
+        }
     },
 
     setFilterByType: (type: fileType | null) => {
@@ -1606,6 +1765,13 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
     },
 
     searchFiles: (query: string): FileItem[] => {
+        // Return backend search results if available, otherwise fallback to client-side search
+        const { searchResults, searchQuery } = get()
+        if (searchQuery && searchQuery.trim() === query.trim() && searchResults.length > 0) {
+            return searchResults
+        }
+
+        // Fallback to client-side search
         if (!query.trim()) return []
 
         const { disks } = get()
@@ -1630,6 +1796,109 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         return results
     },
 
+    searchFilesBackend: async (query: string) => {
+        if (!query.trim()) {
+            set({ searchResults: [], searchQuery: "", isSearching: false })
+            return
+        }
+
+        set({ isSearching: true })
+        const { disks, folderCache } = get()
+        const allResults: FileItem[] = []
+        const lowerQuery = query.toLowerCase()
+
+        // First, search in cache
+        const searchInCache = (files: FileItem[]): FileItem[] => {
+            const results: FileItem[] = []
+            files.forEach(file => {
+                if (file.name.toLowerCase().includes(lowerQuery)) {
+                    results.push(file)
+                }
+            })
+            return results
+        }
+
+        // Search all cached folders
+        for (const [key, cachedFiles] of folderCache.entries()) {
+            const [diskId] = key.split(':')
+            const disk = disks.find(d => d.id === diskId)
+            if (disk) {
+                const cacheResults = searchInCache(cachedFiles)
+                allResults.push(...cacheResults)
+            }
+        }
+
+        // Also search in the disk tree structure (already loaded files)
+        disks.forEach(disk => {
+            const searchInTree = (files: FileItem[]): void => {
+                files.forEach(file => {
+                    if (file.name.toLowerCase().includes(lowerQuery)) {
+                        // Check if not already in results (avoid duplicates)
+                        if (!allResults.find(r => r.id === file.id)) {
+                            allResults.push(file)
+                        }
+                    }
+                    if (file.children) {
+                        searchInTree(file.children)
+                    }
+                })
+            }
+            searchInTree(disk.files)
+        })
+
+        // If we found results in cache, show them immediately but keep searching backend
+        // Don't set isSearching to false yet - wait for backend to complete
+        if (allResults.length > 0) {
+            set({ searchResults: allResults, searchQuery: query })
+        }
+
+        // Now search backend for any files not in cache
+        try {
+            const searchPromises = disks.map(async (disk) => {
+                try {
+                    const files = await api.get<any[]>(`/files/search/${disk.id}?q=${encodeURIComponent(query)}`)
+                    return files.map((f: any) => ({
+                        id: f.id.toString(),
+                        name: f.name,
+                        type: f.type as fileType,
+                        isFolder: f.isFolder,
+                        isPinned: f.isPinned || false,
+                        parentId: f.parentId ? f.parentId.toString() : null,
+                        diskId: disk.id,
+                        createdAt: new Date(f.createdAt),
+                        modifiedAt: new Date(f.updatedAt),
+                        size: f.size,
+                        sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
+                        thumbnail: f.thumbnail,
+                        url: f.url,
+                    }))
+                } catch (error) {
+                    console.error(`Failed to search disk ${disk.id}:`, error)
+                    return []
+                }
+            })
+
+            const resultsArrays = await Promise.all(searchPromises)
+            const backendResults: FileItem[] = []
+            resultsArrays.forEach(results => {
+                results.forEach(file => {
+                    // Only add if not already in results (avoid duplicates)
+                    if (!allResults.find(r => r.id === file.id)) {
+                        backendResults.push(file)
+                    }
+                })
+            })
+
+            // Merge backend results with cache results
+            const finalResults = [...allResults, ...backendResults]
+            set({ searchResults: finalResults, searchQuery: query, isSearching: false })
+        } catch (error) {
+            console.error("Failed to search files:", error)
+            // Still show cache results if available
+            set({ searchResults: allResults, searchQuery: query, isSearching: false })
+        }
+    },
+
     copyFiles: (fileIds: string[]) => {
         set({ clipboard: { files: fileIds, operation: "copy" } })
     },
@@ -1645,20 +1914,21 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         const targetDisk = disks.find(d => d.id === targetDiskId)
         if (!targetDisk) return
 
-        const updateFileInDisk = (disk: Disk, fileId: string, updates: Partial<FileItem>): Disk => {
-            const updateFile = (files: FileItem[]): FileItem[] => {
-                return files.map(file => {
-                    if (file.id === fileId) {
-                        return { ...file, ...updates, modifiedAt: new Date() }
-                    }
-                    if (file.children) {
-                        return { ...file, children: updateFile(file.children) }
-                    }
-                    return file
-                })
-            }
-            return { ...disk, files: updateFile(disk.files) }
-        }
+        // Helper function for future use (commented out to avoid unused variable error)
+        // const updateFileInDisk = (disk: Disk, fileId: string, updates: Partial<FileItem>): Disk => {
+        //     const updateFile = (files: FileItem[]): FileItem[] => {
+        //         return files.map(file => {
+        //             if (file.id === fileId) {
+        //                 return { ...file, ...updates, modifiedAt: new Date() }
+        //             }
+        //             if (file.children) {
+        //                 return { ...file, children: updateFile(file.children) }
+        //             }
+        //             return file
+        //         })
+        //     }
+        //     return { ...disk, files: updateFile(disk.files) }
+        // }
 
         const removeFileFromDisk = (disk: Disk, fileId: string): Disk => {
             const isFileInSubtree = (file: FileItem, targetId: string): boolean => {
@@ -1798,5 +2068,31 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
 
     setBackgroundPlayer: (fileId: string | null) => {
         set({ backgroundPlayerFileId: fileId })
+    },
+
+    refreshFileURL: async (fileId: string) => {
+        try {
+            const response = await api.post<FileItem>(`/files/${fileId}/refresh-url`, {})
+            
+            // Update file in all disks
+            const updatedDisks = get().disks.map(disk => {
+                const updateFileInTree = (files: FileItem[]): FileItem[] => {
+                    return files.map(file => {
+                        if (file.id === fileId) {
+                            return { ...file, url: response.url, thumbnail: response.thumbnail || file.thumbnail }
+                        }
+                        if (file.children) {
+                            return { ...file, children: updateFileInTree(file.children) }
+                        }
+                        return file
+                    })
+                }
+                return { ...disk, files: updateFileInTree(disk.files) }
+            })
+            set({ disks: updatedDisks })
+        } catch (error) {
+            console.error("Failed to refresh file URL:", error)
+            throw error
+        }
     }
 }))

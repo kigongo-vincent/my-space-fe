@@ -14,7 +14,7 @@ const Spashscreen = () => {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
-    const [error, setError] = useState("")
+    const [_error, setError] = useState("")
     const [alertModal, setAlertModal] = useState<{ isOpen: boolean; message: string; type?: "error" | "success" | "info" | "warning" }>({
         isOpen: false,
         message: "",

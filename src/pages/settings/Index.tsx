@@ -21,8 +21,8 @@ import {
     Upload as UploadIcon,
     LogOut
 } from "lucide-react"
-import Button from "../../components/base/Button"
 import StoragePurchaseModal from "../../components/explorer/StoragePurchaseModal"
+import RequestStorageModal from "../../components/explorer/RequestStorageModal"
 import { getUsagePercentage } from "../../components/sidebar/Usage"
 import { useNavigate } from "react-router"
 
@@ -40,6 +40,7 @@ const Settings = () => {
     const { current: user, usage, logout } = useUser()
     const [activeCategory, setActiveCategory] = useState<SettingsCategory>("account")
     const [showStoragePurchase, setShowStoragePurchase] = useState(false)
+    const [showRequestStorage, setShowRequestStorage] = useState(false)
 
     const handleLogout = () => {
         logout()
@@ -56,7 +57,7 @@ const Settings = () => {
         { id: "privacy", label: "Privacy", icon: <Lock size={20} /> }
     ]
 
-    const usagePercentage = getUsagePercentage(usage)
+    const usagePercentage = usage ? getUsagePercentage(usage) : "0%"
 
     const renderContent = () => {
         switch (activeCategory) {
@@ -213,7 +214,7 @@ const Settings = () => {
                             <View className="p-6 rounded-lg" style={{ backgroundColor: current?.dark + "08" }}>
                                 <View className="flex items-center justify-between mb-4">
                                     <Text value="Storage Usage" className="font-semibold" />
-                                    <Text value={`${usage.used.toFixed(2)}${usage.unit} / ${usage.total.toFixed(2)}${usage.unit}`} size="sm" className="opacity-60" />
+                                    {usage && <Text value={`${usage.used.toFixed(2)}${usage.unit} / ${usage.total.toFixed(2)}${usage.unit}`} size="sm" className="opacity-60" />}
                                 </View>
                                 <View style={{ backgroundColor: current?.dark + "1A" }} className='h-3 relative rounded-full w-full mb-4'>
                                     <div 
@@ -224,13 +225,26 @@ const Settings = () => {
                                         className='absolute h-full rounded-full' 
                                     />
                                 </View>
-                                <button
-                                    onClick={() => setShowStoragePurchase(true)}
-                                    className="w-full py-3 rounded-lg font-medium transition-opacity hover:opacity-90"
-                                    style={{ backgroundColor: current?.primary, color: "white" }}
-                                >
-                                    Buy More Storage
-                                </button>
+                                <View className="flex flex-col gap-2">
+                                    <button
+                                        onClick={() => setShowStoragePurchase(true)}
+                                        className="w-full py-3 rounded-lg font-medium transition-opacity hover:opacity-90"
+                                        style={{ backgroundColor: current?.primary, color: "white" }}
+                                    >
+                                        Buy More Storage
+                                    </button>
+                                    <button
+                                        onClick={() => setShowRequestStorage(true)}
+                                        className="w-full py-3 rounded-lg font-medium transition-opacity hover:opacity-90"
+                                        style={{ 
+                                            backgroundColor: current?.dark + "10", 
+                                            color: current?.dark,
+                                            border: `1px solid ${current?.dark}20`
+                                        }}
+                                    >
+                                        Request More Storage
+                                    </button>
+                                </View>
                             </View>
                         </View>
 
@@ -300,7 +314,7 @@ const Settings = () => {
                                             }`}
                                             style={{
                                                 backgroundColor: name === "light" ? current?.primary + "15" : current?.dark + "08",
-                                                ringColor: current?.primary
+                                                ...(name === "light" ? { borderColor: current?.primary } : {})
                                             }}
                                         >
                                             <Text value="Light" className="font-medium" />
@@ -312,7 +326,7 @@ const Settings = () => {
                                             }`}
                                             style={{
                                                 backgroundColor: name === "dark" ? current?.primary + "15" : current?.dark + "08",
-                                                ringColor: current?.primary
+                                                ...(name === "dark" ? { borderColor: current?.primary } : {})
                                             }}
                                         >
                                             <Text value="Dark" className="font-medium" />
@@ -437,6 +451,14 @@ const Settings = () => {
             </View>
 
             {showStoragePurchase && <StoragePurchaseModal onClose={() => setShowStoragePurchase(false)} />}
+            {showRequestStorage && (
+                <RequestStorageModal 
+                    onClose={() => setShowRequestStorage(false)}
+                    onSuccess={() => {
+                        // Optionally refresh user data or show success message
+                    }}
+                />
+            )}
         </>
     )
 }

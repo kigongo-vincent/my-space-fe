@@ -36,20 +36,24 @@ const AccountManagementModal = ({ onClose }: Props) => {
 
                 <View className="border-t pt-4" style={{ borderColor: current?.dark + "20" }}>
                     <Text value="Storage Usage" className="font-semibold mb-2" />
-                    <View style={{ backgroundColor: current?.dark + "1A" }} className="h-2 rounded-full w-full">
-                        <div
-                            style={{
-                                backgroundColor: current?.primary,
-                                width: `${((usage.used / usage.total) * 100).toFixed(2)}%`
-                            }}
-                            className="h-full rounded-full"
-                        />
-                    </View>
-                    <Text
-                        value={`${usage.used}${usage.unit} used of ${usage.total}${usage.unit}`}
-                        size="sm"
-                        className="opacity-70 mt-2"
-                    />
+                    {usage && (
+                        <>
+                            <View style={{ backgroundColor: current?.dark + "1A" }} className="h-2 rounded-full w-full">
+                                <div
+                                    style={{
+                                        backgroundColor: current?.primary,
+                                        width: `${((usage.used / usage.total) * 100).toFixed(2)}%`
+                                    }}
+                                    className="h-full rounded-full"
+                                />
+                            </View>
+                            <Text
+                                value={`${usage.used}${usage.unit} used of ${usage.total}${usage.unit}`}
+                                size="sm"
+                                className="opacity-70 mt-2"
+                            />
+                        </>
+                    )}
                 </View>
 
                 <View className="flex flex-col gap-2">

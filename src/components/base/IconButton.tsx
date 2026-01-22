@@ -4,6 +4,7 @@ import { useTheme } from "../../store/Themestore"
 export interface Props extends HTMLAttributes<HTMLButtonElement> {
     icon: ReactNode
     action: () => void
+    disabled?: boolean
 }
 
 const IconButton = ({ icon, action, onClick, ...rest }: Props) => {

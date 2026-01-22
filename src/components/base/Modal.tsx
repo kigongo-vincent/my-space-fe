@@ -1,4 +1,4 @@
-import React, { AudioHTMLAttributes, DetailedHTMLProps, HTMLAttributes, Ref, useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import View from './View'
 import Text from './Text'
 import { Pause, Play, SkipBack, SkipForward } from 'lucide-react'
@@ -7,7 +7,6 @@ const Modal = () => {
 
     const audioRef = useRef<HTMLAudioElement>(null)
     const [playing, setPlaying] = useState(false)
-    const [progress, setProgress] = useState(0)
 
     const handlePlay = () => {
         if (playing) {

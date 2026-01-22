@@ -4,7 +4,7 @@ import { useUser } from "../store/Userstore"
 import View from "../components/base/View"
 import Text from "../components/base/Text"
 import Button from "../components/base/Button"
-import { Home, ArrowLeft } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 
 const NotFound = () => {
     const { current } = useTheme()

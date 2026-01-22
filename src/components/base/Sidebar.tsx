@@ -16,7 +16,7 @@ import { useFileStore } from '../../store/Filestore'
 export interface Props extends HTMLAttributes<HTMLDivElement> {
 }
 
-export type fileType = "video" | "document" | "audio" | "note" | "url" | "picture" | "folder"
+export type fileType = "video" | "document" | "audio" | "note" | "url" | "picture" | "folder" | "others"
 
 export const getImageByFileType = (type: fileType): string => {
     switch (type) {

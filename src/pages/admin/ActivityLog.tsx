@@ -5,8 +5,8 @@ import { useState, useMemo, useEffect } from "react"
 import { useAdminSearchStore } from "../../store/AdminSearchStore"
 import { useAdminFilterStore } from "../../store/AdminFilterStore"
 import Pagination from "../../components/admin/Pagination"
-import { Activity, Users, HardDrive, Shield, TrendingUp, Download, Upload } from "lucide-react"
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
+import { Activity, Users, HardDrive, Shield, Download, Upload } from "lucide-react"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
 import { getPrimaryColorVariations, getPrimaryColorWithOpacity } from "../../utils/chartColors"
 import { getPastelColor } from "../../utils/colorUtils"
 
@@ -90,9 +90,6 @@ const ActivityLog = () => {
         { name: "Security", value: securityActions, color: primaryColors[3] }
     ]
 
-    // Recent activity summary
-    const recentUserActions = activities.filter(a => a.type === "user").slice(0, 5).length
-    const recentStorageActions = activities.filter(a => a.type === "storage").slice(0, 5).length
 
     return (
         <View className="px-8 pt-8 pb-4" style={{ backgroundColor: current?.background }}>
@@ -247,7 +244,7 @@ const ActivityLog = () => {
                                 cx="50%"
                                 cy="50%"
                                 labelLine={false}
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                                 outerRadius={80}
                                 fill="#8884d8"
                                 dataKey="value"

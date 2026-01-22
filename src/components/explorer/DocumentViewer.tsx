@@ -1,7 +1,7 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
-import { FileItem } from "../../store/Filestore"
+import { FileItem, useFileStore } from "../../store/Filestore"
 import { useTheme } from "../../store/Themestore"
 import { FileText, Download, ExternalLink, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react"
 import IconButton from "../base/IconButton"
@@ -22,11 +22,14 @@ interface Props {
 }
 
 const DocumentViewer = ({ file }: Props) => {
-    const { current, name } = useTheme()
+    const { current } = useTheme()
+    const { refreshFileURL } = useFileStore()
     const [error, setError] = useState<string | null>(null)
     const [numPages, setNumPages] = useState<number | null>(null)
     const [pageNumber, setPageNumber] = useState(1)
     const [scale, setScale] = useState(1.0)
+    const [fileUrl, setFileUrl] = useState(file.url)
+    const [retryCount, setRetryCount] = useState(0)
 
     const getFileExtension = () => {
         return file.name.split('.').pop()?.toLowerCase() || ''
@@ -55,10 +58,34 @@ const DocumentViewer = ({ file }: Props) => {
         setPageNumber(1)
     }
 
-    const onDocumentLoadError = (error: Error) => {
+    const onDocumentLoadError = async (error: Error) => {
         console.error('Error loading PDF:', error)
+        
+        // If it's a 403 or network error, try refreshing the URL
+        if (retryCount < 2 && (error.message.includes('403') || error.message.includes('Forbidden') || error.message.includes('Failed to fetch'))) {
+            try {
+                await refreshFileURL(file.id)
+                const updatedFile = useFileStore.getState().getFileById(file.id)
+                if (updatedFile?.url) {
+                    setFileUrl(updatedFile.url)
+                    setRetryCount(prev => prev + 1)
+                    setError(null)
+                    return
+                }
+            } catch (err) {
+                console.error("Failed to refresh file URL:", err)
+            }
+        }
+        
         setError("Failed to load PDF document")
     }
+
+    // Update fileUrl when file.url changes
+    useEffect(() => {
+        setFileUrl(file.url)
+        setRetryCount(0)
+        setError(null)
+    }, [file.url, file.id])
 
     const goToPrevPage = () => {
         if (pageNumber > 1) {
@@ -152,7 +179,7 @@ const DocumentViewer = ({ file }: Props) => {
                             {/* PDF Viewer */}
                             <View className="flex-1 overflow-auto flex items-center justify-center p-4" style={{ backgroundColor: current?.background }}>
                                 <Document
-                                    file={file.url}
+                                    file={fileUrl}
                                     onLoadSuccess={onDocumentLoadSuccess}
                                     onLoadError={onDocumentLoadError}
                                     loading={
@@ -176,7 +203,7 @@ const DocumentViewer = ({ file }: Props) => {
         }
 
         if (isOfficeDoc) {
-            const docs = [{ uri: file.url || '' }]
+            const docs = [{ uri: fileUrl || '' }]
             
             return (
                 <View className="h-full w-full flex flex-col">

@@ -1,4 +1,4 @@
-import { HTMLAttributes, ReactNode } from "react"
+import { HTMLAttributes, ReactNode, forwardRef } from "react"
 import { useTheme } from "../../store/Themestore"
 
 export interface Props extends HTMLAttributes<HTMLDivElement> {
@@ -7,13 +7,13 @@ export interface Props extends HTMLAttributes<HTMLDivElement> {
     children?: ReactNode
 }
 
-const View = ({ children, mode = "", style, className, onContextMenu, ...rest }: Props) => {
+const View = forwardRef<HTMLDivElement, Props>(({ children, mode = "", style, className, onContextMenu, ...rest }, ref) => {
 
     const { getBackgroundColor } = useTheme()
 
     // Handle context menu - if onContextMenu is provided, it will handle prevention
     // Otherwise, we prevent default for file-explorer-container to block browser menu
-    const handleContextMenu = (e: React.MouseEvent) => {
+    const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
         // If a handler is provided, let it handle everything
         if (onContextMenu) {
             onContextMenu(e)
@@ -26,6 +26,7 @@ const View = ({ children, mode = "", style, className, onContextMenu, ...rest }:
 
     return (
         <div 
+            ref={ref}
             {...rest}
             className={className}
             style={{ background: mode == "" ? "" : getBackgroundColor(mode), ...style }}
@@ -34,6 +35,8 @@ const View = ({ children, mode = "", style, className, onContextMenu, ...rest }:
             {children}
         </div>
     )
-}
+})
+
+View.displayName = "View"
 
 export default View

@@ -21,7 +21,6 @@ import {
     Download,
     Upload as UploadIcon
 } from "lucide-react"
-import Button from "../base/Button"
 import StoragePurchaseModal from "./StoragePurchaseModal"
 import { getUsagePercentage } from "../sidebar/Usage"
 
@@ -53,7 +52,7 @@ const SettingsModal = ({ onClose }: Props) => {
         { id: "privacy", label: "Privacy", icon: <Lock size={20} /> }
     ]
 
-    const usagePercentage = getUsagePercentage(usage)
+    const usagePercentage = usage ? getUsagePercentage(usage) : "0%"
 
     const renderContent = () => {
         switch (activeCategory) {
@@ -194,7 +193,7 @@ const SettingsModal = ({ onClose }: Props) => {
                             <View className="p-6 rounded-lg" style={{ backgroundColor: current?.dark + "08" }}>
                                 <View className="flex items-center justify-between mb-4">
                                     <Text value="Storage Usage" className="font-semibold" />
-                                    <Text value={`${usage.used}${usage.unit} / ${usage.total}${usage.unit}`} size="sm" className="opacity-60" />
+                                    {usage && <Text value={`${usage.used}${usage.unit} / ${usage.total}${usage.unit}`} size="sm" className="opacity-60" />}
                                 </View>
                                 <View style={{ backgroundColor: current?.dark + "1A" }} className='h-3 relative rounded-full w-full mb-4'>
                                     <div 
@@ -278,7 +277,7 @@ const SettingsModal = ({ onClose }: Props) => {
                                             }`}
                                             style={{
                                                 backgroundColor: name === "light" ? current?.primary + "15" : current?.dark + "08",
-                                                ringColor: current?.primary
+                                                ...(name === "light" ? { borderColor: current?.primary } : {})
                                             }}
                                         >
                                             <Text value="Light" className="font-medium" />
@@ -290,7 +289,7 @@ const SettingsModal = ({ onClose }: Props) => {
                                             }`}
                                             style={{
                                                 backgroundColor: name === "dark" ? current?.primary + "15" : current?.dark + "08",
-                                                ringColor: current?.primary
+                                                ...(name === "dark" ? { borderColor: current?.primary } : {})
                                             }}
                                         >
                                             <Text value="Dark" className="font-medium" />

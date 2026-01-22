@@ -2,7 +2,7 @@ import { useState } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
 import { useFileStore } from "../../store/Filestore"
-import { X, AlertTriangle, HardDrive, CheckCircle } from "lucide-react"
+import { X, AlertTriangle, HardDrive } from "lucide-react"
 import IconButton from "../base/IconButton"
 import { useTheme } from "../../store/Themestore"
 
@@ -179,7 +179,7 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
                                     <HardDrive size={20} color={current?.primary} />
                                     <View className="flex-1">
                                         <Text value={sourceDisk.name} className="font-semibold" size="sm" />
-                                        <Text value="Source (will be deleted)" size="xs" className="opacity-60" />
+                                        <Text value="Source (will be deleted)" size="sm" className="opacity-60" />
                                     </View>
                                 </View>
                                 <View className="flex items-center justify-center">
@@ -188,8 +188,8 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
                                 <View className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: current?.dark + "08" }}>
                                     <HardDrive size={20} color={current?.primary} />
                                     <View className="flex-1">
-                                        <Text value={selectedTargetDisk?.name} className="font-semibold" size="sm" />
-                                        <Text value="Target (will receive all files)" size="xs" className="opacity-60" />
+                                        <Text value={selectedTargetDisk?.name || ""} className="font-semibold" size="sm" />
+                                        <Text value="Target (will receive all files)" size="sm" className="opacity-60" />
                                     </View>
                                 </View>
                             </View>

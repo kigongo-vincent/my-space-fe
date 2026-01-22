@@ -134,7 +134,7 @@ const BackgroundPlayer = () => {
                     />
                     <Text
                         value={formatTime(currentTime)}
-                        size="xs"
+                        size="sm"
                         className="opacity-65"
                         style={{ letterSpacing: "0.02em" }}
                     />
@@ -182,7 +182,7 @@ const BackgroundPlayer = () => {
                     </button>
                 </View>
                 <View className="w-full max-w-md flex items-center gap-2">
-                    <Text value={formatTime(currentTime)} size="xs" className="opacity-60 min-w-[40px]" />
+                    <Text value={formatTime(currentTime)} size="sm" className="opacity-60 min-w-[40px]" />
                     <RangeInput
                         min={0}
                         max={duration || 0}
@@ -192,7 +192,7 @@ const BackgroundPlayer = () => {
                         height="4px"
                         className="flex-1"
                     />
-                    <Text value={formatTime(duration)} size="xs" className="opacity-60 min-w-[40px]" />
+                    <Text value={formatTime(duration)} size="sm" className="opacity-60 min-w-[40px]" />
                 </View>
             </View>
 

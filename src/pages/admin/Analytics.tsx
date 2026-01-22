@@ -2,9 +2,9 @@ import View from "../../components/base/View"
 import Text from "../../components/base/Text"
 import { useTheme } from "../../store/Themestore"
 import { useUser } from "../../store/Userstore"
-import { TrendingUp, Users, HardDrive, Activity, Calendar, Download, Upload } from "lucide-react"
+import { TrendingUp, Users, HardDrive, Activity, Download, Upload } from "lucide-react"
 import { useMemo, useState } from "react"
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
 import { getPrimaryColorVariations, getPrimaryColorWithOpacity } from "../../utils/chartColors"
 import { getPastelColor } from "../../utils/colorUtils"
 import Pagination from "../../components/admin/Pagination"
@@ -66,18 +66,19 @@ const Analytics = () => {
         { month: "Jun", storage: totalStorage }
     ], [totalStorage])
 
-    const activityByType = useMemo(() => {
-        const counts = { user: 0, storage: 0, system: 0, security: 0 }
-        activities.forEach(a => {
-            counts[a.type] = (counts[a.type] || 0) + 1
-        })
-        return [
-            { name: "User", value: counts.user, color: primaryColors[0] },
-            { name: "Storage", value: counts.storage, color: primaryColors[1] },
-            { name: "System", value: counts.system, color: primaryColors[2] },
-            { name: "Security", value: counts.security, color: primaryColors[3] }
-        ]
-    }, [activities, primaryColors])
+    // Activity by type distribution (commented out for future use)
+    // const activityByTypeData = useMemo(() => {
+    //     const counts = { user: 0, storage: 0, system: 0, security: 0 }
+    //     activities.forEach(a => {
+    //         counts[a.type] = (counts[a.type] || 0) + 1
+    //     })
+    //     return [
+    //         { name: "User", value: counts.user, color: primaryColors[0] },
+    //         { name: "Storage", value: counts.storage, color: primaryColors[1] },
+    //         { name: "System", value: counts.system, color: primaryColors[2] },
+    //         { name: "Security", value: counts.security, color: primaryColors[3] }
+    //     ]
+    // }, [activities, primaryColors])
 
     const getTypeColor = (type: string) => {
         switch (type) {

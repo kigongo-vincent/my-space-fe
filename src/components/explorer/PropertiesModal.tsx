@@ -14,7 +14,7 @@ interface Props {
 }
 
 const PropertiesModal = ({ fileId, onClose }: Props) => {
-    const { current, name } = useTheme()
+    const { current } = useTheme()
     const { getFileById, disks, getPathForFile } = useFileStore()
     const file = getFileById(fileId)
 
@@ -126,8 +126,8 @@ const PropertiesModal = ({ fileId, onClose }: Props) => {
 
     // Get image URL for the preview - use thumbnail if available, otherwise fallback to type icon
     const getPreviewImageUrl = () => {
-        // For pictures, videos, and audio, use thumbnail if available
-        if ((file.type === "picture" || file.type === "video" || file.type === "audio") && file.thumbnail) {
+        // For pictures and audio, use thumbnail if available
+        if ((file.type === "picture" || file.type === "audio") && file.thumbnail) {
             return file.thumbnail
         }
         // Fallback to type-based icon
@@ -169,14 +169,14 @@ const PropertiesModal = ({ fileId, onClose }: Props) => {
                             className="w-20 h-20 rounded-lg flex items-center justify-center overflow-hidden"
                             style={{ 
                                 backgroundColor: current?.primary + "10",
-                                backgroundImage: (file.type === "picture" || file.type === "video" || file.type === "audio") && file.thumbnail 
+                                backgroundImage: (file.type === "picture" || file.type === "audio") && file.thumbnail 
                                     ? `url(${file.thumbnail})` 
                                     : undefined,
                                 backgroundSize: "cover",
                                 backgroundPosition: "center"
                             }}
                         >
-                            {(file.type === "picture" || file.type === "video" || file.type === "audio") && file.thumbnail ? (
+                            {(file.type === "picture" || file.type === "audio") && file.thumbnail ? (
                                 <img
                                     src={file.thumbnail}
                                     alt={file.name}
@@ -297,7 +297,7 @@ const PropertiesModal = ({ fileId, onClose }: Props) => {
                                         <Text value={disk.name} size="sm" />
                                         <Text 
                                             value={`${disk.usage.used.toFixed(2)} ${disk.usage.unit} used of ${disk.usage.total} ${disk.usage.unit}`}
-                                            size="xs" 
+                                            size="sm" 
                                             className="opacity-60 mt-1"
                                         />
                                     </View>

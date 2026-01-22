@@ -5,7 +5,7 @@ import Button from "../components/base/Button"
 import { useTheme } from "../store/Themestore"
 import { useUser } from "../store/Userstore"
 import Avatar from "../components/base/Avatar"
-import { ArrowLeft, Camera, Mail, User, Calendar, Edit2, Save, X } from "lucide-react"
+import { ArrowLeft, Camera, Mail, User, Calendar, Edit2, X } from "lucide-react"
 import { useNavigate } from "react-router"
 import IconButton from "../components/base/IconButton"
 
@@ -15,7 +15,7 @@ const Profile = () => {
     const navigate = useNavigate()
     const [isEditing, setIsEditing] = useState(false)
     const [username, setUsername] = useState(user?.username || "")
-    const [email, setEmail] = useState(user?.email || "")
+    const [email] = useState(user?.email || "")
     const [bio, setBio] = useState("Software developer and file management enthusiast")
 
     const handleSave = () => {
@@ -23,7 +23,7 @@ const Profile = () => {
         setIsEditing(false)
     }
 
-    const usagePercentage = ((usage.used / usage.total) * 100).toFixed(1)
+    const usagePercentage = usage ? ((usage.used / usage.total) * 100).toFixed(1) : "0"
 
     return (
         <View 
@@ -50,7 +50,6 @@ const Profile = () => {
                         <Avatar 
                             path={user?.photo} 
                             fallback={{ text: user?.username || "" }}
-                            size={120}
                         />
                         {isEditing && (
                             <button
@@ -164,10 +163,10 @@ const Profile = () => {
                         <Text value="Storage Usage" className="text-lg font-bold mb-2" />
                         
                         <View className="flex flex-col gap-2">
-                            <View className="flex justify-between text-sm">
+                            {usage && <View className="flex justify-between text-sm">
                                 <Text value={`${usage.used}${usage.unit} used`} />
                                 <Text value={`${usage.total}${usage.unit} total`} />
-                            </View>
+                            </View>}
                             <View style={{ backgroundColor: current?.dark + "1A" }} className="h-3 rounded-full w-full">
                                 <div
                                     style={{

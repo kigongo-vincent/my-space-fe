@@ -111,13 +111,13 @@ const UploadModal = () => {
                         <View className="flex items-center justify-between text-xs">
                             <Text
                                 value={`${formatFileSize(upload.uploadedBytes)} / ${formatFileSize(upload.totalBytes)}`}
-                                size="xs"
+                                size="sm"
                                 style={{ color: current?.dark, opacity: 0.7 }}
                             />
                             {upload.speed && (
                                 <Text
                                     value={formatSpeed(upload.speed)}
-                                    size="xs"
+                                    size="sm"
                                     style={{ color: current?.dark, opacity: 0.7 }}
                                 />
                             )}
@@ -136,7 +136,7 @@ const UploadModal = () => {
                         </View>
                         <Text
                             value={`${Math.round(upload.progress)}%`}
-                            size="xs"
+                            size="sm"
                             className="text-right"
                             style={{ color: current?.dark, opacity: 0.7 }}
                         />
@@ -146,7 +146,7 @@ const UploadModal = () => {
                 {upload.status === "error" && upload.error && (
                     <Text
                         value={upload.error}
-                        size="xs"
+                        size="sm"
                         style={{ color: current?.error }}
                     />
                 )}
@@ -154,7 +154,7 @@ const UploadModal = () => {
                 {upload.status === "completed" && (
                     <Text
                         value="Upload completed"
-                        size="xs"
+                        size="sm"
                         style={{ color: "#10b981" }}
                     />
                 )}
@@ -269,7 +269,7 @@ const UploadModal = () => {
                                             {completedUploads.length > 5 && (
                                                 <Text
                                                     value={`+${completedUploads.length - 5} more`}
-                                                    size="xs"
+                                                    size="sm"
                                                     className="text-center py-2"
                                                     style={{ color: current?.dark, opacity: 0.5 }}
                                                 />
@@ -310,7 +310,7 @@ const UploadModal = () => {
                                     <Loader2 size={14} className="animate-spin" style={{ color: current?.primary }} />
                                     <Text
                                         value={`${activeUploads.length} upload${activeUploads.length > 1 ? "s" : ""} in progress...`}
-                                        size="xs"
+                                        size="sm"
                                         style={{ color: current?.dark, opacity: 0.7 }}
                                     />
                                 </View>

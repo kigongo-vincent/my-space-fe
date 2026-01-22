@@ -1,5 +1,4 @@
 import { fileType, getImageByFileType } from './Sidebar'
-import View from './View'
 import Text from './Text'
 import { Pin } from 'lucide-react'
 import { useTheme } from '../../store/Themestore'

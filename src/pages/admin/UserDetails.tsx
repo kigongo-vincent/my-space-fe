@@ -3,11 +3,10 @@ import { useParams, useNavigate } from "react-router"
 import View from "../../components/base/View"
 import Text from "../../components/base/Text"
 import { useTheme } from "../../store/Themestore"
-import { useUser, UserI } from "../../store/Userstore"
+import { useUser } from "../../store/Userstore"
 import Avatar from "../../components/base/Avatar"
-import { ArrowLeft, Edit2, Ban, Trash2, CheckCircle, Users, HardDrive, Mail, Calendar, Shield } from "lucide-react"
+import { ArrowLeft, Ban, Trash2, CheckCircle, Users, HardDrive, Mail, Shield } from "lucide-react"
 import { motion } from "framer-motion"
-import Button from "../../components/base/Button"
 import ConfirmationModal from "../../components/base/ConfirmationModal"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { getPrimaryColorVariations } from "../../utils/chartColors"
@@ -77,8 +76,9 @@ const UserDetails = () => {
         ? (user.storage.used / user.storage.total) * 100 
         : 0
 
+    const { name } = useTheme()
     // Calculate secondary color (20%) - a muted complementary color
-    const secondaryColor = current?.name === 'dark' ? '#2a2a2a' : '#e8e8e8'
+    const secondaryColor = name === 'dark' ? '#2a2a2a' : '#e8e8e8'
     
     return (
         <View className="px-8 pt-8 pb-4" style={{ backgroundColor: current?.background }}>
@@ -341,7 +341,7 @@ const UserDetails = () => {
                             overflow: 'hidden'
                         }}
                     >
-                        <motion.View
+                        <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${Math.min(storagePercentage, 100)}%` }}
                             transition={{ duration: 0.8, ease: "easeOut" }}

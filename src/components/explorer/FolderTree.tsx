@@ -4,7 +4,6 @@ import Text from "../base/Text"
 import { useFileStore, FileItem } from "../../store/Filestore"
 import { useTheme } from "../../store/Themestore"
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from "lucide-react"
-import { getImageByFileType } from "../base/Sidebar"
 
 interface FolderNodeProps {
     file: FileItem
@@ -38,7 +37,7 @@ const FolderNode = ({
     draggedFileId = null
 }: FolderNodeProps) => {
     const { current } = useTheme()
-    const { getFileById, getPathForFile } = useFileStore()
+    const { getPathForFile } = useFileStore()
     const isExpanded = expandedFolders.has(file.id)
     const isInCurrentPath = currentPath.includes(file.id)
     const isCurrentFolder = currentPath.length > 0 && currentPath[currentPath.length - 1] === file.id
@@ -304,7 +303,7 @@ const FolderTree = ({ className }: Props) => {
         navigateToFolder(fileId)
     }
 
-    const handleFolderDragStart = useCallback((e: React.DragEvent, file: FileItem) => {
+    const handleFolderDragStart = useCallback((_e: React.DragEvent, file: FileItem) => {
         setDraggedFileId(file.id)
     }, [])
 

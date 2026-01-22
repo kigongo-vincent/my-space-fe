@@ -29,7 +29,7 @@ interface StoragePlan {
 }
 
 const StoragePurchaseModal = ({ onClose }: Props) => {
-    const { current, name } = useTheme()
+    const { current } = useTheme()
     const { usage, setUsage } = useUser()
     const [selectedPlan, setSelectedPlan] = useState<number | null>(null)
 
@@ -93,11 +93,13 @@ const StoragePurchaseModal = ({ onClose }: Props) => {
 
     const handlePurchase = (plan: StoragePlan) => {
         // Simulate purchase
-        setUsage({
-            total: plan.storage,
-            unit: plan.unit,
-            used: usage.used
-        })
+        if (usage) {
+            setUsage({
+                total: plan.storage,
+                unit: plan.unit,
+                used: usage.used
+            })
+        }
         alert(`Purchased ${plan.name} plan!`)
         onClose()
     }
@@ -130,16 +132,6 @@ const StoragePurchaseModal = ({ onClose }: Props) => {
                             className="p-5 rounded-lg flex flex-col gap-4 cursor-pointer relative border-2"
                             style={{
                                 backgroundColor: current?.background,
-                                borderColor: selectedPlan === index 
-                                    ? current?.primary 
-                                    : plan.popular 
-                                        ? current?.primary + "40"
-                                        : "transparent",
-                                boxShadow: selectedPlan === index
-                                    ? `0 8px 24px ${current?.primary}30`
-                                    : undefined
-                            }}
-                            style={{
                                 borderColor: selectedPlan === index 
                                     ? current?.primary 
                                     : plan.popular 

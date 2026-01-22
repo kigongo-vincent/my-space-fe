@@ -1,21 +1,7 @@
 import { useEffect, useRef, ReactNode } from "react"
-import View from "../base/View"
 import Text from "../base/Text"
 import { useTheme } from "../../store/Themestore"
 import { motion, AnimatePresence } from "framer-motion"
-import { 
-    FolderOpen, 
-    Edit, 
-    Trash2, 
-    Copy, 
-    Scissors, 
-    Clipboard, 
-    Download,
-    Share2,
-    Info,
-    Star,
-    StarOff
-} from "lucide-react"
 
 export interface ContextMenuItem {
     label?: string

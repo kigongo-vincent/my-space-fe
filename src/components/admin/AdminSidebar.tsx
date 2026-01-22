@@ -2,7 +2,6 @@ import { HTMLAttributes } from 'react'
 import View from '../base/View'
 import Text from '../base/Text'
 import { useTheme } from '../../store/Themestore'
-import { useUser } from '../../store/Userstore'
 import { 
     LayoutDashboard, 
     Users, 
@@ -10,7 +9,8 @@ import {
     BarChart3, 
     Settings, 
     Activity,
-    ChevronRight
+    ChevronRight,
+    AlertCircle
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router'
 
@@ -26,7 +26,6 @@ type AdminNavItem = {
 
 const AdminSidebar = ({ className }: Props) => {
     const { current } = useTheme()
-    const { current: user } = useUser()
     const navigate = useNavigate()
     const location = useLocation()
 
@@ -48,6 +47,12 @@ const AdminSidebar = ({ className }: Props) => {
             label: 'Storage Overview',
             icon: <HardDrive size={18} />,
             path: '/admin/storage'
+        },
+        {
+            id: 'storage-requests',
+            label: 'Storage Requests',
+            icon: <AlertCircle size={18} />,
+            path: '/admin/storage-requests'
         },
         {
             id: 'analytics',

@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
-import { useFileStore } from "../../store/Filestore"
+import { useFileStore, FileItem } from "../../store/Filestore"
 import { useTheme } from "../../store/Themestore"
 import { Play } from "lucide-react"
 import { Skeleton } from "../base/Skeleton"
 
-const ThumbnailPlaceholder = ({ file }: { file: ReturnType<typeof useFileStore>['getAllFilesByType'][0] }) => {
+const ThumbnailPlaceholder = ({ file }: { file: FileItem }) => {
     const { current } = useTheme()
     const [thumbnailLoaded, setThumbnailLoaded] = useState(false)
     const [thumbnailError, setThumbnailError] = useState(false)
@@ -100,7 +100,7 @@ const AudioFilesView = () => {
             </View>
 
             <View className="flex flex-col gap-1.5">
-                {audioFiles.map(({ file, diskName }, index) => (
+                {audioFiles.map(({ file, diskName }) => (
                     <View
                         key={file.id}
                         className="flex items-center gap-4 p-4 rounded-lg cursor-pointer transition-all"

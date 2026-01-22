@@ -16,7 +16,7 @@ import ConfirmationModal from "../../components/base/ConfirmationModal"
 import StorageDownsizeModal from "../../components/admin/StorageDownsizeModal"
 import Pagination from "../../components/admin/Pagination"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
-import { getPrimaryColorVariations, getPrimaryColorWithOpacity } from "../../utils/chartColors"
+import { getPrimaryColorVariations } from "../../utils/chartColors"
 import { getPastelColor } from "../../utils/colorUtils"
 import { calculateExcessStorage, getFilesToDelete } from "../../utils/storageDownsize"
 import { convertToGB, calculateTotalStorage } from "../../utils/storage"
@@ -157,8 +157,6 @@ const UserManagement = () => {
             
             if (excessStorage > 0) {
                 // Show downsize modal to allow user to delete files
-                const filesToDelete = getFilesToDelete(disks, excessStorage)
-                
                 setDownsizeModal({
                     isOpen: true,
                     userId,
@@ -174,8 +172,11 @@ const UserManagement = () => {
         }
     }
 
-    const handleDownsizeConfirm = (deletedFileIds: string[]) => {
+    const handleDownsizeConfirm = (_deletedFileIds: string[]) => {
         if (!downsizeModal.userId || !downsizeModal.newLimit) return
+        
+        const newLimit = downsizeModal.newLimit
+        const userId = downsizeModal.userId
         
         // Wait a bit more for storage sync to complete, then get updated usage
         setTimeout(() => {
@@ -184,28 +185,28 @@ const UserManagement = () => {
             
             // Convert updated usage to match the new limit's unit
             const updatedUsedGB = convertToGB(updatedStorage.used, updatedStorage.unit)
-            const newLimitGB = convertToGB(downsizeModal.newLimit.total, downsizeModal.newLimit.unit)
+            const newLimitGB = convertToGB(newLimit.total, newLimit.unit)
             
             // Update user storage with new limit and updated usage (in the new limit's unit)
             const updatedStorageLimit: UsageI = {
-                total: downsizeModal.newLimit.total,
-                unit: downsizeModal.newLimit.unit,
+                total: newLimit.total,
+                unit: newLimit.unit,
                 used: Math.min(updatedUsedGB, newLimitGB) // Cap used at the new limit
             }
             
             // Convert back to the limit's unit if needed
-            if (downsizeModal.newLimit.unit !== updatedStorage.unit) {
-                if (downsizeModal.newLimit.unit === "GB") {
+            if (newLimit.unit !== updatedStorage.unit) {
+                if (newLimit.unit === "GB") {
                     updatedStorageLimit.used = updatedUsedGB
-                } else if (downsizeModal.newLimit.unit === "MB") {
+                } else if (newLimit.unit === "MB") {
                     updatedStorageLimit.used = updatedUsedGB * 1024
-                } else if (downsizeModal.newLimit.unit === "TB") {
+                } else if (newLimit.unit === "TB") {
                     updatedStorageLimit.used = updatedUsedGB / 1024
                 }
-                updatedStorageLimit.used = Math.min(updatedStorageLimit.used, downsizeModal.newLimit.total)
+                updatedStorageLimit.used = Math.min(updatedStorageLimit.used, newLimit.total)
             }
             
-            updateUserStorage(downsizeModal.userId, updatedStorageLimit)
+            updateUserStorage(userId, updatedStorageLimit)
             
             setDownsizeModal({ isOpen: false, userId: null, currentUsage: null, newLimit: null })
             setEditingUserId(null)
@@ -397,7 +398,7 @@ const UserManagement = () => {
                                 cx="50%"
                                 cy="50%"
                                 labelLine={false}
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                                 outerRadius={80}
                                 fill="#8884d8"
                                 dataKey="value"

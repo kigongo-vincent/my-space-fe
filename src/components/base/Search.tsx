@@ -1,7 +1,7 @@
-import { SearchIcon, Globe, SlidersHorizontal } from "lucide-react"
+import { SearchIcon, SlidersHorizontal } from "lucide-react"
 import View from "./View"
 import { useTheme } from "../../store/Themestore"
-import { useState, useRef, useEffect } from "react"
+import { useRef, useEffect } from "react"
 import { useFileStore } from "../../store/Filestore"
 import { useLocation } from "react-router"
 import { useAdminSearchStore } from "../../store/AdminSearchStore"
@@ -26,14 +26,14 @@ const Search = ({ onFilterClick }: SearchProps) => {
     const isAdminPage = location.pathname.startsWith('/admin')
     
     // Use appropriate store based on route
-    const { setSearchQuery: setFileSearchQuery, searchQuery: fileSearchQuery } = useFileStore()
+    const { setSearchQuery: setFileSearchQuery, searchQuery: fileSearchQuery, searchFilesBackend } = useFileStore()
     const { searchQuery: adminSearchQuery, setSearchQuery: setAdminSearchQuery } = useAdminSearchStore()
     const { activityType, userRole, userStatus, dateRange, analyticsType, storageRange } = useAdminFilterStore()
     
     // Use store value directly - Zustand will trigger re-renders
     const searchValue = isAdminPage ? adminSearchQuery : fileSearchQuery
-    const [showOnlineOption, setShowOnlineOption] = useState(false)
     const searchRef = useRef<HTMLInputElement>(null)
+    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     
     // Check if any filters are active based on current page
     const hasActiveFilters = isAdminPage && (() => {
@@ -52,25 +52,36 @@ const Search = ({ onFilterClick }: SearchProps) => {
         return false
     })()
 
-    // Update showOnlineOption when search changes
-    useEffect(() => {
-        setShowOnlineOption(searchValue.trim().length > 0 && !isAdminPage)
-    }, [searchValue, isAdminPage])
-
     const handleChange = (value: string) => {
         if (isAdminPage) {
             setAdminSearchQuery(value)
         } else {
+            // Set query immediately - this will set isSearching: true
             setFileSearchQuery(value)
+            
+            // Debounce backend search
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current)
+            }
+            
+            searchTimeoutRef.current = setTimeout(() => {
+                if (value.trim()) {
+                    searchFilesBackend(value.trim())
+                } else {
+                    searchFilesBackend("")
+                }
+            }, 500) // 500ms debounce
         }
     }
 
-    const handleSearchOnline = () => {
-        if (searchValue.trim()) {
-            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchValue.trim())}`
-            window.open(searchUrl, '_blank', 'noopener,noreferrer')
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current)
+            }
         }
-    }
+    }, [])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -79,16 +90,11 @@ const Search = ({ onFilterClick }: SearchProps) => {
                 e.preventDefault()
                 searchRef.current?.focus()
             }
-            // Ctrl/Cmd + Enter to search online
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && searchValue.trim()) {
-                e.preventDefault()
-                handleSearchOnline()
-            }
         }
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [searchValue])
+    }, [])
 
     return (
         <View mode="background" className="rounded-full px-6 py-3 min-w-[25vw] flex items-center gap-3 relative">
@@ -118,20 +124,6 @@ const Search = ({ onFilterClick }: SearchProps) => {
                     title="Open filters"
                 >
                     <SlidersHorizontal size={18} />
-                </button>
-            )}
-            {showOnlineOption && (
-                <button
-                    onClick={handleSearchOnline}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all hover:opacity-80 text-xs font-medium"
-                    style={{
-                        backgroundColor: current?.primary + "15",
-                        color: current?.primary
-                    }}
-                    title="Search online (Ctrl/Cmd + Enter)"
-                >
-                    <Globe size={14} />
-                    <span>Online</span>
                 </button>
             )}
         </View>

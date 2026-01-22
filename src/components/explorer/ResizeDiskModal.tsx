@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
-import Button from "../base/Button"
 import { useFileStore } from "../../store/Filestore"
 import { X, AlertCircle, CheckCircle, Info } from "lucide-react"
 import IconButton from "../base/IconButton"
@@ -37,6 +36,7 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
     
     // Calculate available space for resizing this disk
     const getUserTotalGB = (): number => {
+        if (!usage) return 0
         return convertToGB(usage.total, usage.unit)
     }
     
@@ -265,12 +265,12 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
                         <View className="flex flex-col gap-1">
                             <Text 
                                 value={`Minimum: ${usedInUnit.toFixed(2)} ${unit} (used storage)`} 
-                                size="xs" 
+                                size="sm" 
                                 className="opacity-50" 
                             />
                             <Text 
                                 value={`Maximum: ${maxAvailable.toFixed(2)} ${unit} (available + current)`} 
-                                size="xs" 
+                                size="sm" 
                                 className="opacity-50" 
                             />
                         </View>

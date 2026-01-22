@@ -2,7 +2,7 @@ import View from "../../components/base/View"
 import Text from "../../components/base/Text"
 import { useTheme } from "../../store/Themestore"
 import Button from "../../components/base/Button"
-import { Shield, Database, Bell, Key, Globe, Server, BarChart3 } from "lucide-react"
+import { Shield, Database, Globe, Server, BarChart3 } from "lucide-react"
 import { useState } from "react"
 import Switch from "../../components/base/Switch"
 
@@ -68,7 +68,7 @@ const AdminSettings = () => {
                         </View>
                         <Switch
                             checked={settings.maintenanceMode}
-                            onChange={(checked) => setSettings(prev => ({ ...prev, maintenanceMode: checked }))}
+                            onChange={(checked) => setSettings((prev: typeof settings) => ({ ...prev, maintenanceMode: checked }))}
                         />
                     </View>
 
@@ -79,7 +79,7 @@ const AdminSettings = () => {
                         </View>
                         <Switch
                             checked={settings.allowNewRegistrations}
-                            onChange={(checked) => setSettings(prev => ({ ...prev, allowNewRegistrations: checked }))}
+                            onChange={(checked) => setSettings((prev: typeof settings) => ({ ...prev, allowNewRegistrations: checked }))}
                         />
                     </View>
 
@@ -90,7 +90,7 @@ const AdminSettings = () => {
                         </View>
                         <Switch
                             checked={settings.requireEmailVerification}
-                            onChange={(checked) => setSettings(prev => ({ ...prev, requireEmailVerification: checked }))}
+                            onChange={(checked) => setSettings((prev: typeof settings) => ({ ...prev, requireEmailVerification: checked }))}
                         />
                     </View>
                 </View>
@@ -115,7 +115,7 @@ const AdminSettings = () => {
                         <input
                             type="number"
                             value={settings.defaultStorageLimit}
-                            onChange={(e) => setSettings(prev => ({ ...prev, defaultStorageLimit: parseFloat(e.target.value) || 0 }))}
+                            onChange={(e) => setSettings((prev: typeof settings) => ({ ...prev, defaultStorageLimit: parseFloat(e.target.value) || 0 }))}
                             className="w-full px-3 py-2 outline-none"
                             style={{
                                 backgroundColor: current?.background,
@@ -132,7 +132,7 @@ const AdminSettings = () => {
                         <input
                             type="number"
                             value={settings.maxStorageLimit}
-                            onChange={(e) => setSettings(prev => ({ ...prev, maxStorageLimit: parseFloat(e.target.value) || 0 }))}
+                            onChange={(e) => setSettings((prev: typeof settings) => ({ ...prev, maxStorageLimit: parseFloat(e.target.value) || 0 }))}
                             className="w-full px-3 py-2 outline-none"
                             style={{
                                 backgroundColor: current?.background,
@@ -165,7 +165,7 @@ const AdminSettings = () => {
                         <input
                             type="number"
                             value={settings.sessionTimeout}
-                            onChange={(e) => setSettings(prev => ({ ...prev, sessionTimeout: parseFloat(e.target.value) || 0 }))}
+                            onChange={(e) => setSettings((prev: typeof settings) => ({ ...prev, sessionTimeout: parseFloat(e.target.value) || 0 }))}
                             className="w-full px-3 py-2 outline-none"
                             style={{
                                 backgroundColor: current?.background,
@@ -183,23 +183,10 @@ const AdminSettings = () => {
                             <Text value="Enable Two-Factor Authentication" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                             <Text value="Require 2FA for admin accounts" style={{ fontSize: '0.815rem', opacity: 0.7 }} />
                         </View>
-                        <button
-                            onClick={() => handleToggle("enableTwoFactor")}
-                            className="relative w-12 h-6 transition-all"
-                            style={{
-                                backgroundColor: settings.enableTwoFactor ? current?.primary : `${current?.dark}30`,
-                                borderRadius: '0.25rem'
-                            }}
-                        >
-                            <View
-                                className="absolute top-0.5 left-0.5 w-5 h-5 transition-all"
-                                style={{
-                                    backgroundColor: "#ffffff",
-                                    borderRadius: '0.25rem',
-                                    transform: settings.enableTwoFactor ? 'translateX(24px)' : 'translateX(0)'
-                                }}
-                            />
-                        </button>
+                        <Switch
+                            checked={settings.enableTwoFactor}
+                            onChange={(checked) => setSettings((prev: typeof settings) => ({ ...prev, enableTwoFactor: checked }))}
+                        />
                     </View>
                 </View>
             </View>
@@ -226,7 +213,7 @@ const AdminSettings = () => {
                         <input
                             type="number"
                             value={settings.topUsersCount}
-                            onChange={(e) => setSettings(prev => ({ ...prev, topUsersCount: parseInt(e.target.value) || 5 }))}
+                            onChange={(e) => setSettings((prev: typeof settings) => ({ ...prev, topUsersCount: parseInt(e.target.value) || 5 }))}
                             className="w-full px-3 py-2.5 outline-none"
                             style={{
                                 backgroundColor: current?.background,
@@ -262,7 +249,7 @@ const AdminSettings = () => {
                     <input
                         type="number"
                         value={settings.logRetentionDays}
-                        onChange={(e) => setSettings(prev => ({ ...prev, logRetentionDays: parseFloat(e.target.value) || 0 }))}
+                        onChange={(e) => setSettings((prev: typeof settings) => ({ ...prev, logRetentionDays: parseFloat(e.target.value) || 0 }))}
                         className="w-full px-3 py-2.5 outline-none"
                         style={{
                             backgroundColor: current?.background,

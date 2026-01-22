@@ -10,7 +10,6 @@ import {
     Palette, 
     Moon, 
     Sun,
-    Globe,
     Download,
     Trash2,
     ArrowLeft

@@ -17,7 +17,6 @@ const Gallery3DView = ({ files, onFileClick, onContextMenu }: Props) => {
     const { current, name } = useTheme()
     const [rotation, setRotation] = useState(0)
     const [isDragging, setIsDragging] = useState(false)
-    const [startX, setStartX] = useState(0)
 
     useEffect(() => {
         if (!sceneRef.current) return
@@ -61,8 +60,8 @@ const Gallery3DView = ({ files, onFileClick, onContextMenu }: Props) => {
     }, [])
 
     const getImageUrl = (file: FileItem) => {
-        // Use thumbnail for pictures and videos if available
-        if ((file.type === "picture" || file.type === "video") && file.thumbnail) {
+        // Use thumbnail for pictures if available
+        if (file.type === "picture" && file.thumbnail) {
             return file.thumbnail
         }
         return getImageByFileType(file.type)

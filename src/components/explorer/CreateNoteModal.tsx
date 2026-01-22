@@ -1,9 +1,8 @@
 import { useState } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
-import Button from "../base/Button"
 import { useFileStore } from "../../store/Filestore"
-import { X, FileText, Sparkles } from "lucide-react"
+import { X, FileText } from "lucide-react"
 import IconButton from "../base/IconButton"
 import { useTheme } from "../../store/Themestore"
 import AnimatedModal from "../base/AnimatedModal"
@@ -18,7 +17,7 @@ const CreateNoteModal = ({ onClose, parentId, diskId }: Props) => {
     const [noteName, setNoteName] = useState("")
     const [noteContent, setNoteContent] = useState("")
     const { createNote } = useFileStore()
-    const { current, name } = useTheme()
+    const { current } = useTheme()
 
     const handleCreate = () => {
         if (noteName.trim() && noteContent.trim()) {

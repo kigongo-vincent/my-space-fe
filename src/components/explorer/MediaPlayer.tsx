@@ -4,7 +4,6 @@ import Text from "../base/Text"
 import { useTheme } from "../../store/Themestore"
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Minimize2 } from "lucide-react"
 import { FileItem } from "../../store/Filestore"
-import IconButton from "../base/IconButton"
 import { useFileStore } from "../../store/Filestore"
 import RangeInput from "../base/RangeInput"
 
@@ -166,12 +165,6 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
         media.playbackRate = rate
     }
 
-    const formatTime = (seconds: number) => {
-        if (isNaN(seconds)) return "0:00"
-        const mins = Math.floor(seconds / 60)
-        const secs = Math.floor(seconds % 60)
-        return `${mins}:${secs.toString().padStart(2, "0")}`
-    }
 
     const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0
 
@@ -180,19 +173,10 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
             {/* Album Art / Video Display */}
             {isVideo ? (
                 <View className="relative max-w-full max-h-[50%] rounded-lg media-glow overflow-hidden">
-                    {file.thumbnail && (
-                        <img
-                            src={file.thumbnail}
-                            alt={file.name}
-                            className="absolute inset-0 w-full h-full object-cover"
-                            style={{ display: isPlaying ? 'none' : 'block' }}
-                        />
-                    )}
                     <video
                         ref={videoRef}
                         src={videoUrl}
                         className="max-w-full max-h-[50%] rounded-lg"
-                        poster={file.thumbnail}
                         onPlay={() => setIsPlaying(true)}
                         onPause={() => setIsPlaying(false)}
                     />
@@ -257,9 +241,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                     style={{
                         boxShadow: name === "dark" 
                             ? `0 10px 15px -3px rgba(0, 0, 0, 0.3)`
-                            : `0 10px 15px -3px ${current?.dark}10`
-                    }}
-                    style={{
+                            : `0 10px 15px -3px ${current?.dark}10`,
                         backgroundColor: current?.primary,
                         color: "white",
                         width: "72px",
@@ -293,7 +275,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                 <View className="flex items-center gap-3">
                     <Text 
                         value="Speed" 
-                        size="xs" 
+                        size="sm" 
                         className="uppercase tracking-wider"
                         style={{ color: current?.dark + "70", letterSpacing: "0.1em" }} 
                     />
@@ -339,9 +321,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                                 style={{
                                     boxShadow: name === "dark" 
                                         ? `0 20px 25px -5px rgba(0, 0, 0, 0.3)`
-                                        : `0 20px 25px -5px ${current?.dark}10`
-                                }}
-                                style={{ 
+                                        : `0 20px 25px -5px ${current?.dark}10`,
                                     backgroundColor: current?.foreground || current?.background,
                                     border: `1px solid ${current?.dark}20`
                                 }}

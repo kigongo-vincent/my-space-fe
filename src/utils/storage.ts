@@ -79,7 +79,8 @@ export const calculateTotalStorage = (disks: Disk[]): UsageI => {
  * Calculate available disk space from user storage
  * Returns available space in GB
  */
-export const getAvailableSpaceGB = (usage: UsageI): number => {
+export const getAvailableSpaceGB = (usage: UsageI | null): number => {
+    if (!usage) return 0
     const totalGB = convertToGB(usage.total, usage.unit)
     const usedGB = convertToGB(usage.used, usage.unit)
     const availableGB = totalGB - usedGB

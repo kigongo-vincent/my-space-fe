@@ -5,7 +5,7 @@ import { useUser } from "../../store/Userstore"
 import { Users, HardDrive, Activity, TrendingUp, FileText, BarChart3 } from "lucide-react"
 import { useNavigate } from "react-router"
 import { useMemo } from "react"
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
 import { getPrimaryColorVariations, getPrimaryColorWithOpacity } from "../../utils/chartColors"
 import { getPastelColor } from "../../utils/colorUtils"
 

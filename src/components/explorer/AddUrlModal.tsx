@@ -1,7 +1,6 @@
 import { useState } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
-import Button from "../base/Button"
 import { useFileStore } from "../../store/Filestore"
 import { X, Link2, ExternalLink, AlertCircle, CheckCircle } from "lucide-react"
 import IconButton from "../base/IconButton"
@@ -101,7 +100,7 @@ const AddUrlModal = ({ onClose, parentId, diskId }: Props) => {
                     {urlName && (
                         <Text 
                             value={`${urlName.length}/100 characters`} 
-                            size="xs" 
+                            size="sm" 
                             className="opacity-50 ml-1" 
                         />
                     )}
@@ -194,9 +193,7 @@ const AddUrlModal = ({ onClose, parentId, diskId }: Props) => {
                         style={{
                             boxShadow: name === "dark" 
                                 ? `0 4px 6px -1px rgba(0, 0, 0, 0.3)`
-                                : `0 4px 6px -1px ${current?.dark}10`
-                        }}
-                        style={{
+                                : `0 4px 6px -1px ${current?.dark}10`,
                             backgroundColor: isFormValid ? current?.primary : current?.dark + "20",
                             color: isFormValid ? "white" : current?.dark + "60",
                             fontSize: "14px"

@@ -5,10 +5,9 @@ import { useTheme } from "../../store/Themestore"
 import { useFileStore, FileItem } from "../../store/Filestore"
 import View from "../base/View"
 import Text from "../base/Text"
-import Button from "../base/Button"
 import { AlertTriangle, Trash2, File, Folder, CheckSquare, Square } from "lucide-react"
 import { calculateSelectedFilesSize } from "../../utils/storageDownsize"
-import { convertToGB, convertFileSizeToGB } from "../../utils/storage"
+import { convertToGB } from "../../utils/storage"
 import { UsageI } from "../../store/Userstore"
 
 interface StorageDownsizeModalProps {
@@ -260,7 +259,6 @@ const StorageDownsizeModal = ({
                                         <View>
                                             {filesToDelete.map((file, index) => {
                                                 const isSelected = selectedFiles.has(file.id)
-                                                const fileSizeGB = convertFileSizeToGB(file.size || 0, file.sizeUnit || "KB")
                                                 
                                                 return (
                                                     <motion.div

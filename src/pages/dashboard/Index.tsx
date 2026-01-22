@@ -16,9 +16,13 @@ import DiskDetailsModal from "../../components/explorer/DiskDetailsModal"
 import RenameDiskModal from "../../components/explorer/RenameDiskModal"
 import MergeDiskModal from "../../components/explorer/MergeDiskModal"
 import ResizeDiskModal from "../../components/explorer/ResizeDiskModal"
-import ContextMenu, { ContextMenuItem } from "../../components/explorer/ContextMenu"
-import { Trash2, Edit, Info, HardDrive, Plus, Star, StarOff, RefreshCw, GitMerge, Maximize2 } from "lucide-react"
+import ContextMenu from "../../components/explorer/ContextMenu"
+import { FileItem } from "../../store/Filestore"
+import RenameModal from "../../components/explorer/RenameModal"
+import PropertiesModal from "../../components/explorer/PropertiesModal"
+import { Trash2, Edit, Info, HardDrive, Plus, Star, StarOff, RefreshCw, GitMerge, Maximize2, Search, FolderOpen, Copy, Scissors } from "lucide-react"
 import { motion } from "framer-motion"
+import { Skeleton } from "../../components/base/Skeleton"
 
 const Index = () => {
 
@@ -30,23 +34,24 @@ const Index = () => {
         openModals,
         closeFileModal,
         searchQuery,
-        searchFiles,
+        searchResults,
+        isSearching,
         filterByType,
         setCurrentDisk,
         openFileModal,
         navigateToFolder,
         deleteFile,
         getFileById,
-        getAllFilesByType,
         pinnedFiles,
         togglePin,
         isPinned,
+        copyFiles,
+        cutFiles,
         getPathForFile,
         setCurrentPath,
         deleteDisk,
         formatDisk,
-        fetchDisks,
-        isLoading
+        fetchDisks
     } = useFileStore()
 
     useEffect(() => {
@@ -76,7 +81,7 @@ const Index = () => {
     }, [disks, currentDiskId, currentPath, setCurrentDisk])
 
     const { current, name } = useTheme()
-    const [showHome, setShowHome] = useState(!currentDiskId)
+    const [_showHome, setShowHome] = useState(!currentDiskId)
     const [showCreateDisk, setShowCreateDisk] = useState(false)
     const [diskContextMenu, setDiskContextMenu] = useState<{ x: number; y: number; diskId: string } | null>(null)
     const [showDiskDetails, setShowDiskDetails] = useState<string | null>(null)
@@ -84,6 +89,9 @@ const Index = () => {
     const [mergeDiskId, setMergeDiskId] = useState<string | null>(null)
     const [resizeDiskId, setResizeDiskId] = useState<string | null>(null)
     const [nodeContextMenu, setNodeContextMenu] = useState<{ x: number; y: number; fileId: string } | null>(null)
+    const [searchResultContextMenu, setSearchResultContextMenu] = useState<{ x: number; y: number; file: FileItem } | null>(null)
+    const [renameSearchFile, setRenameSearchFile] = useState<FileItem | null>(null)
+    const [propertiesSearchFile, setPropertiesSearchFile] = useState<string | null>(null)
 
     // Convert store disks to component format
     const diskComponents: DiskI[] = disks.map(d => {
@@ -171,7 +179,89 @@ const Index = () => {
     }
 
     // Show search results if searching
-    const searchResults = searchQuery ? searchFiles(searchQuery) : []
+    // Use backend search results if available, otherwise use empty array
+    const displaySearchResults = searchQuery && searchResults.length > 0 ? searchResults : []
+
+    // Show search loading skeleton
+    // Show skeleton when: we have a query AND we're actively searching AND no results yet
+    // The isSearching flag is set immediately when user types, ensuring skeleton shows right away
+    if (searchQuery && searchQuery.trim().length > 0 && isSearching && displaySearchResults.length === 0) {
+        return (
+            <View className="h-full flex flex-col p-2">
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="mb-6"
+                >
+                    <Text
+                        value={`Searching for "${searchQuery}"...`}
+                        className="font-semibold mb-4 text-lg"
+                        style={{
+                            letterSpacing: "-0.02em",
+                            lineHeight: "1.3"
+                        }}
+                    />
+                    <View className="grid gap-1 grid-cols-6">
+                        {Array.from({ length: 12 }).map((_, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ 
+                                    duration: 0.2,
+                                    delay: i * 0.03
+                                }}
+                            >
+                                <View className="flex flex-col gap-2 items-center">
+                                    <Skeleton width="10vh" height="10vh" rounded className="mb-2" />
+                                    <Skeleton width="80%" height="0.75rem" />
+                                </View>
+                            </motion.div>
+                        ))}
+                    </View>
+                </motion.div>
+            </View>
+        )
+    }
+
+    // Show empty search results (only after search completes - isSearching must be false)
+    // Make sure we've actually completed a search (not just initial state)
+    if (searchQuery && !isSearching && displaySearchResults.length === 0 && searchQuery.trim().length > 0) {
+        return (
+            <View className="h-full flex flex-col items-center justify-center p-8">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex flex-col items-center gap-4 max-w-md text-center"
+                >
+                    <View
+                        className="p-6 rounded-full"
+                        style={{
+                            backgroundColor: current?.primary + "15"
+                        }}
+                    >
+                        <Search size={48} color={current?.primary} style={{ opacity: 0.7 }} />
+                    </View>
+                    <Text
+                        value={`No results found for "${searchQuery}"`}
+                        className="font-semibold text-xl mb-2"
+                        style={{
+                            letterSpacing: "-0.02em"
+                        }}
+                    />
+                    <Text
+                        value="Try adjusting your search terms or check for typos"
+                        className="opacity-60 text-sm"
+                        style={{
+                            letterSpacing: "0.01em"
+                        }}
+                    />
+                </motion.div>
+            </View>
+        )
+    }
 
     // Show audio files view if filtering by audio
     if (filterByType === "audio" && !searchQuery) {
@@ -229,8 +319,8 @@ const Index = () => {
         )
     }
 
-    // Show search results if searching
-    if (searchQuery && searchResults.length > 0) {
+    // Show search results if we have results (even if still searching backend)
+    if (searchQuery && displaySearchResults.length > 0) {
         return (
             <View className="h-full flex flex-col p-2">
                 <motion.div
@@ -248,12 +338,12 @@ const Index = () => {
                         }}
                     />
                     <Text
-                        value={`${searchResults.length} ${searchResults.length === 1 ? 'result' : 'results'}`}
+                        value={`${displaySearchResults.length} ${displaySearchResults.length === 1 ? 'result' : 'results'}`}
                         className="opacity-65 text-sm mb-4"
                         style={{ letterSpacing: "0.02em" }}
                     />
                     <View className="grid gap-1 grid-cols-6">
-                        {searchResults.map((file, i) => (
+                        {displaySearchResults.map((file, i) => (
                             <motion.div
                                 key={i}
                                 initial={{ opacity: 0, scale: 0.9 }}
@@ -262,29 +352,64 @@ const Index = () => {
                                     duration: 0.2,
                                     delay: i * 0.03
                                 }}
-                                onClick={() => {
-                                    // Find the disk for this file
-                                    const disk = disks.find(d => d.id === file.diskId)
-                                    if (disk) {
-                                        setCurrentDisk(disk.id)
-                                        // Navigate to the file's folder
-                                        const path = useFileStore.getState().getPathForFile(file.id)
-                                        useFileStore.getState().setCurrentPath(path)
-                                        if (!file.isFolder) {
-                                            openFileModal(file.id)
-                                        } else {
-                                            navigateToFolder(file.id)
-                                        }
-                                    }
-                                }}
-                                className="cursor-pointer hover:opacity-80 transition-opacity"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
                             >
                                 <Node
                                     label={file.name}
                                     fileType={file.type}
                                     path=""
+                                    fileId={file.id}
+                                    pinned={isPinned(file.id)}
+                                    onClick={async () => {
+                                        // Find the disk for this file
+                                        const disk = disks.find(d => d.id === file.diskId)
+                                        if (!disk) return
+
+                                        // Set the current disk and fetch all files to build complete tree
+                                        await setCurrentDisk(disk.id)
+                                        
+                                        // Wait a bit for files to load
+                                        await new Promise(resolve => setTimeout(resolve, 200))
+                                        
+                                        // Build path to the file's parent folder
+                                        if (file.parentId) {
+                                            // Try to navigate to parent folder
+                                            const parentFile = useFileStore.getState().getFileById(file.parentId)
+                                            if (parentFile && parentFile.isFolder) {
+                                                await navigateToFolder(file.parentId)
+                                            } else {
+                                                // Parent not found, try to build path
+                                                const path = useFileStore.getState().getPathForFile(file.parentId)
+                                                if (path.length > 0) {
+                                                    useFileStore.getState().setCurrentPath(path)
+                                                } else {
+                                                    // Fallback: navigate to root
+                                                    useFileStore.getState().setCurrentPath([])
+                                                }
+                                            }
+                                        } else {
+                                            // No parent, navigate to root
+                                            useFileStore.getState().setCurrentPath([])
+                                        }
+                                        
+                                        // Small delay to ensure navigation is complete
+                                        await new Promise(resolve => setTimeout(resolve, 100))
+                                        
+                                        // Now open the file or navigate to folder
+                                        if (!file.isFolder) {
+                                            openFileModal(file.id)
+                                        } else {
+                                            await navigateToFolder(file.id)
+                                        }
+                                    }}
+                                    onContextMenu={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setSearchResultContextMenu({
+                                            x: e.clientX,
+                                            y: e.clientY,
+                                            file: file
+                                        })
+                                    }}
                                 />
                             </motion.div>
                         ))}
@@ -576,6 +701,137 @@ const Index = () => {
                         }
                     ]}
                     onClose={() => setNodeContextMenu(null)}
+                />
+            )}
+
+            {/* Search Result Context Menu */}
+            {searchResultContextMenu && (
+                <ContextMenu
+                    x={searchResultContextMenu.x}
+                    y={searchResultContextMenu.y}
+                    items={[
+                        {
+                            label: searchResultContextMenu.file.isFolder ? "Open" : "Open",
+                            icon: <FolderOpen size={16} />,
+                            action: async () => {
+                                const file = searchResultContextMenu.file
+                                const disk = disks.find(d => d.id === file.diskId)
+                                if (!disk) return
+
+                                await setCurrentDisk(disk.id)
+                                await new Promise(resolve => setTimeout(resolve, 200))
+                                
+                                if (file.parentId) {
+                                    const parentFile = useFileStore.getState().getFileById(file.parentId)
+                                    if (parentFile && parentFile.isFolder) {
+                                        await navigateToFolder(file.parentId)
+                                    } else {
+                                        const path = useFileStore.getState().getPathForFile(file.parentId)
+                                        if (path.length > 0) {
+                                            useFileStore.getState().setCurrentPath(path)
+                                        } else {
+                                            useFileStore.getState().setCurrentPath([])
+                                        }
+                                    }
+                                } else {
+                                    useFileStore.getState().setCurrentPath([])
+                                }
+                                
+                                await new Promise(resolve => setTimeout(resolve, 100))
+                                
+                                if (!file.isFolder) {
+                                    openFileModal(file.id)
+                                } else {
+                                    await navigateToFolder(file.id)
+                                }
+                                setSearchResultContextMenu(null)
+                            }
+                        },
+                        { separator: true },
+                        {
+                            label: "Cut",
+                            icon: <Scissors size={16} />,
+                            action: () => {
+                                cutFiles([searchResultContextMenu.file.id])
+                                setSearchResultContextMenu(null)
+                            }
+                        },
+                        {
+                            label: "Copy",
+                            icon: <Copy size={16} />,
+                            action: () => {
+                                copyFiles([searchResultContextMenu.file.id])
+                                setSearchResultContextMenu(null)
+                            }
+                        },
+                        { separator: true },
+                        {
+                            label: "Rename",
+                            icon: <Edit size={16} />,
+                            action: () => {
+                                setRenameSearchFile(searchResultContextMenu.file)
+                                setSearchResultContextMenu(null)
+                            }
+                        },
+                        {
+                            label: "Delete",
+                            icon: <Trash2 size={16} />,
+                            action: async () => {
+                                await deleteFile(searchResultContextMenu.file.id)
+                                // Refresh search results
+                                if (searchQuery) {
+                                    useFileStore.getState().searchFilesBackend(searchQuery)
+                                }
+                                setSearchResultContextMenu(null)
+                            }
+                        },
+                        { separator: true },
+                        {
+                            label: isPinned(searchResultContextMenu.file.id) ? "Unpin" : "Pin",
+                            icon: isPinned(searchResultContextMenu.file.id) ? <StarOff size={16} /> : <Star size={16} />,
+                            action: async () => {
+                                await togglePin(searchResultContextMenu.file.id)
+                                // Refresh search results
+                                if (searchQuery) {
+                                    useFileStore.getState().searchFilesBackend(searchQuery)
+                                }
+                                setSearchResultContextMenu(null)
+                            }
+                        },
+                        { separator: true },
+                        {
+                            label: "Properties",
+                            icon: <Info size={16} />,
+                            action: () => {
+                                setPropertiesSearchFile(searchResultContextMenu.file.id)
+                                setSearchResultContextMenu(null)
+                            }
+                        }
+                    ]}
+                    onClose={() => setSearchResultContextMenu(null)}
+                />
+            )}
+
+            {/* Rename Modal for Search Results */}
+            {renameSearchFile && (
+                <RenameModal
+                    fileId={renameSearchFile.id}
+                    currentName={renameSearchFile.name}
+                    onClose={async () => {
+                        setRenameSearchFile(null)
+                        // Refresh search results after rename
+                        if (searchQuery) {
+                            useFileStore.getState().searchFilesBackend(searchQuery)
+                        }
+                    }}
+                />
+            )}
+
+            {/* Properties Modal for Search Results */}
+            {propertiesSearchFile && (
+                <PropertiesModal
+                    fileId={propertiesSearchFile}
+                    onClose={() => setPropertiesSearchFile(null)}
                 />
             )}
 

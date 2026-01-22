@@ -1,4 +1,3 @@
-import React from "react"
 import {
     FileText,
     Image,
@@ -120,10 +119,9 @@ export const getFileIcon = (type: fileType, extension?: string, size: number = 2
 }
 
 // Get icon color based on file type
-export const getFileIconColor = (type: fileType, extension?: string, theme?: { primary: string; dark: string }): string => {
+export const getFileIconColor = (_type: fileType, extension?: string, theme?: { primary: string; dark: string }): string => {
     const ext = extension?.toLowerCase() || ""
     const primary = theme?.primary || "#EE7E06"
-    const dark = theme?.dark || "#333333"
 
     // Special colors for code files
     if (['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs'].includes(ext)) {

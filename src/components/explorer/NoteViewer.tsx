@@ -12,7 +12,7 @@ interface Props {
 }
 
 const NoteViewer = ({ file }: Props) => {
-    const { current, name } = useTheme()
+    const { current } = useTheme()
     const { renameFile, updateNoteContent } = useFileStore()
     const [isEditing, setIsEditing] = useState(false)
     const [noteTitle, setNoteTitle] = useState(file.name.replace('.md', ''))

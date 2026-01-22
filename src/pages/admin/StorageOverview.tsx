@@ -2,16 +2,15 @@ import View from "../../components/base/View"
 import Text from "../../components/base/Text"
 import { useTheme } from "../../store/Themestore"
 import { useUser } from "../../store/Userstore"
-import { HardDrive, TrendingUp, Users, AlertCircle } from "lucide-react"
-import Avatar from "../../components/base/Avatar"
+import { HardDrive, TrendingUp, Users } from "lucide-react"
 import { useMemo } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
-import { getPrimaryColorVariations, getPrimaryColorWithOpacity } from "../../utils/chartColors"
+import { getPrimaryColorVariations } from "../../utils/chartColors"
 import { getPastelColor } from "../../utils/colorUtils"
 
 const StorageOverview = () => {
     const { current } = useTheme()
-    const { users, getInitials } = useUser()
+    const { users } = useUser()
 
     // Calculate storage stats (S3 - no limit, just track usage)
     const totalUsed = users.reduce((sum, u) => sum + (u.storage?.used || 0), 0)
@@ -170,7 +169,7 @@ const StorageOverview = () => {
                                 fill="#8884d8"
                                 dataKey="storage"
                             >
-                                {userStorageDistribution.map((entry, index) => (
+                                {userStorageDistribution.map((_entry, index) => (
                                     <Cell key={`cell-${index}`} fill={primaryColors[index % primaryColors.length]} />
                                 ))}
                             </Pie>

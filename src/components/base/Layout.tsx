@@ -1,7 +1,6 @@
 import { ReactNode } from "react"
 import Navbar from "./Navbar"
 import View from "./View"
-import { useTheme } from "../../store/Themestore"
 import Sidebar from "./Sidebar"
 
 export interface Props {
@@ -9,8 +8,6 @@ export interface Props {
 }
 
 const Layout = (props: Props) => {
-
-    const { current } = useTheme()
 
     return (
         <View >

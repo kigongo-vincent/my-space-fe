@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react"
+import { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
 import { useFileStore, FileItem } from "../../store/Filestore"
@@ -54,7 +54,8 @@ const FileExplorer = () => {
         togglePin,
         isPinned,
         selectFile,
-        selectedFiles
+        selectedFiles,
+        visitedPaths,
     } = useFileStore()
 
     const { current } = useTheme()
@@ -72,6 +73,288 @@ const FileExplorer = () => {
 
     const files = getCurrentFolderFiles()
     const currentDisk = disks.find(d => d.id === currentDiskId)
+    const [pathInputValue, setPathInputValue] = useState("")
+    const [isEditingPath, setIsEditingPath] = useState(false)
+    const [showSuggestions, setShowSuggestions] = useState(false)
+    const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1)
+    const pathInputRef = useRef<HTMLInputElement>(null)
+    const suggestionsRef = useRef<HTMLDivElement>(null)
+
+    // Build full path string
+    const fullPath = useMemo(() => {
+        if (!currentDisk) return ""
+        const pathParts: string[] = [currentDisk.name]
+        currentPath.forEach(folderId => {
+            const folder = getFileById(folderId)
+            if (folder) {
+                pathParts.push(folder.name)
+            }
+        })
+        return pathParts.join("\\")
+    }, [currentDisk, currentPath, getFileById])
+
+    // Update path input when path changes (but not when user is editing)
+    useEffect(() => {
+        if (!isEditingPath) {
+            setPathInputValue(fullPath)
+        }
+    }, [fullPath, isEditingPath])
+
+    // Generate autocomplete suggestions
+    const suggestions = useMemo(() => {
+        if (!pathInputValue.trim() || !isEditingPath) return []
+        
+        const query = pathInputValue.toLowerCase().trim()
+        const results: Array<{ path: string; type: 'visited' | 'suggestion' }> = []
+        
+        // Add visited paths that match
+        visitedPaths.forEach(path => {
+            if (path.toLowerCase().includes(query)) {
+                results.push({ path, type: 'visited' })
+            }
+        })
+        
+        // Add suggestions from all folders/disks
+        disks.forEach(disk => {
+            // Check disk name
+            if (disk.name.toLowerCase().includes(query)) {
+                const path = disk.name
+                if (!results.find(r => r.path === path)) {
+                    results.push({ path, type: 'suggestion' })
+                }
+            }
+            
+            // Recursively find matching folders
+            const findMatchingFolders = (files: FileItem[], currentPath: string[]) => {
+                files.forEach(file => {
+                    if (file.isFolder) {
+                        const newPath = [...currentPath, file.name]
+                        const fullPath = [disk.name, ...newPath].join("\\")
+                        
+                        // Check if any part of the path matches
+                        if (fullPath.toLowerCase().includes(query)) {
+                            if (!results.find(r => r.path === fullPath)) {
+                                results.push({ path: fullPath, type: 'suggestion' })
+                            }
+                        }
+                        
+                        // Recurse into children
+                        if (file.children) {
+                            findMatchingFolders(file.children, newPath)
+                        }
+                    }
+                })
+            }
+            
+            findMatchingFolders(disk.files, [])
+        })
+        
+        // Sort: visited first, then by relevance (shorter/more exact matches first)
+        return results
+            .sort((a, b) => {
+                if (a.type === 'visited' && b.type !== 'visited') return -1
+                if (a.type !== 'visited' && b.type === 'visited') return 1
+                const aStarts = a.path.toLowerCase().startsWith(query)
+                const bStarts = b.path.toLowerCase().startsWith(query)
+                if (aStarts && !bStarts) return -1
+                if (!aStarts && bStarts) return 1
+                return a.path.length - b.path.length
+            })
+            .slice(0, 10) // Limit to 10 suggestions
+    }, [pathInputValue, isEditingPath, visitedPaths, disks])
+
+    // Handle keyboard navigation in suggestions
+    useEffect(() => {
+        if (!showSuggestions || suggestions.length === 0 || !isEditingPath) return
+
+        const handleKeyDown = async (e: KeyboardEvent) => {
+            if (e.key === "ArrowDown") {
+                e.preventDefault()
+                setSelectedSuggestionIndex(prev => 
+                    prev < suggestions.length - 1 ? prev + 1 : prev
+                )
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault()
+                setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : -1)
+            } else if (e.key === "Enter" && selectedSuggestionIndex >= 0) {
+                e.preventDefault()
+                const selected = suggestions[selectedSuggestionIndex]
+                setPathInputValue(selected.path)
+                setShowSuggestions(false)
+                setSelectedSuggestionIndex(-1)
+                setIsEditingPath(false)
+                
+                // Navigate to the selected path
+                const parts = selected.path.split("\\").filter(p => p.trim())
+                if (parts.length === 0) return
+                
+                const targetDisk = disks.find(d => d.name === parts[0])
+                if (!targetDisk) return
+                
+                if (targetDisk.id !== currentDiskId) {
+                    await setCurrentDisk(targetDisk.id)
+                }
+                
+                if (parts.length === 1) {
+                    setCurrentPath([])
+                    return
+                }
+                
+                const folderParts = parts.slice(1)
+                const newPath: string[] = []
+                let currentFolderId: string | null = null
+                
+                for (const folderName of folderParts) {
+                    let folderFiles: FileItem[] = []
+                    if (currentFolderId) {
+                        const folder = getFileById(currentFolderId)
+                        if (folder?.children) {
+                            folderFiles = folder.children
+                        } else {
+                            await navigateToFolder(currentFolderId)
+                            const updatedFolder = getFileById(currentFolderId)
+                            folderFiles = updatedFolder?.children || []
+                        }
+                    } else {
+                        const disk = disks.find(d => d.id === targetDisk.id)
+                        folderFiles = disk?.files || []
+                    }
+                    
+                    const folder = folderFiles.find(f => 
+                        f.isFolder && f.name.toLowerCase() === folderName.toLowerCase()
+                    )
+                    
+                    if (folder) {
+                        newPath.push(folder.id)
+                        currentFolderId = folder.id
+                    } else {
+                        break
+                    }
+                }
+                
+                setCurrentPath(newPath)
+            } else if (e.key === "Escape") {
+                setShowSuggestions(false)
+                setSelectedSuggestionIndex(-1)
+            }
+        }
+
+        window.addEventListener("keydown", handleKeyDown)
+        return () => window.removeEventListener("keydown", handleKeyDown)
+    }, [showSuggestions, suggestions, selectedSuggestionIndex, isEditingPath, disks, currentDiskId, setCurrentDisk, setCurrentPath, getFileById, navigateToFolder])
+
+    // Show suggestions when typing
+    useEffect(() => {
+        if (isEditingPath && pathInputValue.trim() && suggestions.length > 0) {
+            setShowSuggestions(true)
+        } else {
+            setShowSuggestions(false)
+        }
+    }, [pathInputValue, isEditingPath, suggestions.length])
+
+    // Navigate to path when user types and presses Enter
+    const handlePathSubmit = useCallback(async (e: React.FormEvent | React.KeyboardEvent) => {
+        e.preventDefault()
+        if (!currentDiskId) return
+
+        const typedPath = pathInputValue.trim()
+        if (!typedPath) {
+            setPathInputValue(fullPath)
+            setIsEditingPath(false)
+            return
+        }
+
+        // Parse the path (format: "DiskName\Folder1\Folder2" or "Folder1\Folder2")
+        const parts = typedPath.split("\\").filter(p => p.trim())
+        if (parts.length === 0) {
+            setPathInputValue(fullPath)
+            setIsEditingPath(false)
+            return
+        }
+
+        let targetDiskId = currentDiskId
+        let folderParts = parts
+
+        // Check if first part is a disk name
+        const potentialDisk = disks.find(d => d.name === parts[0])
+        if (potentialDisk) {
+            // First part is a disk name
+            targetDiskId = potentialDisk.id
+            folderParts = parts.slice(1)
+            
+            // Switch to that disk if different
+            if (targetDiskId !== currentDiskId) {
+                await setCurrentDisk(targetDiskId)
+            }
+        }
+
+        // Navigate through folders
+        if (folderParts.length === 0) {
+            // Just root of current disk
+            setCurrentPath([])
+            setIsEditingPath(false)
+            return
+        }
+
+        // Build path by finding folders by name
+        const newPath: string[] = []
+        let currentFolderId: string | null = null
+
+        for (let i = 0; i < folderParts.length; i++) {
+            const folderName = folderParts[i]
+            
+            // Get files in current folder
+            let folderFiles: FileItem[] = []
+            if (currentFolderId) {
+                const folder = getFileById(currentFolderId)
+                if (folder?.children) {
+                    folderFiles = folder.children
+                } else {
+                    // Need to load folder contents
+                    try {
+                        await navigateToFolder(currentFolderId)
+                        const updatedFolder = getFileById(currentFolderId)
+                        folderFiles = updatedFolder?.children || []
+                    } catch (error) {
+                        alert(`Failed to load folder "${folderName}"`)
+                        setPathInputValue(fullPath)
+                        setIsEditingPath(false)
+                        return
+                    }
+                }
+            } else {
+                // Root level - get disk files
+                const disk = disks.find(d => d.id === targetDiskId)
+                folderFiles = disk?.files || []
+            }
+
+            // Find folder by name (case-insensitive for better UX)
+            const folder = folderFiles.find(f => 
+                f.isFolder && f.name.toLowerCase() === folderName.toLowerCase()
+            )
+            
+            if (!folder) {
+                alert(`Folder "${folderName}" not found`)
+                setPathInputValue(fullPath)
+                setIsEditingPath(false)
+                return
+            }
+
+            newPath.push(folder.id)
+            currentFolderId = folder.id
+        }
+
+        setCurrentPath(newPath)
+        setIsEditingPath(false)
+    }, [pathInputValue, currentDiskId, currentDisk, disks, fullPath, setCurrentDisk, setCurrentPath, getFileById, navigateToFolder])
+
+    // Focus input when editing starts
+    useEffect(() => {
+        if (isEditingPath && pathInputRef.current) {
+            pathInputRef.current.focus()
+            pathInputRef.current.select()
+        }
+    }, [isEditingPath])
 
     // Helper function to process directory entries recursively
     const processDirectoryEntry = useCallback(async (
@@ -85,7 +368,7 @@ const FileExplorer = () => {
         const folderName = dirEntry.name
 
         // Create folder in the app and get its ID
-        const targetFolderId = createFolder(folderName, parentFolderId, diskId)
+        const targetFolderId = await createFolder(folderName, parentFolderId, diskId)
         if (!targetFolderId) {
             console.error('Failed to create folder:', folderName)
             return null
@@ -120,8 +403,8 @@ const FileExplorer = () => {
                 } else if (entry.isFile) {
                     // Upload file to current folder
                     const fileEntry = entry as FileSystemFileEntry
-                    fileEntry.file((file: File) => {
-                        uploadFile(file, targetFolderId, diskId)
+                    fileEntry.file(async (file: File) => {
+                        await uploadFile(file, targetFolderId, diskId)
                     })
                 }
             }
@@ -239,7 +522,7 @@ const FileExplorer = () => {
         }
     }, [currentDiskId, currentPath, uploadFile, getFileById, getPathForFile, cutFiles, pasteFiles])
 
-    const handleFolderDragStart = useCallback((e: React.DragEvent, file: FileItem) => {
+    const handleFolderDragStart = useCallback(() => {
         setIsDraggingFolder(true)
     }, [])
 
@@ -529,8 +812,9 @@ const FileExplorer = () => {
                 <ViewSettingsBar />
                 
                 {/* Toolbar */}
-                <View className="flex items-center justify-between mb-4 pb-3 pt-3 border-b" style={{ borderColor: current?.dark + "20" }}>
-                    <View className="flex items-center gap-3">
+                <View className="flex items-center gap-3 mb-4 pb-3 pt-3 border-b" style={{ borderColor: current?.dark + "20" }}>
+                    {/* Left: Navigation buttons */}
+                    <View className="flex items-center gap-3 flex-shrink-0">
                         <IconButton
                             icon={<Home size={18} color={current?.dark} />}
                             action={() => {
@@ -548,35 +832,197 @@ const FileExplorer = () => {
                                 title="Back"
                             />
                         )}
-                        <Text
-                            value={
-                                filterByType
-                                    ? `${filterByType.charAt(0).toUpperCase() + filterByType.slice(1)} Files`
-                                    : currentDisk?.name || "Files"
-                            }
-                            className="font-semibold text-lg"
-                            style={{
-                                letterSpacing: "-0.02em",
-                                lineHeight: "1.3"
-                            }}
-                        />
-                        {!filterByType && currentPath.length > 0 && (
-                            <>
-                                <Text value="/" className="opacity-40 mx-1" />
-                                <Text value="..." className="opacity-60" size="sm" />
-                            </>
-                        )}
-                        {filterByType && (
+                    </View>
+
+                    {/* Middle: Path input - takes all available space */}
+                    {filterByType ? (
+                        <View className="flex items-center gap-2 flex-shrink-0">
+                            <Text
+                                value={`${filterByType.charAt(0).toUpperCase() + filterByType.slice(1)} Files`}
+                                className="font-semibold text-lg"
+                                style={{
+                                    letterSpacing: "-0.02em",
+                                    lineHeight: "1.3"
+                                }}
+                            />
                             <Text
                                 value={`${files.length} ${files.length === 1 ? 'file' : 'files'}`}
                                 size="sm"
                                 className="opacity-65 ml-2"
                                 style={{ letterSpacing: "0.02em" }}
                             />
-                        )}
-                    </View>
+                        </View>
+                    ) : (
+                        <View className="flex-1 flex items-center min-w-0 relative">
+                            {isEditingPath ? (
+                                <form onSubmit={handlePathSubmit} className="flex-1 w-full min-w-0 relative">
+                                    <input
+                                        ref={pathInputRef}
+                                        type="text"
+                                        value={pathInputValue}
+                                        onChange={(e) => {
+                                            setPathInputValue(e.target.value)
+                                            setSelectedSuggestionIndex(-1)
+                                        }}
+                                        onFocus={() => {
+                                            if (suggestions.length > 0) {
+                                                setShowSuggestions(true)
+                                            }
+                                        }}
+                                        onBlur={(e) => {
+                                            // Delay to allow click on suggestion
+                                            setTimeout(() => {
+                                                if (!suggestionsRef.current?.contains(e.relatedTarget as Node)) {
+                                                    setPathInputValue(fullPath)
+                                                    setIsEditingPath(false)
+                                                    setShowSuggestions(false)
+                                                }
+                                            }, 200)
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Escape") {
+                                                setPathInputValue(fullPath)
+                                                setIsEditingPath(false)
+                                                setShowSuggestions(false)
+                                            } else if (e.key === "Enter" && selectedSuggestionIndex < 0) {
+                                                handlePathSubmit(e)
+                                            }
+                                        }}
+                                        className="w-full h-[5vh] px-3 rounded border font-mono text-sm flex items-center"
+                                        style={{
+                                            backgroundColor: current?.background,
+                                            borderColor: current?.primary,
+                                            color: current?.dark,
+                                            outline: "none",
+                                        }}
+                                    />
+                                    {/* Suggestions Dropdown */}
+                                    {showSuggestions && suggestions.length > 0 && (
+                                        <View
+                                            ref={suggestionsRef}
+                                            className="absolute top-full left-0 right-0 z-50 mt-1 rounded border overflow-hidden"
+                                            style={{
+                                                backgroundColor: current?.foreground,
+                                                borderColor: current?.dark + "20",
+                                                boxShadow: `0 4px 12px ${current?.dark}15`,
+                                                maxHeight: "300px",
+                                                overflowY: "auto"
+                                            }}
+                                        >
+                                            {suggestions.map((suggestion, index) => (
+                                                <button
+                                                    key={`${suggestion.path}-${index}`}
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        setPathInputValue(suggestion.path)
+                                                        setShowSuggestions(false)
+                                                        setSelectedSuggestionIndex(-1)
+                                                        setIsEditingPath(false)
+                                                        
+                                                        // Navigate to the selected path
+                                                        const parts = suggestion.path.split("\\").filter(p => p.trim())
+                                                        if (parts.length === 0) return
+                                                        
+                                                        // Find disk
+                                                        const targetDisk = disks.find(d => d.name === parts[0])
+                                                        if (!targetDisk) return
+                                                        
+                                                        // Switch disk if needed
+                                                        if (targetDisk.id !== currentDiskId) {
+                                                            await setCurrentDisk(targetDisk.id)
+                                                        }
+                                                        
+                                                        // Navigate through folders
+                                                        if (parts.length === 1) {
+                                                            setCurrentPath([])
+                                                            return
+                                                        }
+                                                        
+                                                        const folderParts = parts.slice(1)
+                                                        const newPath: string[] = []
+                                                        let currentFolderId: string | null = null
+                                                        
+                                                        for (const folderName of folderParts) {
+                                                            let folderFiles: FileItem[] = []
+                                                            if (currentFolderId) {
+                                                                const folder = getFileById(currentFolderId)
+                                                                if (folder?.children) {
+                                                                    folderFiles = folder.children
+                                                                } else {
+                                                                    await navigateToFolder(currentFolderId)
+                                                                    const updatedFolder = getFileById(currentFolderId)
+                                                                    folderFiles = updatedFolder?.children || []
+                                                                }
+                                                            } else {
+                                                                const disk = disks.find(d => d.id === targetDisk.id)
+                                                                folderFiles = disk?.files || []
+                                                            }
+                                                            
+                                                            const folder = folderFiles.find(f => 
+                                                                f.isFolder && f.name.toLowerCase() === folderName.toLowerCase()
+                                                            )
+                                                            
+                                                            if (folder) {
+                                                                newPath.push(folder.id)
+                                                                currentFolderId = folder.id
+                                                            } else {
+                                                                break
+                                                            }
+                                                        }
+                                                        
+                                                        setCurrentPath(newPath)
+                                                    }}
+                                                    className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-opacity-50 transition-colors"
+                                                    style={{
+                                                        backgroundColor: selectedSuggestionIndex === index 
+                                                            ? current?.primary + "15" 
+                                                            : index % 2 === 0 
+                                                                ? current?.dark + "05" 
+                                                                : "transparent",
+                                                        color: current?.dark,
+                                                    }}
+                                                    onMouseEnter={() => setSelectedSuggestionIndex(index)}
+                                                >
+                                                    <View className="flex items-center gap-2 flex-1 min-w-0">
+                                                        {suggestion.type === 'visited' && (
+                                                            <View 
+                                                                className="w-4 h-4 rounded-full flex-shrink-0"
+                                                                style={{ backgroundColor: current?.primary + "40" }}
+                                                            />
+                                                        )}
+                                                        <Text
+                                                            value={suggestion.path}
+                                                            className="font-mono text-sm truncate flex-1"
+                                                        />
+                                                    </View>
+                                                </button>
+                                            ))}
+                                        </View>
+                                    )}
+                                </form>
+                            ) : (
+                                <View
+                                    className="flex-1 w-full h-[5vh] px-3 rounded cursor-text hover:bg-opacity-50 transition-colors min-w-0 flex items-center"
+                                    style={{
+                                        backgroundColor: current?.dark + "08",
+                                    }}
+                                    onClick={() => setIsEditingPath(true)}
+                                    title="Click to edit path"
+                                >
+                                    <Text
+                                        value={fullPath || currentDisk?.name || "Files"}
+                                        className="font-mono text-sm truncate"
+                                        style={{
+                                            color: current?.dark,
+                                        }}
+                                    />
+                                </View>
+                            )}
+                        </View>
+                    )}
 
-                    <View className="flex items-center gap-2">
+                    {/* Right: Action buttons */}
+                    <View className="flex items-center gap-2 flex-shrink-0">
                         <IconButton
                             icon={<Upload size={18} color={current?.dark} />}
                             action={() => {

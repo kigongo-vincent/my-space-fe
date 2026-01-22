@@ -18,6 +18,7 @@ export interface ThemeI {
     error: string
     success: string
     dark: string
+    warning?: string
 }
 
 export const LightTheme: ThemeI = {
@@ -26,7 +27,8 @@ export const LightTheme: ThemeI = {
     foreground: "#f9f9f9",
     error: "#ef4444",
     success: "#10b981",
-    dark: "#333333"
+    dark: "#333333",
+    warning: "#f59e0b"
 }
 
 export const DarkTheme: ThemeI = {
@@ -35,7 +37,8 @@ export const DarkTheme: ThemeI = {
     foreground: "#181818", // Spotify's card/surface background
     error: "#e22134", // Spotify's error red
     success: "#1DB954", // Spotify green
-    dark: "#ffffff" // White text on dark background
+    dark: "#ffffff", // White text on dark background
+    warning: "#f59e0b"
 }
 
 export const useTheme = create<ThemeStoreI>((set, get) => ({
