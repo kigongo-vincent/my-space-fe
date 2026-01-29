@@ -1,6 +1,6 @@
 import { create } from "zustand"
 import { fileType } from "../components/base/Sidebar"
-import { calculateTotalStorage, getAvailableSpaceGB, convertFileSizeToGB } from "../utils/storage"
+import { calculateTotalStorage, getAvailableSpaceGB, convertFileSizeToGB, computeUsedFromDisksInUnit } from "../utils/storage"
 import api from "../utils/api"
 import { useUploadStore } from "./UploadStore"
 import { useBackgroundJobStore } from "./BackgroundJobStore"
@@ -225,15 +225,21 @@ const updateDiskUsage = (disk: Disk): Disk => {
     }
 }
 
-// Sync user storage with total from all disks
+// Sync user usage from disks: only update "used" (sum of disk usage).
+// "Total" is the user's allocated quota from backend (user.storage) and must never
+// be derived from disks. Disks are partitions of that quota; resizing a disk does
+// not change the user's total allocated space.
 const syncUserStorage = (disks: Disk[]) => {
-    const totalStorage = calculateTotalStorage(disks)
-    // Update user store asynchronously to avoid circular dependency
     setTimeout(() => {
-        // Dynamic import to avoid circular dependency
         import("./Userstore").then(({ useUser }) => {
-            const { setUsage } = useUser.getState()
-            setUsage(totalStorage)
+            const { setUsage, usage: currentUsage } = useUser.getState()
+            if (!currentUsage) return
+            const usedInUserUnit = computeUsedFromDisksInUnit(disks, currentUsage.unit)
+            setUsage({
+                total: currentUsage.total,
+                unit: currentUsage.unit,
+                used: usedInUserUnit,
+            })
         })
     }, 0)
 }
@@ -1080,6 +1086,9 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             // Create new array reference to trigger re-render
             set({ disks: [...updatedDisks] })
             
+            // Invalidate cache so back/forth navigation shows the new folder
+            get().clearFolderCache(diskId)
+            
             // Sync user storage
             syncUserStorage(updatedDisks)
 
@@ -1176,18 +1185,19 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 deviceId: f.deviceId,
             }))
 
-            // Update disk with files from backend
+            // Merge new folder contents into existing tree (don't replace whole tree)
             const updatedDisks = get().disks.map(d => {
                 if (d.id === diskId) {
-                    return {
-                        ...d,
-                        files: mappedFiles,
-                    }
+                    const flatExisting = flattenFiles(d.files)
+                    const otherFiles = flatExisting.filter(f => f.parentId !== parentId)
+                    const merged = [...otherFiles, ...mappedFiles]
+                    return { ...d, files: buildFileTree(merged) }
                 }
                 return d
             })
 
             set({ disks: updatedDisks })
+            get().clearFolderCache(diskId)
             
             // Sync user storage
             syncUserStorage(updatedDisks)
@@ -1283,23 +1293,24 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 modifiedAt: new Date(f.updatedAt),
                 size: f.size,
                 sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
-                            thumbnail: f.thumbnail,
-                            url: f.url,
-                            deviceId: f.deviceId,
-                        }))
+                thumbnail: f.thumbnail,
+                url: f.url,
+                deviceId: f.deviceId,
+            }))
 
-            // Update disk with files from backend
+            // Merge new folder contents into existing tree (don't replace whole tree)
             const updatedDisks = get().disks.map(d => {
                 if (d.id === diskId) {
-                    return {
-                        ...d,
-                        files: mappedFiles,
-                    }
+                    const flatExisting = flattenFiles(d.files)
+                    const otherFiles = flatExisting.filter(f => f.parentId !== parentId)
+                    const merged = [...otherFiles, ...mappedFiles]
+                    return { ...d, files: buildFileTree(merged) }
                 }
                 return d
             })
 
             set({ disks: updatedDisks })
+            get().clearFolderCache(diskId)
             
             // Sync user storage
             syncUserStorage(updatedDisks)
@@ -1467,6 +1478,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
 
             // Force state update with new array reference to trigger re-render
             set({ disks: updatedDisks })
+            get().clearFolderCache(diskId)
             
             // Also trigger a re-render by updating the current path (if we're in a folder)
             const { currentPath: currentPathState } = get()

@@ -127,8 +127,8 @@ const AnimatedModal = ({ isOpen, onClose, children, size = "md", position = "cen
                                     padding: 0,
                                     boxSizing: 'border-box',
                                     boxShadow: name === "dark"
-                                        ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
-                                        : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
+                                        ? `0 25px 50px -12px rgba(0, 0, 0, 0.4)`
+                                        : `0 25px 50px -12px ${current?.dark}15`
                                 }}
                                 onClick={(e) => e.stopPropagation()}
                             >
@@ -171,8 +171,8 @@ const AnimatedModal = ({ isOpen, onClose, children, size = "md", position = "cen
                                 backgroundColor: current?.foreground,
                                 borderRadius: position === "right" || position === "left" ? '0' : '0.5rem',
                                 boxShadow: name === "dark"
-                                    ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
-                                    : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
+                                    ? `0 25px 50px -12px rgba(0, 0, 0, 0.4)`
+                                    : `0 25px 50px -12px ${current?.dark}15`
                             }}
                             onClick={(e) => e.stopPropagation()}
                         >

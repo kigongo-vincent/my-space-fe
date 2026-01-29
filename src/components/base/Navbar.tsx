@@ -55,12 +55,7 @@ const Navbar = () => {
             <View
                 mode="foreground"
                 className="h-[7vh] flex items-center"
-                style={{
-                    boxShadow: name === "dark"
-                        ? `0 2px 8px rgba(0, 0, 0, 0.3)`
-                        : `0 2px 8px ${current?.dark}20`,
-                    zIndex: 1000
-                }}
+                style={{ zIndex: 1000 }}
             >
                 <View className="m-auto flex justify-between items-center max-w-[90vw] min-w-[96vw]">
                     <Logo />

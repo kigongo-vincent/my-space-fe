@@ -22,6 +22,26 @@ export const convertToGB = (size: number, unit: "KB" | "MB" | "GB" | "TB" | "PB"
 }
 
 /**
+ * Convert GB to a display unit (for used/total in user's unit)
+ */
+export const convertFromGB = (gb: number, unit: "KB" | "MB" | "GB" | "TB" | "PB"): number => {
+    switch (unit) {
+        case "KB":
+            return gb * 1024 * 1024
+        case "MB":
+            return gb * 1024
+        case "GB":
+            return gb
+        case "TB":
+            return gb / 1024
+        case "PB":
+            return gb / (1024 * 1024)
+        default:
+            return gb
+    }
+}
+
+/**
  * Format storage value to 2 decimal places
  */
 export const formatStorage = (value: number, unit: string): string => {
@@ -81,6 +101,23 @@ export const calculateTotalStorage = (disks: Disk[]): UsageI => {
         total: parseFloat(displayTotal.toFixed(2)),
         unit: displayUnit
     }
+}
+
+/**
+ * Compute total used space across disks in a target unit.
+ * Used when syncing user usage: total/unit come from backend (allocated quota);
+ * only "used" is derived from disks.
+ */
+export const computeUsedFromDisksInUnit = (
+    disks: { usage: { used: number; unit: string } }[],
+    targetUnit: "GB" | "MB" | "TB" | "PB"
+): number => {
+    let totalUsedGB = 0
+    disks.forEach(disk => {
+        totalUsedGB += convertToGB(disk.usage.used, disk.usage.unit as "KB" | "MB" | "GB" | "TB" | "PB")
+    })
+    const inTarget = convertFromGB(totalUsedGB, targetUnit)
+    return parseFloat(inTarget.toFixed(2))
 }
 
 /**

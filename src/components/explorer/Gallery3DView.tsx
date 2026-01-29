@@ -60,9 +60,10 @@ const Gallery3DView = ({ files, onFileClick, onContextMenu }: Props) => {
     }, [])
 
     const getImageUrl = (file: FileItem) => {
-        // Use thumbnail for pictures if available
-        if (file.type === "picture" && file.thumbnail) {
-            return file.thumbnail
+        // Prefer actual image (thumbnail or url) for pictures
+        if (file.type === "picture") {
+            if (file.thumbnail) return file.thumbnail
+            if (file.url) return file.url
         }
         return getImageByFileType(file.type)
     }

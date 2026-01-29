@@ -14,56 +14,169 @@ interface Props {
     videoUrl?: string
 }
 
-const ThumbnailPlaceholder = ({ file }: { file: Props['file'] }) => {
+const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HTMLAudioElement>, isPlaying: boolean }) => {
     const { current } = useTheme()
-    const [thumbnailLoaded, setThumbnailLoaded] = useState(false)
-    const [thumbnailError, setThumbnailError] = useState(false)
+    const canvasRef = useRef<HTMLCanvasElement>(null)
+    const animationFrameRef = useRef<number | null>(null)
+    const audioContextRef = useRef<AudioContext | null>(null)
+    const analyserRef = useRef<AnalyserNode | null>(null)
+    const dataArrayRef = useRef<Uint8Array | null>(null)
+    const sourceRef = useRef<MediaElementAudioSourceNode | null>(null)
 
-    if (!file.thumbnail) {
-        return (
-            <View
-                className="w-[320px] h-[320px] rounded-lg flex items-center justify-center overflow-hidden media-glow"
-                style={{ 
-                    backgroundColor: current?.dark + "10"
-                }}
-            >
-                <Text value="🎵" className="text-8xl" />
-            </View>
-        )
-    }
+    useEffect(() => {
+        const audio = audioRef.current
+        const canvas = canvasRef.current
+        if (!audio || !canvas) return
+
+        // Initialize Web Audio API
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+        const analyser = audioContext.createAnalyser()
+        analyser.fftSize = 256
+        analyser.smoothingTimeConstant = 0.8
+
+        const bufferLength = analyser.frequencyBinCount
+        const dataArray = new Uint8Array(bufferLength)
+
+        let source: MediaElementAudioSourceNode | null = null
+
+        const connectAudio = async () => {
+            if (audioContext.state === 'closed') return
+            
+            // Resume audio context if suspended (browser autoplay policy)
+            if (audioContext.state === 'suspended') {
+                try {
+                    await audioContext.resume()
+                } catch (e) {
+                    console.warn('Could not resume audio context:', e)
+                }
+            }
+            
+            try {
+                if (!source) {
+                    source = audioContext.createMediaElementSource(audio)
+                    source.connect(analyser)
+                    analyser.connect(audioContext.destination)
+                }
+            } catch (e) {
+                // Already connected or error
+            }
+        }
+
+        // Connect when audio is ready
+        if (audio.readyState >= 2) {
+            connectAudio()
+        } else {
+            audio.addEventListener('canplay', connectAudio, { once: true })
+        }
+
+        // Also try to connect when playing starts
+        const handlePlay = () => {
+            connectAudio()
+        }
+        audio.addEventListener('play', handlePlay)
+
+        audioContextRef.current = audioContext
+        analyserRef.current = analyser
+        dataArrayRef.current = dataArray
+        sourceRef.current = source
+
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+
+        const width = canvas.width
+        const height = canvas.height
+        const barCount = 64
+        const barWidth = width / barCount
+        const centerY = height / 2
+
+        const draw = () => {
+            if (!isPlaying && audio.paused) {
+                // Draw idle state - subtle pulsing bars
+                const bgGradient = ctx.createLinearGradient(0, 0, 0, height)
+                bgGradient.addColorStop(0, current?.dark + "15")
+                bgGradient.addColorStop(1, current?.dark + "08")
+                ctx.fillStyle = bgGradient
+                ctx.fillRect(0, 0, width, height)
+                
+                const time = Date.now() / 1000
+                for (let i = 0; i < barCount; i++) {
+                    const barHeight = Math.sin(time + i * 0.1) * 8 + 12
+                    const x = i * barWidth + barWidth / 2 - 2
+                    const gradient = ctx.createLinearGradient(0, centerY - barHeight, 0, centerY + barHeight)
+                    gradient.addColorStop(0, current?.primary + "40")
+                    gradient.addColorStop(1, current?.primary + "20")
+                    ctx.fillStyle = gradient
+                    ctx.fillRect(x, centerY - barHeight / 2, 4, barHeight)
+                }
+            } else {
+                // Get frequency data
+                analyser.getByteFrequencyData(dataArray)
+
+                // Clear canvas with gradient background
+                const bgGradient = ctx.createLinearGradient(0, 0, 0, height)
+                bgGradient.addColorStop(0, current?.dark + "10")
+                bgGradient.addColorStop(1, current?.dark + "05")
+                ctx.fillStyle = bgGradient
+                ctx.fillRect(0, 0, width, height)
+
+                // Draw bars
+                for (let i = 0; i < barCount; i++) {
+                    const dataIndex = Math.floor((i / barCount) * bufferLength)
+                    const barHeight = (dataArray[dataIndex] / 255) * (height * 0.8)
+                    const normalizedHeight = Math.max(4, barHeight)
+                    
+                    const x = i * barWidth + barWidth / 2 - 2
+                    
+                    // Create gradient for each bar
+                    const gradient = ctx.createLinearGradient(0, centerY - normalizedHeight, 0, centerY + normalizedHeight)
+                    const opacity = Math.min(1, normalizedHeight / (height * 0.4))
+                    const alpha1 = Math.floor(opacity * 255).toString(16).padStart(2, '0')
+                    const alpha2 = Math.floor(opacity * 200).toString(16).padStart(2, '0')
+                    const alpha3 = Math.floor(opacity * 100).toString(16).padStart(2, '0')
+                    gradient.addColorStop(0, current?.primary + alpha1)
+                    gradient.addColorStop(0.5, current?.primary + alpha2)
+                    gradient.addColorStop(1, current?.primary + alpha3)
+                    
+                    ctx.fillStyle = gradient
+                    ctx.fillRect(x, centerY - normalizedHeight / 2, 4, normalizedHeight)
+                }
+            }
+
+            animationFrameRef.current = requestAnimationFrame(draw)
+        }
+
+        draw()
+
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current)
+            }
+            audio.removeEventListener('canplay', connectAudio)
+            audio.removeEventListener('play', handlePlay)
+            if (source) {
+                try {
+                    source.disconnect()
+                } catch (e) {}
+            }
+            if (audioContext.state !== 'closed') {
+                audioContext.close().catch(() => {})
+            }
+        }
+    }, [isPlaying, current, audioRef])
 
     return (
         <View
-            className="w-[320px] h-[320px] rounded-lg flex items-center justify-center overflow-hidden media-glow relative"
+            className="w-[320px] h-[320px] rounded-lg flex items-center justify-center overflow-hidden media-glow"
             style={{ 
                 backgroundColor: current?.dark + "10"
             }}
         >
-            {!thumbnailLoaded && !thumbnailError && (
-                <div 
-                    className="absolute inset-0"
-                    style={{
-                        backgroundColor: current?.dark + "10",
-                        animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-                        borderRadius: "0.5rem"
-                    }}
-                />
-            )}
-            <img
-                src={file.thumbnail}
-                alt={file.name}
-                className={`w-full h-full object-cover ${thumbnailLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity`}
-                style={{
-                    backgroundSize: "cover",
-                    backgroundPosition: "center"
-                }}
-                onLoad={() => setThumbnailLoaded(true)}
-                onError={() => {
-                    setThumbnailError(true)
-                    setThumbnailLoaded(true)
-                }}
+            <canvas
+                ref={canvasRef}
+                width={320}
+                height={320}
+                className="w-full h-full"
             />
-            {thumbnailError && <Text value="🎵" className="text-8xl absolute" />}
         </View>
     )
 }
@@ -677,7 +790,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                     </button>
                 </View>
             ) : (
-                <ThumbnailPlaceholder file={file} />
+                <AudioVisualizer audioRef={audioRef} isPlaying={isPlaying} />
             )}
 
             {/* Song Title */}

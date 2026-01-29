@@ -70,11 +70,11 @@ const RequestStorageModal = ({ onClose, onSuccess }: Props) => {
                             value={requestedGB}
                             onChange={(e) => setRequestedGB(e.target.value)}
                             placeholder="e.g., 50"
-                            className="px-4 py-2 rounded-lg border"
+                            className="px-4 py-2 rounded-lg"
                             style={{
                                 backgroundColor: current?.background,
-                                borderColor: current?.dark + "20",
                                 color: current?.dark,
+                                outline: "none",
                             }}
                             required
                         />
@@ -88,11 +88,11 @@ const RequestStorageModal = ({ onClose, onSuccess }: Props) => {
                             onChange={(e) => setReason(e.target.value)}
                             placeholder="Explain why you need additional storage..."
                             rows={4}
-                            className="px-4 py-2 rounded-lg border resize-none"
+                            className="px-4 py-2 rounded-lg resize-none"
                             style={{
                                 backgroundColor: current?.background,
-                                borderColor: current?.dark + "20",
                                 color: current?.dark,
+                                outline: "none",
                             }}
                         />
                     </View>
@@ -112,7 +112,7 @@ const RequestStorageModal = ({ onClose, onSuccess }: Props) => {
                             onClick={onClose}
                             className="px-4 py-2 rounded-lg font-medium transition-opacity hover:opacity-80"
                             style={{
-                                backgroundColor: current?.dark + "10",
+                                backgroundColor: current?.foreground,
                                 color: current?.dark,
                             }}
                         >

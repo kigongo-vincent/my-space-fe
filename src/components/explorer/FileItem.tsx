@@ -100,10 +100,11 @@ const FileItem = ({
         }
     }
 
-    // Get image URL for picture files
+    // Prefer actual image (thumbnail or url) over icon for picture files
     const getImageUrl = () => {
-        if (file.type === "picture" && file.thumbnail) {
-            return file.thumbnail
+        if (file.type === "picture") {
+            if (file.thumbnail) return file.thumbnail
+            if (file.url) return file.url
         }
         return getImageByFileType(file.type)
     }

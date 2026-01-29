@@ -124,15 +124,17 @@ const PropertiesModal = ({ fileId, onClose }: Props) => {
         }
     }
 
-    // Get image URL for the preview - use thumbnail if available, otherwise fallback to type icon
+    // Get image URL for the preview - use thumbnail/url for pictures, thumbnail for audio, else type icon
     const getPreviewImageUrl = () => {
-        // For pictures and audio, use thumbnail if available
-        if ((file.type === "picture" || file.type === "audio") && file.thumbnail) {
-            return file.thumbnail
+        if (file.type === "picture") {
+            if (file.thumbnail) return file.thumbnail
+            if (file.url) return file.url
         }
-        // Fallback to type-based icon
+        if (file.type === "audio" && file.thumbnail) return file.thumbnail
         return getImageByFileType(file.type)
     }
+    
+    const hasImagePreview = (file.type === "picture" && (file.thumbnail || file.url)) || (file.type === "audio" && file.thumbnail)
 
     const getTypeLabel = () => {
         if (file.isFolder) return "Folder"
@@ -169,16 +171,14 @@ const PropertiesModal = ({ fileId, onClose }: Props) => {
                             className="w-20 h-20 rounded-lg flex items-center justify-center overflow-hidden"
                             style={{ 
                                 backgroundColor: current?.primary + "10",
-                                backgroundImage: (file.type === "picture" || file.type === "audio") && file.thumbnail 
-                                    ? `url(${file.thumbnail})` 
-                                    : undefined,
+                                backgroundImage: hasImagePreview ? `url(${getPreviewImageUrl()})` : undefined,
                                 backgroundSize: "cover",
                                 backgroundPosition: "center"
                             }}
                         >
-                            {(file.type === "picture" || file.type === "audio") && file.thumbnail ? (
+                            {hasImagePreview ? (
                                 <img
-                                    src={file.thumbnail}
+                                    src={getPreviewImageUrl()}
                                     alt={file.name}
                                     className="w-full h-full object-cover"
                                 />

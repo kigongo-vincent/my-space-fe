@@ -3,7 +3,7 @@ import View from "../base/View"
 import Text from "../base/Text"
 import { useFileStore, FileItem } from "../../store/Filestore"
 import FileItemComponent from "./FileItem"
-import { ArrowLeft, Home, FolderPlus, Upload, FileText, Link2 } from "lucide-react"
+import { ArrowLeft, Home, FolderPlus, Upload, FileText, Link2, RotateCw } from "lucide-react"
 import { useTheme } from "../../store/Themestore"
 import IconButton from "../base/IconButton"
 import Button from "../base/Button"
@@ -17,6 +17,7 @@ import PropertiesModal from "./PropertiesModal"
 import FolderTree from "./FolderTree"
 import Gallery3DView from "./Gallery3DView"
 import ViewSettingsBar from "./ViewSettingsBar"
+import { FileItemSkeleton, ListItemSkeleton } from "../base/Skeleton"
 import {
     FolderOpen,
     Edit,
@@ -57,6 +58,8 @@ const FileExplorer = () => {
         selectedFiles,
         visitedPaths,
         highlightedFileId,
+        fetchDisks,
+        isLoading,
     } = useFileStore()
 
     const { current } = useTheme()
@@ -626,6 +629,15 @@ const FileExplorer = () => {
         if (!file.id) {
             return [
                 {
+                    label: "Refresh",
+                    icon: <RotateCw size={16} />,
+                    action: () => {
+                        fetchDisks()
+                        setContextMenu(null)
+                    }
+                },
+                { separator: true },
+                {
                     label: "Paste",
                     icon: <Clipboard size={16} />,
                     action: () => {
@@ -675,6 +687,15 @@ const FileExplorer = () => {
 
         // File context menu
         const items: ContextMenuItem[] = [
+            {
+                label: "Refresh",
+                icon: <RotateCw size={16} />,
+                action: () => {
+                    fetchDisks()
+                    setContextMenu(null)
+                }
+            },
+            { separator: true },
             {
                 label: file.isFolder ? "Open" : "Open",
                 icon: <FolderOpen size={16} />,
@@ -1030,6 +1051,15 @@ const FileExplorer = () => {
                     {/* Right: Action buttons */}
                     <View className="flex items-center gap-2 flex-shrink-0">
                         <IconButton
+                            icon={<RotateCw size={18} color={current?.dark} />}
+                            action={() => {
+                                if (currentDiskId) {
+                                    fetchDisks()
+                                }
+                            }}
+                            title="Refresh"
+                        />
+                        <IconButton
                             icon={<Upload size={18} color={current?.dark} />}
                             action={() => {
                                 if (currentDiskId) {
@@ -1087,11 +1117,19 @@ const FileExplorer = () => {
                             backgroundColor: isDragging ? current?.primary + "05" : "transparent"
                         }}
                     >
-                        <Gallery3DView
-                            files={files}
-                            onFileClick={handleFileClick}
-                            onContextMenu={handleContextMenu}
-                        />
+                        {isLoading ? (
+                            <View className="grid grid-cols-6 gap-4 p-2 h-full overflow-auto">
+                                {Array.from({ length: 12 }).map((_, i) => (
+                                    <FileItemSkeleton key={i} />
+                                ))}
+                            </View>
+                        ) : (
+                            <Gallery3DView
+                                files={files}
+                                onFileClick={handleFileClick}
+                                onContextMenu={handleContextMenu}
+                            />
+                        )}
                     </View>
                 ) : (
                     <View
@@ -1146,7 +1184,17 @@ const FileExplorer = () => {
                                 </View>
                             </View>
                         )}
-                        {files.length === 0 ? (
+                        {isLoading ? (
+                            <View className={viewMode === "grid" ? "grid grid-cols-6 gap-4 p-2" : "flex flex-col gap-1 p-2"}>
+                                {viewMode === "grid"
+                                    ? Array.from({ length: 12 }).map((_, i) => (
+                                        <FileItemSkeleton key={i} />
+                                      ))
+                                    : Array.from({ length: 8 }).map((_, i) => (
+                                        <ListItemSkeleton key={i} />
+                                      ))}
+                            </View>
+                        ) : files.length === 0 ? (
                             <View className="h-full flex items-center justify-center empty-space">
                                 <Text value="This folder is empty" className="opacity-60" />
                             </View>

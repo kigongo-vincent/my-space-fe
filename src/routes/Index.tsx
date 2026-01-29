@@ -35,9 +35,7 @@ const Index = () => {
             } />
             <Route path='/settings' element={
                 <ProtectedRoute>
-                    <Layout>
-                        <Settings />
-                    </Layout>
+                    <Settings />
                 </ProtectedRoute>
             } />
             <Route path='/admin/*' element={
