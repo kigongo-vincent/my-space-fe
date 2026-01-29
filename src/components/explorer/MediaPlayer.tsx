@@ -14,7 +14,7 @@ interface Props {
     videoUrl?: string
 }
 
-const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HTMLAudioElement>, isPlaying: boolean }) => {
+const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HTMLAudioElement | null>, isPlaying: boolean }) => {
     const { current } = useTheme()
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const animationFrameRef = useRef<number | null>(null)
@@ -41,7 +41,7 @@ const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HT
 
         const connectAudio = async () => {
             if (audioContext.state === 'closed') return
-            
+
             // Resume audio context if suspended (browser autoplay policy)
             if (audioContext.state === 'suspended') {
                 try {
@@ -50,7 +50,7 @@ const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HT
                     console.warn('Could not resume audio context:', e)
                 }
             }
-            
+
             try {
                 if (!source) {
                     source = audioContext.createMediaElementSource(audio)
@@ -97,7 +97,7 @@ const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HT
                 bgGradient.addColorStop(1, current?.dark + "08")
                 ctx.fillStyle = bgGradient
                 ctx.fillRect(0, 0, width, height)
-                
+
                 const time = Date.now() / 1000
                 for (let i = 0; i < barCount; i++) {
                     const barHeight = Math.sin(time + i * 0.1) * 8 + 12
@@ -124,9 +124,9 @@ const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HT
                     const dataIndex = Math.floor((i / barCount) * bufferLength)
                     const barHeight = (dataArray[dataIndex] / 255) * (height * 0.8)
                     const normalizedHeight = Math.max(4, barHeight)
-                    
+
                     const x = i * barWidth + barWidth / 2 - 2
-                    
+
                     // Create gradient for each bar
                     const gradient = ctx.createLinearGradient(0, centerY - normalizedHeight, 0, centerY + normalizedHeight)
                     const opacity = Math.min(1, normalizedHeight / (height * 0.4))
@@ -136,7 +136,7 @@ const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HT
                     gradient.addColorStop(0, current?.primary + alpha1)
                     gradient.addColorStop(0.5, current?.primary + alpha2)
                     gradient.addColorStop(1, current?.primary + alpha3)
-                    
+
                     ctx.fillStyle = gradient
                     ctx.fillRect(x, centerY - normalizedHeight / 2, 4, normalizedHeight)
                 }
@@ -156,10 +156,10 @@ const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HT
             if (source) {
                 try {
                     source.disconnect()
-                } catch (e) {}
+                } catch (e) { }
             }
             if (audioContext.state !== 'closed') {
-                audioContext.close().catch(() => {})
+                audioContext.close().catch(() => { })
             }
         }
     }, [isPlaying, current, audioRef])
@@ -167,7 +167,7 @@ const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HT
     return (
         <View
             className="w-[320px] h-[320px] rounded-lg flex items-center justify-center overflow-hidden media-glow"
-            style={{ 
+            style={{
                 backgroundColor: current?.dark + "10"
             }}
         >
@@ -215,7 +215,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                 const updateNetworkSpeed = () => {
                     const effectiveType = connection.effectiveType || '4g'
                     const downlink = connection.downlink || 10
-                    
+
                     if (effectiveType === 'slow-2g' || effectiveType === '2g' || downlink < 0.5) {
                         setNetworkSpeed('slow')
                         setPreloadStrategy('metadata')
@@ -227,10 +227,10 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                         setPreloadStrategy('auto')
                     }
                 }
-                
+
                 updateNetworkSpeed()
                 connection.addEventListener('change', updateNetworkSpeed)
-                
+
                 return () => {
                     connection.removeEventListener('change', updateNetworkSpeed)
                 }
@@ -242,28 +242,28 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
     const getSiblingFiles = (): FileItem[] => {
         // Try to get files from current folder view first
         const currentFiles = getCurrentFolderFiles()
-        const sameTypeInCurrentFolder = currentFiles.filter(f => 
-            !f.isFolder && 
+        const sameTypeInCurrentFolder = currentFiles.filter(f =>
+            !f.isFolder &&
             f.type === file.type
         )
-        
+
         // If we found files in current folder, use those
         if (sameTypeInCurrentFolder.length > 0) {
             return sameTypeInCurrentFolder.filter(f => f.id !== file.id)
         }
-        
+
         // Otherwise, try to get from parent folder
         if (file.parentId) {
             const parentFile = getFileById(file.parentId)
             if (parentFile && parentFile.children) {
-                return parentFile.children.filter(f => 
-                    !f.isFolder && 
-                    f.type === file.type && 
+                return parentFile.children.filter(f =>
+                    !f.isFolder &&
+                    f.type === file.type &&
                     f.id !== file.id
                 )
             }
         }
-        
+
         return []
     }
 
@@ -271,7 +271,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
     // Include current file in the list for proper indexing, then sort by name
     const allFiles = [...siblingFiles, file].sort((a, b) => a.name.localeCompare(b.name))
     const currentIndex = allFiles.findIndex(f => f.id === file.id)
-    
+
     // Get next and previous files
     const getNextFile = (): FileItem | null => {
         if (allFiles.length <= 1) return null
@@ -288,22 +288,22 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
     // Spotify-style: Preload next track for instant switching
     const preloadNextTrack = (nextFile: FileItem) => {
         if (!nextFile.url || isVideo) return
-        
+
         // Create hidden audio element to preload next track
         if (nextTrackPreloadRef.current) {
             nextTrackPreloadRef.current.pause()
             nextTrackPreloadRef.current.src = ''
             nextTrackPreloadRef.current.load()
         }
-        
+
         const preloadAudio = document.createElement('audio')
         preloadAudio.preload = 'auto'
         preloadAudio.src = nextFile.url
         preloadAudio.volume = 0 // Silent preload
         preloadAudio.load() // Start loading immediately
-        
+
         nextTrackPreloadRef.current = preloadAudio
-        
+
         // Pre-connect to next track URL (DNS + TCP handshake)
         if ('dns-prefetch' in document.createElement('link')) {
             const link = document.createElement('link')
@@ -322,7 +322,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                 media.pause()
                 media.currentTime = 0
             }
-            
+
             // Check if current file is in a modal, if so update it instead of opening new one
             const currentModal = findModalByFileId(file.id)
             if (currentModal) {
@@ -342,7 +342,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                 media.pause()
                 media.currentTime = 0
             }
-            
+
             // Check if current file is in a modal, if so update it instead of opening new one
             const currentModal = findModalByFileId(file.id)
             if (currentModal) {
@@ -448,20 +448,20 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                 lastTimeUpdate = now
             }
         }
-        
+
         const updateDuration = () => {
             setDuration(media.duration)
             setIsLoading(false)
-            
+
             // Spotify-style: Aggressive preloading for next track
             const nextFile = getNextFile()
             if (nextFile && networkSpeed !== 'slow') {
                 nextFileRef.current = nextFile
-                
+
                 // For audio, preload next track immediately (Spotify-style)
                 if (!isVideo && nextFile.url) {
                     preloadNextTrack(nextFile)
-                    
+
                     // Also use prefetch as backup
                     const link = document.createElement('link')
                     link.rel = 'prefetch'
@@ -504,7 +504,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                     console.warn(`High playback latency: ${latency}ms (target: <200ms)`)
                 }
             }
-            
+
             setIsPlaying(true)
             setIsBuffering(false)
             // Switch to auto preload when playing starts (YouTube-style)
@@ -515,7 +515,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
         }
 
         const handlePause = () => setIsPlaying(false)
-        
+
         const handleWaiting = () => {
             setIsBuffering(true)
             // Aggressively try to buffer more
@@ -529,7 +529,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
             // Don't wait for canplaythrough - this reduces latency significantly
             setIsBuffering(false)
             setIsLoading(false)
-            
+
             // For audio, try to start playing immediately if user clicked play
             if (!isVideo && !isPlaying && media.readyState >= 2) {
                 // Audio is ready to play, but wait for user interaction
@@ -613,13 +613,13 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
             media.removeEventListener("canplaythrough", handleCanPlayThrough)
             media.removeEventListener("loadstart", handleLoadStart)
             media.removeEventListener("progress", handleProgress)
-            
+
             if (rafId !== null) {
                 cancelAnimationFrame(rafId)
             }
-            
+
             clearInterval(progressInterval)
-            
+
             if (prefetchTimeoutRef.current) {
                 clearTimeout(prefetchTimeoutRef.current)
             }
@@ -635,10 +635,10 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
         } else {
             // Spotify-style: Measure latency from click to playback
             playStartTimeRef.current = Date.now()
-            
+
             // Start playback immediately
             const playPromise = media.play()
-            
+
             // Handle promise rejection (autoplay policies)
             if (playPromise !== undefined) {
                 playPromise
@@ -705,11 +705,11 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
         <View className={`flex flex-col ${isVideo ? 'h-full' : 'h-full'} items-center ${isVideo ? 'justify-start' : 'justify-center'} p-10 gap-8 overflow-auto`}>
             {/* Album Art / Video Display */}
             {isVideo ? (
-                <View 
+                <View
                     ref={videoContainerRef}
                     className="relative rounded-lg media-glow overflow-hidden"
-                    style={{ 
-                        position: 'relative', 
+                    style={{
+                        position: 'relative',
                         display: 'flex',
                         width: '100%',
                         maxWidth: '800px',
@@ -737,7 +737,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                             setIsLoading(true)
                             setIsBuffering(true)
                         }}
-                        style={{ 
+                        style={{
                             width: '100%',
                             height: 'auto',
                             display: 'block',
@@ -767,9 +767,9 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                                             borderTopColor: current?.primary,
                                         }}
                                     />
-                                    <Text 
-                                        value={isLoading ? "Loading..." : "Buffering..."} 
-                                        size="sm" 
+                                    <Text
+                                        value={isLoading ? "Loading..." : "Buffering..."}
+                                        size="sm"
                                         className="opacity-80"
                                     />
                                 </View>
@@ -795,21 +795,21 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
 
             {/* Song Title */}
             <View className="flex flex-col items-center gap-1 max-w-md">
-                <Text 
-                    value={file.name.replace(/\.[^/.]+$/, "")} 
-                    className="font-semibold text-xl text-center leading-tight" 
-                    style={{ 
+                <Text
+                    value={file.name.replace(/\.[^/.]+$/, "")}
+                    className="font-semibold text-xl text-center leading-tight"
+                    style={{
                         color: current?.dark,
                         letterSpacing: "-0.02em"
-                    }} 
+                    }}
                 />
-                <Text 
-                    value="Now Playing" 
-                    className="text-xs text-center uppercase tracking-wider" 
-                    style={{ 
+                <Text
+                    value="Now Playing"
+                    className="text-xs text-center uppercase tracking-wider"
+                    style={{
                         color: current?.dark + "70",
                         letterSpacing: "0.1em"
-                    }} 
+                    }}
                 />
             </View>
 
@@ -831,7 +831,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                     onClick={playPrevious}
                     disabled={!getPreviousFile()}
                     className="p-3 hover:opacity-70 transition-opacity rounded-full hover:bg-opacity-10 disabled:opacity-30 disabled:cursor-not-allowed"
-                    style={{ 
+                    style={{
                         color: current?.dark,
                         backgroundColor: current?.dark + "08"
                     }}
@@ -847,7 +847,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                         }
                     }}
                     className="p-3 hover:opacity-70 transition-opacity rounded-full hover:bg-opacity-10"
-                    style={{ 
+                    style={{
                         color: current?.dark,
                         backgroundColor: current?.dark + "08"
                     }}
@@ -860,7 +860,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                     disabled={isLoading}
                     className="rounded-full hover:scale-105 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
-                        boxShadow: name === "dark" 
+                        boxShadow: name === "dark"
                             ? `0 10px 15px -3px rgba(0, 0, 0, 0.3)`
                             : `0 10px 15px -3px ${current?.dark}10`,
                         backgroundColor: current?.primary,
@@ -890,7 +890,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                         }
                     }}
                     className="p-3 hover:opacity-70 transition-opacity rounded-full hover:bg-opacity-10"
-                    style={{ 
+                    style={{
                         color: current?.dark,
                         backgroundColor: current?.dark + "08"
                     }}
@@ -902,7 +902,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                     onClick={playNext}
                     disabled={!getNextFile()}
                     className="p-3 hover:opacity-70 transition-opacity rounded-full hover:bg-opacity-10 disabled:opacity-30 disabled:cursor-not-allowed"
-                    style={{ 
+                    style={{
                         color: current?.dark,
                         backgroundColor: current?.dark + "08"
                     }}
@@ -916,11 +916,11 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
             <View className="flex items-center justify-center gap-8 mt-2">
                 {/* Playback Speed */}
                 <View className="flex items-center gap-3">
-                    <Text 
-                        value="Speed" 
-                        size="sm" 
+                    <Text
+                        value="Speed"
+                        size="sm"
                         className="uppercase tracking-wider"
-                        style={{ color: current?.dark + "70", letterSpacing: "0.1em" }} 
+                        style={{ color: current?.dark + "70", letterSpacing: "0.1em" }}
                     />
                     <View className="flex items-center gap-1.5">
                         {[0.5, 1, 1.5, 2].map((rate) => (
@@ -941,7 +941,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                 </View>
 
                 {/* Volume Control */}
-                <View 
+                <View
                     className="flex items-center gap-3 relative"
                     onMouseEnter={() => setShowVolumeSlider(true)}
                     onMouseLeave={() => setShowVolumeSlider(false)}
@@ -949,7 +949,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                     <button
                         onClick={toggleMute}
                         className="p-2 hover:opacity-80 transition-opacity rounded-full hover:bg-opacity-10"
-                        style={{ 
+                        style={{
                             color: current?.dark,
                             backgroundColor: current?.dark + "08"
                         }}
@@ -959,10 +959,10 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                     </button>
                     {showVolumeSlider && (
                         <View className="absolute bottom-full mb-3 left-1/2 transform -translate-x-1/2">
-                            <View 
+                            <View
                                 className="p-4 rounded-lg flex items-center"
                                 style={{
-                                    boxShadow: name === "dark" 
+                                    boxShadow: name === "dark"
                                         ? `0 20px 25px -5px rgba(0, 0, 0, 0.3)`
                                         : `0 20px 25px -5px ${current?.dark}10`,
                                     backgroundColor: current?.foreground || current?.background,

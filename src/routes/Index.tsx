@@ -5,7 +5,6 @@ import DashboardRoutes from "./dashboard/Index"
 import Settings from '../pages/settings/Index'
 import AdminRoutes from './admin/Index'
 import NotFound from '../pages/NotFound'
-import Layout from '../components/base/Layout'
 import { ProtectedRoute } from '../components/auth/ProtectedRoute'
 import { AdminProtectedRoute } from '../components/auth/AdminProtectedRoute'
 import { PublicRoute } from '../components/auth/PublicRoute'
