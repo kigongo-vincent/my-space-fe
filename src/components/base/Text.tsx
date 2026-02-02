@@ -7,7 +7,7 @@ export interface Props extends HTMLAttributes<HTMLParagraphElement> {
 
 const Text = ({ value, size, className, ...rest }: Props) => {
     return (
-        <p {...rest} className={` ${size == "sm" ? "text-[11.5px]" : size == "md" ? "text-[14px]" : size == "lg" ? "text-[24px]" : "text-[12px]"} ${className}`}>
+        <p {...rest} className={` ${size == "sm" ? "text-[0.85rem]" : size == "md" ? "text-[1.04rem]" : size == "lg" ? "text-[1.78rem]" : "text-[0.89rem]"} ${className}`}>
             {value}
         </p>
     )

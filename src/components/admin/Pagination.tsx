@@ -2,7 +2,7 @@ import View from "../base/View"
 import Text from "../base/Text"
 import { useTheme } from "../../store/Themestore"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import CustomSelect from "./CustomSelect"
+import Select from "../base/Select"
 
 interface PaginationProps {
     currentPage: number
@@ -41,7 +41,7 @@ const Pagination = ({
                 />
                 <View className="flex items-center gap-2">
                     <Text value="Items per page:" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
-                    <CustomSelect
+                    <Select
                         value={itemsPerPage}
                         onChange={(value) => onItemsPerPageChange(Number(value))}
                         options={[

@@ -5,9 +5,10 @@ export interface Props extends HTMLAttributes<HTMLButtonElement> {
     icon: ReactNode
     action: () => void
     disabled?: boolean
+    transparent?: boolean
 }
 
-const IconButton = ({ icon, action, onClick, ...rest }: Props) => {
+const IconButton = ({ icon, action, onClick, transparent, ...rest }: Props) => {
 
     const { current } = useTheme()
 
@@ -24,7 +25,7 @@ const IconButton = ({ icon, action, onClick, ...rest }: Props) => {
         <button
             onClick={handleClick}
             style={{
-                backgroundColor: current?.background
+                backgroundColor: transparent ? 'transparent' : current?.background
             }}
             className="h-[5vh] cursor-pointer w-[5vh] flex items-center rounded-lg justify-center hover:opacity-80 transition-opacity" {...rest}>
             {icon}

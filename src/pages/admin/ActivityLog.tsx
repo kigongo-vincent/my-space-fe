@@ -1,5 +1,6 @@
 import View from "../../components/base/View"
 import Text from "../../components/base/Text"
+import AdminPageHeader from "../../components/admin/AdminPageHeader"
 import { useTheme } from "../../store/Themestore"
 import { useState, useMemo, useEffect } from "react"
 import { useAdminSearchStore } from "../../store/AdminSearchStore"
@@ -9,6 +10,7 @@ import { Activity, Users, HardDrive, Shield, Download, Upload } from "lucide-rea
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
 import { getPrimaryColorVariations, getPrimaryColorWithOpacity } from "../../utils/chartColors"
 import { getPastelColor } from "../../utils/colorUtils"
+import api from "../../utils/api"
 
 interface ActivityItem {
     id: number
@@ -23,38 +25,47 @@ const ActivityLog = () => {
     const { current } = useTheme()
     const { searchQuery } = useAdminSearchStore()
     const { activityType } = useAdminFilterStore()
-    
+    const [activities, setActivities] = useState<ActivityItem[]>([])
+    const [totalActivities, setTotalActivities] = useState(0)
+    const [loading, setLoading] = useState(true)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(10)
+
+    const fetchActivities = async () => {
+        try {
+            setLoading(true)
+            const typeParam = activityType === "all" ? "" : `&type=${activityType}`
+            const searchParam = searchQuery.trim() ? `&search=${encodeURIComponent(searchQuery)}` : ""
+            const data = await api.get<{ items: ActivityItem[]; total: number }>(
+                `/admin/activity-log?page=${currentPage}&limit=${itemsPerPage}${typeParam}${searchParam}`,
+                true
+            )
+            setActivities(data.items || [])
+            setTotalActivities(data.total || 0)
+        } catch (error) {
+            console.error("Failed to fetch activities:", error)
+            setActivities([])
+            setTotalActivities(0)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchActivities()
+    }, [currentPage, itemsPerPage, activityType, searchQuery])
+
     // Reset to page 1 when search changes
     useEffect(() => {
         setCurrentPage(1)
     }, [searchQuery])
-    const [currentPage, setCurrentPage] = useState(1)
-    const [itemsPerPage, setItemsPerPage] = useState(10)
 
-    // Activity data - should be fetched from API
-    const activities: ActivityItem[] = useMemo(() => [], [])
+    // API returns filtered & paginated data
+    const paginatedActivities = activities
+    const totalPages = Math.ceil(totalActivities / itemsPerPage) || 1
 
-    const filteredActivities = useMemo(() => {
-        return activities.filter(activity => {
-            const matchesSearch = !searchQuery.trim() || 
-                                activity.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                activity.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                activity.details.toLowerCase().includes(searchQuery.toLowerCase())
-            const matchesFilter = activityType === "all" || activity.type === activityType
-            return matchesSearch && matchesFilter
-        })
-    }, [activities, searchQuery, activityType])
-
-    const paginatedActivities = useMemo(() => {
-        const start = (currentPage - 1) * itemsPerPage
-        const end = start + itemsPerPage
-        return filteredActivities.slice(start, end)
-    }, [filteredActivities, currentPage, itemsPerPage])
-
-    const totalPages = Math.ceil(filteredActivities.length / itemsPerPage)
-
-    // Summary stats
-    const totalActivities = activities.length
+    // Summary stats from current page data (for charts - full stats would need separate endpoint)
+    const totalActivitiesCount = totalActivities
     const userActions = activities.filter(a => a.type === "user").length
     const storageActions = activities.filter(a => a.type === "storage").length
     const systemActions = activities.filter(a => a.type === "system").length
@@ -73,14 +84,18 @@ const ActivityLog = () => {
     // Chart colors - use primary color variations
     const primaryColors = getPrimaryColorVariations(current?.primary || "#EE7E06")
     
-    // Chart data - Activity over time
+    // Chart data - Activity over time (from current page data)
     const activityOverTimeData = useMemo(() => {
-        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-        return days.map(day => ({
-            day,
-            activities: Math.floor(Math.random() * 20) + 5
-        }))
-    }, [])
+        const dayCounts: Record<string, number> = {}
+        activities.forEach(a => {
+            const day = a.timestamp.split(" ")[0]
+            dayCounts[day] = (dayCounts[day] || 0) + 1
+        })
+        return Object.entries(dayCounts)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([day, count]) => ({ day: day.slice(5) || day, activities: count }))
+            .slice(-7)
+    }, [activities])
 
     // Activity by type distribution
     const activityByTypeData = [
@@ -92,11 +107,8 @@ const ActivityLog = () => {
 
 
     return (
-        <View className="px-8 pt-8 pb-4" style={{ backgroundColor: current?.background }}>
-            <View className="mb-8">
-                <Text value="Activity Log" style={{ color: current?.dark, fontSize: '1.11rem', fontWeight: 500 }} />
-                <Text value="Monitor all system activities and user actions" style={{ fontSize: '1rem', opacity: 0.6, marginTop: '0.5rem' }} />
-            </View>
+        <View className="flex flex-col">
+            <AdminPageHeader title="Activity Log" subtitle="Monitor all system activities and user actions" />
 
             {/* Summary Cards */}
             <View className="grid grid-cols-4 gap-6 mb-8">
@@ -122,7 +134,7 @@ const ActivityLog = () => {
                             <Activity size={18} color={current?.primary} />
                         </View>
                     </View>
-                    <Text value={totalActivities.toString()} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} />
+                    <Text value={totalActivitiesCount.toString()} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }} />
                 </View>
 
                 <View
@@ -147,7 +159,7 @@ const ActivityLog = () => {
                             <Users size={18} color={current?.primary} />
                         </View>
                     </View>
-                    <Text value={userActions.toString()} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} />
+                    <Text value={userActions.toString()} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }} />
                 </View>
 
                 <View
@@ -172,7 +184,7 @@ const ActivityLog = () => {
                             <HardDrive size={18} color="#3b82f6" />
                         </View>
                     </View>
-                    <Text value={storageActions.toString()} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} />
+                    <Text value={storageActions.toString()} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }} />
                 </View>
 
                 <View
@@ -197,7 +209,7 @@ const ActivityLog = () => {
                             <Shield size={18} color="#f59e0b" />
                         </View>
                     </View>
-                    <Text value={securityActions.toString()} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} />
+                    <Text value={securityActions.toString()} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }} />
                 </View>
             </View>
 
@@ -213,13 +225,14 @@ const ActivityLog = () => {
                     <Text value="Activity Over Time" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500, marginBottom: '1rem' }} />
                     <ResponsiveContainer width="100%" height={250}>
                         <AreaChart data={activityOverTimeData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}20`} />
+                            <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
                             <XAxis dataKey="day" stroke={current?.dark} style={{ fontSize: '0.815rem' }} />
                             <YAxis stroke={current?.dark} style={{ fontSize: '0.815rem' }} />
                             <Tooltip 
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',
+                                    boxShadow: 'none',
                                     borderRadius: '0.25rem',
                                     fontSize: '0.815rem'
                                 }}
@@ -248,15 +261,17 @@ const ActivityLog = () => {
                                 outerRadius={80}
                                 fill="#8884d8"
                                 dataKey="value"
+                                stroke="none"
                             >
                                 {activityByTypeData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                                 ))}
                             </Pie>
                             <Tooltip 
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',
+                                    boxShadow: 'none',
                                     borderRadius: '0.25rem',
                                     fontSize: '0.815rem'
                                 }}
@@ -290,7 +305,7 @@ const ActivityLog = () => {
                         </View>
                         <Text value="User Management Activity" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                     </View>
-                    <Text value={userActions.toString()} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, marginBottom: '0.25rem' }} />
+                    <Text value={userActions.toString()} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, marginBottom: '0.25rem' }} />
                     <Text value="User actions this period" style={{ fontSize: '0.815rem', opacity: 0.6, color: current?.dark }} />
                 </View>
 
@@ -316,7 +331,7 @@ const ActivityLog = () => {
                         </View>
                         <Text value="Storage Management Activity" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                     </View>
-                    <Text value={storageActions.toString()} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, marginBottom: '0.25rem' }} />
+                    <Text value={storageActions.toString()} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, marginBottom: '0.25rem' }} />
                     <Text value="Storage actions this period" style={{ fontSize: '0.815rem', opacity: 0.6, color: current?.dark }} />
                 </View>
             </View>
@@ -353,7 +368,11 @@ const ActivityLog = () => {
                     </View>
                 </View>
 
-                {paginatedActivities.length === 0 ? (
+                {loading ? (
+                    <View className="p-8 text-center">
+                        <Text value="Loading..." style={{ opacity: 0.6, fontSize: '1rem' }} />
+                    </View>
+                ) : paginatedActivities.length === 0 ? (
                     <View className="p-8 text-center">
                         <Text value="No activities found" style={{ opacity: 0.6, fontSize: '1rem' }} />
                     </View>
@@ -408,13 +427,13 @@ const ActivityLog = () => {
             </View>
 
             {/* Pagination */}
-            {filteredActivities.length > 0 && (
+            {totalActivities > 0 && (
                 <View className="mt-4">
                     <Pagination
                         currentPage={currentPage}
                         totalPages={totalPages}
                         itemsPerPage={itemsPerPage}
-                        totalItems={filteredActivities.length}
+                        totalItems={totalActivities}
                         onPageChange={setCurrentPage}
                         onItemsPerPageChange={(limit) => {
                             setItemsPerPage(limit)

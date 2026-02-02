@@ -40,9 +40,9 @@ const AlertModal = ({
     const getIcon = () => {
         switch (type) {
             case "success":
-                return <CheckCircle2 size={24} color="#10b981" />
+                return <CheckCircle2 size={24} color={current?.success || "#10b981"} />
             case "warning":
-                return <AlertCircle size={24} color="#f59e0b" />
+                return <AlertCircle size={24} color={current?.warning || "#f59e0b"} />
             case "info":
                 return <Info size={24} color={current?.primary} />
             default:
@@ -67,9 +67,9 @@ const AlertModal = ({
     const getBackgroundColor = () => {
         switch (type) {
             case "success":
-                return "#10b98120"
+                return (current?.success || "#10b981") + "20"
             case "warning":
-                return "#f59e0b20"
+                return (current?.warning || "#f59e0b") + "20"
             case "info":
                 return current?.primary + "20"
             default:
@@ -80,9 +80,9 @@ const AlertModal = ({
     const getBorderColor = () => {
         switch (type) {
             case "success":
-                return "#10b98140"
+                return (current?.success || "#10b981") + "40"
             case "warning":
-                return "#f59e0b40"
+                return (current?.warning || "#f59e0b") + "40"
             case "info":
                 return current?.primary + "40"
             default:

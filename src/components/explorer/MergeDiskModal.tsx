@@ -5,6 +5,7 @@ import { useFileStore } from "../../store/Filestore"
 import { X, AlertTriangle, HardDrive } from "lucide-react"
 import IconButton from "../base/IconButton"
 import { useTheme } from "../../store/Themestore"
+import Select from "../base/Select"
 
 interface Props {
     sourceDiskId: string
@@ -38,15 +39,15 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
                 className="p-6 rounded-lg min-w-[500px] max-w-[600px] flex flex-col gap-5"
                 style={{
                     boxShadow: name === "dark" 
-                        ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
-                        : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
+                        ? `0 25px 50px -12px rgba(0, 0, 0, 0.4)`
+                        : `0 25px 50px -12px ${current?.dark}15`
                 }}
             >
                 {!showConfirm ? (
                     <>
                         <View className="flex items-center justify-between">
                             <View className="flex items-center gap-3">
-                                <HardDrive size={24} color={current?.primary} />
+                                <HardDrive size={24} color={current?.dark} style={{ opacity: 0.8 }} />
                                 <Text value="Merge Disk" className="font-semibold text-xl" />
                             </View>
                             <IconButton icon={<X size={18} color={current?.dark} />} action={onClose} />
@@ -56,7 +57,7 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
                             <View className="p-4 rounded-lg" style={{ backgroundColor: current?.dark + "08" }}>
                                 <Text value="Source Disk" className="font-medium mb-2" size="sm" />
                                 <View className="flex items-center gap-3">
-                                    <HardDrive size={20} color={current?.primary} />
+                                    <HardDrive size={20} color={current?.dark} style={{ opacity: 0.6 }} />
                                     <View className="flex-1">
                                         <Text value={sourceDisk.name} className="font-semibold" />
                                         <Text 
@@ -75,30 +76,26 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
                                         <Text value="No other disks available to merge with" size="sm" className="opacity-60" />
                                     </View>
                                 ) : (
-                                    <select
+                                    <Select
                                         value={targetDiskId}
-                                        onChange={(e) => setTargetDiskId(e.target.value)}
-                                        className="w-full p-3 rounded-lg outline-none"
-                                        style={{
-                                            backgroundColor: current?.background,
-                                            color: current?.dark,
-                                            border: `1px solid ${current?.dark}20`
-                                        }}
-                                    >
-                                        <option value="">Select a disk...</option>
-                                        {availableDisks.map(disk => (
-                                            <option key={disk.id} value={disk.id}>
-                                                {disk.name} ({disk.usage.used.toFixed(2)}${disk.usage.unit} / {disk.usage.total.toFixed(2)}${disk.usage.unit})
-                                            </option>
-                                        ))}
-                                    </select>
+                                        onChange={(v) => setTargetDiskId(String(v))}
+                                        options={[
+                                            { value: "", label: "Select a disk..." },
+                                            ...availableDisks.map(disk => ({
+                                                value: disk.id,
+                                                label: `${disk.name} (${disk.usage.used.toFixed(2)}${disk.usage.unit} / ${disk.usage.total.toFixed(2)}${disk.usage.unit})`
+                                            }))
+                                        ]}
+                                        placeholder="Select a disk..."
+                                        className="w-full"
+                                        useBackgroundMode
+                                    />
                                 )}
                             </View>
 
                             {selectedTargetDisk && (
-                                <View className="p-4 rounded-lg border" style={{ 
-                                    backgroundColor: current?.primary + "10",
-                                    borderColor: current?.primary + "30"
+                                <View className="p-4 rounded-lg" style={{ 
+                                    backgroundColor: current?.dark + "06"
                                 }}>
                                     <Text value="Merge Preview" className="font-medium mb-2" size="sm" />
                                     <View className="flex flex-col gap-2">
@@ -118,12 +115,12 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
                                 </View>
                             )}
 
-                            <View className="p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: current?.warning || "#f59e0b" + "15" }}>
-                                <AlertTriangle size={16} color={current?.warning || "#f59e0b"} className="mt-0.5 flex-shrink-0" />
+                            <View className="p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: current?.dark + "08" }}>
+                                <AlertTriangle size={16} color={current?.dark} style={{ opacity: 0.6 }} className="mt-0.5 flex-shrink-0" />
                                 <Text 
                                     value="All files from the source disk will be moved to the target disk. The source disk will be deleted after merging." 
                                     size="sm" 
-                                    className="opacity-80"
+                                    className="opacity-70"
                                 />
                             </View>
                         </View>
@@ -176,7 +173,7 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
 
                             <View className="flex flex-col gap-2">
                                 <View className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: current?.dark + "08" }}>
-                                    <HardDrive size={20} color={current?.primary} />
+                                    <HardDrive size={20} color={current?.dark} style={{ opacity: 0.6 }} />
                                     <View className="flex-1">
                                         <Text value={sourceDisk.name} className="font-semibold" size="sm" />
                                         <Text value="Source (will be deleted)" size="sm" className="opacity-60" />
@@ -186,7 +183,7 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
                                     <Text value="→" className="text-2xl opacity-40" />
                                 </View>
                                 <View className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: current?.dark + "08" }}>
-                                    <HardDrive size={20} color={current?.primary} />
+                                    <HardDrive size={20} color={current?.dark} style={{ opacity: 0.6 }} />
                                     <View className="flex-1">
                                         <Text value={selectedTargetDisk?.name || ""} className="font-semibold" size="sm" />
                                         <Text value="Target (will receive all files)" size="sm" className="opacity-60" />

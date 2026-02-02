@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react"
-import View from "../base/View"
-import Text from "../base/Text"
+import View from "./View"
+import Text from "./Text"
 import { useTheme } from "../../store/Themestore"
 import { ChevronDown } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
-interface CustomSelectProps {
+interface SelectProps {
     value: string | number
     onChange: (value: string | number) => void
     options: { value: string | number; label: string }[]
@@ -14,7 +14,7 @@ interface CustomSelectProps {
     useBackgroundMode?: boolean
 }
 
-const CustomSelect = ({ value, onChange, options, placeholder, className, useBackgroundMode = false }: CustomSelectProps) => {
+const Select = ({ value, onChange, options, placeholder, className, useBackgroundMode = false }: SelectProps) => {
     const { current, getBackgroundColor } = useTheme()
     const [isOpen, setIsOpen] = useState(false)
     const selectRef = useRef<HTMLDivElement>(null)
@@ -44,7 +44,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className, useBac
         <View className={`relative ${className}`} ref={selectRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center justify-between w-full px-3 py-2.5 outline-none transition-all"
+                className="flex items-center justify-between w-full px-3 py-2.5 outline-none transition-all rounded-lg"
                 style={{
                     backgroundColor: backgroundColor,
                     color: current?.dark,
@@ -88,7 +88,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className, useBac
                     >
                         {options.map((option, index) => (
                             <motion.button
-                                key={option.value}
+                                key={String(option.value)}
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.02 }}
@@ -117,4 +117,4 @@ const CustomSelect = ({ value, onChange, options, placeholder, className, useBac
     )
 }
 
-export default CustomSelect
+export default Select

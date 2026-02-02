@@ -8,17 +8,17 @@ interface LoadingScreenProps {
     progress?: number
 }
 
-export const LoadingScreen = ({ 
-    message = "Loading...", 
+export const LoadingScreen = ({
+    message = "Loading...",
     showProgress = false,
-    progress = 0 
+    progress = 0
 }: LoadingScreenProps) => {
     const { current } = useTheme()
 
     return (
-        <motion.div 
+        <motion.div
             className="min-h-screen flex items-center justify-center"
-            style={{ 
+            style={{
                 backgroundColor: current?.background,
             }}
             initial={{ opacity: 0 }}
@@ -31,7 +31,7 @@ export const LoadingScreen = ({
                 <motion.div
                     initial={{ scale: 0.8, opacity: 0, y: -20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
-                    transition={{ 
+                    transition={{
                         duration: 0.6,
                         ease: [0.16, 1, 0.3, 1]
                     }}
@@ -44,7 +44,7 @@ export const LoadingScreen = ({
                             border: `1px solid ${current?.primary}15`,
                         }}
                     >
-                        <Logo />
+                        {/* <Logo /> */}
                     </div>
                 </motion.div>
 
@@ -104,8 +104,8 @@ export const LoadingScreen = ({
                         transition={{ delay: 0.4, duration: 0.4 }}
                         className="flex flex-col items-center gap-3 w-full max-w-xs"
                     >
-                        <span 
-                            style={{ 
+                        <span
+                            style={{
                                 color: current?.dark,
                                 fontSize: '15px',
                                 fontWeight: 500,
@@ -115,10 +115,10 @@ export const LoadingScreen = ({
                         >
                             {message}
                         </span>
-                        
+
                         {/* Progress Bar */}
                         {showProgress && (
-                            <div 
+                            <div
                                 className="w-full h-1.5 rounded-full overflow-hidden"
                                 style={{
                                     backgroundColor: current?.dark + "10"

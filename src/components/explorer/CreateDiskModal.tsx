@@ -8,6 +8,7 @@ import { useTheme } from "../../store/Themestore"
 import { useUser } from "../../store/Userstore"
 import { convertToGB } from "../../utils/storage"
 import AlertModal from "../base/AlertModal"
+import Select from "../base/Select"
 
 interface Props {
     onClose: () => void
@@ -260,20 +261,17 @@ const CreateDiskModal = ({ onClose }: Props) => {
                                 </div>
                             )}
                         </div>
-                        <select
+                        <Select
                             value={unit}
-                            onChange={(e) => handleUnitChange(e.target.value as "GB" | "MB" | "TB")}
-                            className="p-3 rounded-lg outline-none"
-                            style={{
-                                backgroundColor: current?.background,
-                                color: current?.dark,
-                                border: "none"
-                            }}
-                        >
-                            <option value="MB">MB</option>
-                            <option value="GB">GB</option>
-                            <option value="TB">TB</option>
-                        </select>
+                            onChange={(v) => handleUnitChange(v as "GB" | "MB" | "TB")}
+                            options={[
+                                { value: "MB", label: "MB" },
+                                { value: "GB", label: "GB" },
+                                { value: "TB", label: "TB" },
+                            ]}
+                            className="min-w-[80px]"
+                            useBackgroundMode
+                        />
                     </View>
                     {errors.size && (
                         <View className="flex items-center gap-2 text-sm">

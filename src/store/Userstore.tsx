@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import api from "../utils/api"
+import { useTheme } from "./Themestore"
 
 export interface UsageI {
     total: number
@@ -35,6 +36,7 @@ export interface UserI {
     role?: "admin" | "user"
     storage?: UsageI
     suspended?: boolean
+    provider?: string // "google", "apple", or "" for email/password
 }
 
 export const useUser = create<UserstoreI>((set, get) => ({
@@ -66,7 +68,8 @@ export const useUser = create<UserstoreI>((set, get) => ({
                     total: response.user.storage.total,
                     used: response.user.storage.used,
                     unit: response.user.storage.unit as "GB" | "MB" | "TB" | "PB"
-                } : undefined
+                } : undefined,
+                provider: response.user.provider || undefined,
             }
             
             localStorage.setItem('token', response.token)
@@ -103,7 +106,8 @@ export const useUser = create<UserstoreI>((set, get) => ({
                     total: loginResponse.user.storage.total,
                     used: loginResponse.user.storage.used,
                     unit: loginResponse.user.storage.unit as "GB" | "MB" | "TB" | "PB"
-                } : undefined
+                } : undefined,
+                provider: loginResponse.user.provider || undefined,
             }
             
             localStorage.setItem('token', loginResponse.token)
@@ -178,7 +182,8 @@ export const useUser = create<UserstoreI>((set, get) => ({
                     total: response.storage.total,
                     used: response.storage.used,
                     unit: response.storage.unit as "GB" | "MB" | "TB" | "PB"
-                } : undefined
+                } : undefined,
+                provider: response.provider || undefined,
             }
             
             localStorage.setItem('user', JSON.stringify(user))
@@ -188,6 +193,16 @@ export const useUser = create<UserstoreI>((set, get) => ({
                 isAuthenticated: true,
                 isLoading: false 
             })
+
+            // Fetch and apply user settings from backend
+            try {
+                const settings = await api.get<Record<string, unknown>>('/users/me/settings', true)
+                if (settings && typeof settings === 'object' && Object.keys(settings).length > 0) {
+                    useTheme.getState().applySettingsFromBackend(settings)
+                }
+            } catch {
+                // Ignore - user may have no settings yet
+            }
         } catch (error) {
             set({ isLoading: false, isAuthenticated: false, current: null })
             localStorage.removeItem('token')
@@ -196,10 +211,7 @@ export const useUser = create<UserstoreI>((set, get) => ({
     },
     fetchAllUsers: async () => {
         try {
-            set({ isLoading: true })
             const response = await api.get<any[]>('/users/')
-            
-            // Map backend responses to frontend UserI[]
             const users: UserI[] = response.map((u: any) => ({
                 id: u.id,
                 username: u.username,
@@ -213,10 +225,9 @@ export const useUser = create<UserstoreI>((set, get) => ({
                     unit: u.storage.unit as "GB" | "MB" | "TB" | "PB"
                 } : undefined
             }))
-            
-            set({ users, isLoading: false })
-        } catch (error) {
-            set({ isLoading: false })
+            set({ users })
+        } catch {
+            set({ users: [] })
         }
     },
     getInitials: (s: string): string => {

@@ -1,13 +1,16 @@
 import View from "../../components/base/View"
 import Text from "../../components/base/Text"
+import AdminPageHeader from "../../components/admin/AdminPageHeader"
 import { useTheme } from "../../store/Themestore"
-import { useUser } from "../../store/Userstore"
+import { useAdminStatsStore } from "../../store/AdminStatsStore"
+import { useAdminSettingsStore } from "../../store/AdminSettingsStore"
 import { TrendingUp, Users, HardDrive, Activity, Download, Upload } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
 import { getPrimaryColorVariations, getPrimaryColorWithOpacity } from "../../utils/chartColors"
 import { getPastelColor } from "../../utils/colorUtils"
 import Pagination from "../../components/admin/Pagination"
+import api from "../../utils/api"
 
 interface ActivityItem {
     id: number
@@ -20,51 +23,49 @@ interface ActivityItem {
 
 const Analytics = () => {
     const { current } = useTheme()
-    const { users } = useUser()
+    const { stats } = useAdminStatsStore()
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
+    const [activities, setActivities] = useState<ActivityItem[]>([])
 
-    // Calculate analytics
-    const totalUsers = users.length
-    const activeUsers = users.filter(u => !u.suspended && u.role === "user").length
-    const suspendedUsers = users.filter(u => u.suspended).length
-    const totalStorage = users.reduce((sum, u) => sum + (u.storage?.total || 0), 0)
-    const totalUsed = users.reduce((sum, u) => sum + (u.storage?.used || 0), 0)
-    const avgStoragePerUser = totalUsers > 0 ? totalStorage / totalUsers : 0
+    const totalUsers = stats?.totalUsers ?? 0
+    const activeUsers = stats?.activeUsers ?? 0
+    const suspendedUsers = stats?.suspendedUsers ?? 0
+    const totalStorage = stats?.totalStorageGB ?? 0
+    const totalUsed = stats?.usedStorageGB ?? 0
+    const avgStoragePerUser = stats?.avgStorageGB ?? 0
     const avgUsagePerUser = totalUsers > 0 ? totalUsed / totalUsers : 0
 
-    // Activity data - should be fetched from API
-    const activities: ActivityItem[] = useMemo(() => [], [])
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const res = await api.get<{ items: ActivityItem[] }>("/admin/activity-log?limit=50", true)
+                setActivities(res?.items ?? [])
+            } catch {
+                setActivities([])
+            }
+        }
+        load()
+    }, [])
 
     const paginatedActivities = useMemo(() => {
         const start = (currentPage - 1) * itemsPerPage
-        const end = start + itemsPerPage
-        return activities.slice(start, end)
+        return activities.slice(start, start + itemsPerPage)
     }, [activities, currentPage, itemsPerPage])
 
-    const totalPages = Math.ceil(activities.length / itemsPerPage)
+    const totalPages = Math.ceil(activities.length / itemsPerPage) || 1
 
-    // Chart colors - use primary color variations
     const primaryColors = getPrimaryColorVariations(current?.primary || "#EE7E06")
-    
-    // Chart data
-    const userGrowthData = useMemo(() => [
-        { month: "Jan", users: 45 },
-        { month: "Feb", users: 52 },
-        { month: "Mar", users: 48 },
-        { month: "Apr", users: 61 },
-        { month: "May", users: 55 },
-        { month: "Jun", users: totalUsers }
-    ], [totalUsers])
 
-    const storageTrendData = useMemo(() => [
-        { month: "Jan", storage: 420 },
-        { month: "Feb", storage: 480 },
-        { month: "Mar", storage: 510 },
-        { month: "Apr", storage: 550 },
-        { month: "May", storage: 580 },
-        { month: "Jun", storage: totalStorage }
-    ], [totalStorage])
+    const userGrowthData = useMemo(() => {
+        const data = (stats?.userGrowth ?? []).map((g) => ({ month: g.month, users: g.count }))
+        return data.length > 0 ? data : [{ month: "Current", users: totalUsers }]
+    }, [stats?.userGrowth, totalUsers])
+
+    const storageTrendData = useMemo(() => {
+        const data = (stats?.storageTrend ?? []).map((t) => ({ month: t.month, storage: t.valueGB }))
+        return data.length > 0 ? data : [{ month: "Current", storage: totalStorage }]
+    }, [stats?.storageTrend, totalStorage])
 
     // Activity by type distribution (commented out for future use)
     // const activityByTypeData = useMemo(() => {
@@ -91,11 +92,8 @@ const Analytics = () => {
     }
 
     return (
-        <View className="px-8 pt-8 pb-4" style={{ backgroundColor: current?.background }}>
-            <View className="mb-8">
-                <Text value="Analytics" style={{ color: current?.dark, fontSize: '1.11rem', fontWeight: 500 }} />
-                <Text value="Track application performance and user metrics" style={{ fontSize: '1rem', opacity: 0.6, marginTop: '0.5rem' }} />
-            </View>
+        <View className="flex flex-col">
+            <AdminPageHeader title="Analytics" subtitle="Track application performance and user metrics" />
 
             {/* Summary Cards */}
             <View className="grid grid-cols-4 gap-6 mb-8">
@@ -121,7 +119,7 @@ const Analytics = () => {
                             <Users size={18} color={current?.primary} />
                         </View>
                     </View>
-                    <Text value={totalUsers.toString()} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} />
+                    <Text value={totalUsers.toString()} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }} />
                     <Text value={`${activeUsers} active`} style={{ fontSize: '0.815rem', opacity: 0.6, marginTop: '0.5rem', color: current?.dark }} />
                 </View>
 
@@ -147,7 +145,7 @@ const Analytics = () => {
                             <Activity size={18} color="#10b981" />
                         </View>
                     </View>
-                    <Text value={activeUsers.toString()} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} />
+                    <Text value={activeUsers.toString()} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }} />
                     <Text value={`${suspendedUsers} suspended`} style={{ fontSize: '0.815rem', opacity: 0.6, marginTop: '0.5rem', color: current?.dark }} />
                 </View>
 
@@ -173,7 +171,7 @@ const Analytics = () => {
                             <HardDrive size={18} color="#3b82f6" />
                         </View>
                     </View>
-                    <Text value={`${avgStoragePerUser.toFixed(1)} GB`} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} />
+                    <Text value={`${avgStoragePerUser.toFixed(1)} GB`} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }} />
                     <Text value={`${avgUsagePerUser.toFixed(1)} GB used`} style={{ fontSize: '0.815rem', opacity: 0.6, marginTop: '0.5rem', color: current?.dark }} />
                 </View>
 
@@ -199,8 +197,8 @@ const Analytics = () => {
                             <TrendingUp size={18} color="#f59e0b" />
                         </View>
                     </View>
-                    <Text value="+12.5%" style={{ color: "#10b981", fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} />
-                    <Text value="Last 30 days" style={{ fontSize: '0.815rem', opacity: 0.6, marginTop: '0.5rem', color: current?.dark }} />
+                    <Text value={userGrowthData.length >= 2 ? `+${Math.round(((totalUsers - (userGrowthData[0]?.users ?? 0)) / Math.max(1, userGrowthData[0]?.users ?? 1)) * 100)}%` : "—"} style={{ color: "#10b981", fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }} />
+                    <Text value="vs first period" style={{ fontSize: '0.815rem', opacity: 0.6, marginTop: '0.5rem', color: current?.dark }} />
                 </View>
             </View>
 
@@ -216,13 +214,14 @@ const Analytics = () => {
                     <Text value="User Growth" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500, marginBottom: '1rem' }} />
                     <ResponsiveContainer width="100%" height={250}>
                         <AreaChart data={userGrowthData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}20`} />
+                            <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
                             <XAxis dataKey="month" stroke={current?.dark} style={{ fontSize: '0.815rem' }} />
                             <YAxis stroke={current?.dark} style={{ fontSize: '0.815rem' }} />
                             <Tooltip 
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',
+                                    boxShadow: 'none',
                                     borderRadius: '0.25rem',
                                     fontSize: '0.815rem'
                                 }}
@@ -242,13 +241,14 @@ const Analytics = () => {
                     <Text value="Storage Allocation Trend" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500, marginBottom: '1rem' }} />
                     <ResponsiveContainer width="100%" height={250}>
                         <LineChart data={storageTrendData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}20`} />
+                            <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
                             <XAxis dataKey="month" stroke={current?.dark} style={{ fontSize: '0.815rem' }} />
                             <YAxis stroke={current?.dark} style={{ fontSize: '0.815rem' }} />
                             <Tooltip 
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',
+                                    boxShadow: 'none',
                                     borderRadius: '0.25rem',
                                     fontSize: '0.815rem'
                                 }}
@@ -283,8 +283,8 @@ const Analytics = () => {
                         </View>
                         <Text value="Upload Activity" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                     </View>
-                    <Text value="1,234 files" style={{ color: current?.dark, fontSize: '1.185rem', fontWeight: 500, marginBottom: '0.25rem' }} />
-                    <Text value="Uploaded this month" style={{ fontSize: '0.89rem', opacity: 0.7 }} />
+                    <Text value={`${activities.filter(a => a.action?.toLowerCase().includes('storage') || a.type === 'storage').length} actions`} style={{ color: current?.dark, fontSize: '1.185rem', fontWeight: 500, marginBottom: '0.25rem' }} />
+                    <Text value="Storage actions" style={{ fontSize: '0.89rem', opacity: 0.7 }} />
                 </View>
 
                 <View
@@ -309,8 +309,8 @@ const Analytics = () => {
                         </View>
                         <Text value="Download Activity" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                     </View>
-                    <Text value="856 files" style={{ color: current?.dark, fontSize: '1.185rem', fontWeight: 500, marginBottom: '0.25rem' }} />
-                    <Text value="Downloaded this month" style={{ fontSize: '0.89rem', opacity: 0.7 }} />
+                    <Text value={`${activities.filter(a => a.type === 'user' || a.type === 'security').length} actions`} style={{ color: current?.dark, fontSize: '1.185rem', fontWeight: 500, marginBottom: '0.25rem' }} />
+                    <Text value="User/security actions" style={{ fontSize: '0.89rem', opacity: 0.7 }} />
                 </View>
             </View>
 

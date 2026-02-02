@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from "react"
 import { useAdminSearchStore } from "../../store/AdminSearchStore"
 import { useAdminFilterStore } from "../../store/AdminFilterStore"
+import { useAdminSettingsStore } from "../../store/AdminSettingsStore"
 import View from "../../components/base/View"
 import Text from "../../components/base/Text"
+import AdminPageHeader from "../../components/admin/AdminPageHeader"
 import IconButton from "../../components/base/IconButton"
 import { useTheme } from "../../store/Themestore"
 import { useUser, UserI, UsageI } from "../../store/Userstore"
@@ -20,6 +22,7 @@ import { getPrimaryColorVariations } from "../../utils/chartColors"
 import { getPastelColor } from "../../utils/colorUtils"
 import { calculateExcessStorage, getFilesToDelete } from "../../utils/storageDownsize"
 import { convertToGB, calculateTotalStorage } from "../../utils/storage"
+import Select from "../../components/base/Select"
 
 const UserManagement = () => {
     const navigate = useNavigate()
@@ -103,21 +106,7 @@ const UserManagement = () => {
         { name: "Suspended", value: suspendedUsers, color: primaryColors[3] }
     ]
 
-    // Get top users count from settings
-    const getTopUsersCount = () => {
-        const saved = localStorage.getItem('adminSettings')
-        if (saved) {
-            try {
-                const settings = JSON.parse(saved)
-                return settings.topUsersCount || 5
-            } catch {
-                return 5
-            }
-        }
-        return 5
-    }
-
-    const topUsersCount = getTopUsersCount()
+    const topUsersCount = useAdminSettingsStore((s) => s.topUsersCount)
 
     const storageDistributionData = users
         .filter(u => u.role === "user")
@@ -271,24 +260,17 @@ const UserManagement = () => {
     }
 
     return (
-        <View className="px-8 pt-8 pb-4" style={{ backgroundColor: current?.background }}>
-            {/* Header */}
-            <View className="mb-8">
-                <Text value="User Management" style={{ color: current?.dark, fontSize: '1.11rem', fontWeight: 500 }} />
-                <Text value="Manage users and their storage allocations" style={{ fontSize: '1rem', opacity: 0.6, marginTop: '0.5rem' }} />
-            </View>
+        <View className="flex flex-col">
+            <AdminPageHeader title="User Management" subtitle="Manage users and their storage allocations" />
 
             {/* Summary Cards */}
-            <View className="grid grid-cols-4 gap-6 mb-8">
+            <View className="grid grid-cols-4 gap-6 mb-6">
                 <View
-                    style={{
-                        backgroundColor: current?.foreground,
-                        borderRadius: '0.25rem',
-                        padding: '1.5rem',
-                    }}
+                    className="rounded-xl p-4"
+                    style={{ backgroundColor: current?.foreground }}
                 >
                     <View className="flex items-start justify-between mb-3">
-                        <Text value="Total Users" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
+                        <Text value="Total Users" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                         <View 
                             className="flex items-center justify-center"
                             style={{ 
@@ -302,18 +284,15 @@ const UserManagement = () => {
                             <Users size={18} color={current?.primary} />
                         </View>
                     </View>
-                    <Text value={totalUsers.toString()} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} />
+                    <Text value={totalUsers.toString()} style={{ color: current?.dark, lineHeight: '1.2', fontSize: '1rem', fontWeight: 400 }} />
                 </View>
 
                 <View
-                    style={{
-                        backgroundColor: current?.foreground,
-                        borderRadius: '0.25rem',
-                        padding: '1.5rem',
-                    }}
+                    className="rounded-xl p-4"
+                    style={{ backgroundColor: current?.foreground }}
                 >
                     <View className="flex items-start justify-between mb-3">
-                        <Text value="Active Users" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
+                        <Text value="Active Users" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                         <View 
                             className="flex items-center justify-center"
                             style={{ 
@@ -327,18 +306,15 @@ const UserManagement = () => {
                             <UserCheck size={18} color="#10b981" />
                         </View>
                     </View>
-                    <Text value={activeUsers.toString()} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} />
+                    <Text value={activeUsers.toString()} style={{ color: current?.dark, lineHeight: '1.2', fontSize: '1rem', fontWeight: 400 }} />
                 </View>
 
                 <View
-                    style={{
-                        backgroundColor: current?.foreground,
-                        borderRadius: '0.25rem',
-                        padding: '1.5rem',
-                    }}
+                    className="rounded-xl p-4"
+                    style={{ backgroundColor: current?.foreground }}
                 >
                     <View className="flex items-start justify-between mb-3">
-                        <Text value="Suspended" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
+                        <Text value="Suspended" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                         <View 
                             className="flex items-center justify-center"
                             style={{ 
@@ -352,18 +328,15 @@ const UserManagement = () => {
                             <UserX size={18} color={current?.error || "#ef4444"} />
                         </View>
                     </View>
-                    <Text value={suspendedUsers.toString()} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} />
+                    <Text value={suspendedUsers.toString()} style={{ color: current?.dark, lineHeight: '1.2', fontSize: '1rem', fontWeight: 400 }} />
                 </View>
 
                 <View
-                    style={{
-                        backgroundColor: current?.foreground,
-                        borderRadius: '0.25rem',
-                        padding: '1.5rem',
-                    }}
+                    className="rounded-xl p-4"
+                    style={{ backgroundColor: current?.foreground }}
                 >
                     <View className="flex items-start justify-between mb-3">
-                        <Text value="Total Storage" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
+                        <Text value="Total Storage" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                         <View 
                             className="flex items-center justify-center"
                             style={{ 
@@ -377,20 +350,17 @@ const UserManagement = () => {
                             <HardDrive size={18} color="#3b82f6" />
                         </View>
                     </View>
-                    <Text value={`${totalStorage.toFixed(1)} GB`} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} />
+                    <Text value={`${totalStorage.toFixed(1)} GB`} style={{ color: current?.dark, lineHeight: '1.2', fontSize: '1rem', fontWeight: 400 }} />
                 </View>
             </View>
 
             {/* Charts */}
-            <View className="grid grid-cols-2 gap-6 mb-8">
+            <View className="grid grid-cols-2 gap-6 mb-6">
                 <View
-                    style={{
-                        backgroundColor: current?.foreground,
-                        borderRadius: '0.25rem',
-                        padding: '1.5rem',
-                    }}
+                    className="rounded-xl p-4"
+                    style={{ backgroundColor: current?.foreground }}
                 >
-                    <Text value="User Status Distribution" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500, marginBottom: '1rem' }} />
+                    <Text value="User Status Distribution" className="font-medium mb-4" style={{ color: current?.dark, fontSize: '1rem' }} />
                     <ResponsiveContainer width="100%" height={200}>
                         <PieChart>
                             <Pie
@@ -402,33 +372,32 @@ const UserManagement = () => {
                                 outerRadius={80}
                                 fill="#8884d8"
                                 dataKey="value"
+                                stroke="none"
                             >
                                 {userStatusData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                                 ))}
                             </Pie>
-                            <Tooltip />
+                            <Tooltip contentStyle={{ backgroundColor: current?.foreground, border: 'none', boxShadow: 'none' }} />
                         </PieChart>
                     </ResponsiveContainer>
                 </View>
 
                 <View
-                    style={{
-                        backgroundColor: current?.foreground,
-                        borderRadius: '0.25rem',
-                        padding: '1.5rem',
-                    }}
+                    className="rounded-xl p-4"
+                    style={{ backgroundColor: current?.foreground }}
                 >
-                    <Text value="Top Users by Storage" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500, marginBottom: '1rem' }} />
+                    <Text value="Top Users by Storage" className="font-medium mb-4" style={{ color: current?.dark, fontSize: '1rem' }} />
                     <ResponsiveContainer width="100%" height={200}>
                         <BarChart data={storageDistributionData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}20`} />
+                            <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
                             <XAxis dataKey="name" stroke={current?.dark} style={{ fontSize: '0.89rem' }} />
                             <YAxis stroke={current?.dark} style={{ fontSize: '0.89rem' }} />
                             <Tooltip 
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',
+                                    boxShadow: 'none',
                                     borderRadius: '0.25rem',
                                     fontSize: '0.89rem'
                                 }}
@@ -443,10 +412,7 @@ const UserManagement = () => {
             {/* Table */}
             <View
                 mode="foreground"
-                className="overflow-hidden"
-                style={{
-                    borderRadius: '0.25rem'
-                }}
+                className="overflow-hidden rounded-xl"
             >
                 <View 
                     className="grid grid-cols-12 gap-4 p-3"
@@ -455,13 +421,13 @@ const UserManagement = () => {
                     }}
                 >
                     <View className="col-span-3">
-                        <Text value="User" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
+                        <Text value="User" className="font-medium" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                     </View>
                     <View className="col-span-2">
-                        <Text value="Storage" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
+                        <Text value="Storage" className="font-medium" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                     </View>
                     <View className="col-span-4">
-                        <Text value="Usage" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
+                        <Text value="Usage" className="font-medium" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                     </View>
                     <View className="col-span-3 flex justify-end">
                         {/* Empty header for actions column */}
@@ -470,7 +436,7 @@ const UserManagement = () => {
 
                 {paginatedUsers.length === 0 ? (
                     <View className="p-8 text-center">
-                        <Text value="No users found" style={{ opacity: 0.6, fontSize: '1rem' }} />
+                        <Text value="No users found" size="md" className="opacity-60" />
                     </View>
                 ) : (
                     <>
@@ -488,7 +454,7 @@ const UserManagement = () => {
                                     <Avatar path={user.photo} fallback={{ text: getInitials(user.username) }} />
                                     <View>
                                         <View className="flex items-center gap-2">
-                                            <Text value={user.username} style={{ color: current?.dark, fontSize: '1rem' }} />
+                                            <Text value={user.username} size="md" style={{ color: current?.dark }} />
                                             {user.suspended && (
                                                 <View
                                                     className="px-1.5 py-0.5 flex items-center gap-1"
@@ -498,7 +464,7 @@ const UserManagement = () => {
                                                     }}
                                                 >
                                                     <Ban size={10} color={current?.error || "#ef4444"} />
-                                                    <Text value="Suspended" style={{ color: current?.error || "#ef4444", fontSize: '0.74rem' }} />
+                                                    <Text value="Suspended" size="sm" style={{ color: current?.error || "#ef4444" }} />
                                                 </View>
                                             )}
                                         </View>
@@ -529,22 +495,18 @@ const UserManagement = () => {
                                                 min="0"
                                                 step="0.1"
                                             />
-                                            <select
+                                            <Select
                                                 value={storageUnit}
-                                                onChange={(e) => setStorageUnit(e.target.value as "GB" | "MB" | "TB" | "PB")}
-                                                className="px-1.5 py-1 outline-none"
-                                                style={{
-                                                    backgroundColor: current?.background,
-                                                    color: current?.dark,
-                                                    borderRadius: '0.25rem',
-                                                    fontSize: '0.815rem'
-                                                }}
-                                            >
-                                                <option value="MB">MB</option>
-                                                <option value="GB">GB</option>
-                                                <option value="TB">TB</option>
-                                                <option value="PB">PB</option>
-                                            </select>
+                                                onChange={(v) => setStorageUnit(v as "GB" | "MB" | "TB" | "PB")}
+                                                options={[
+                                                    { value: "MB", label: "MB" },
+                                                    { value: "GB", label: "GB" },
+                                                    { value: "TB", label: "TB" },
+                                                    { value: "PB", label: "PB" },
+                                                ]}
+                                                className="w-16"
+                                                useBackgroundMode
+                                            />
                                         </View>
                                     ) : (
                                         <Text 

@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router'
 import Spashscreen from '../pages/Spashscreen'
 import SignupSplash from '../pages/auth/SignupSplash'
+import AuthCallback from '../pages/auth/AuthCallback'
 import DashboardRoutes from "./dashboard/Index"
 import Settings from '../pages/settings/Index'
 import AdminRoutes from './admin/Index'
@@ -27,6 +28,7 @@ const Index = () => {
                     <Spashscreen />
                 </PublicRoute>
             } />
+            <Route path='/auth/callback' element={<AuthCallback />} />
             <Route path='/dashboard' element={
                 <ProtectedRoute>
                     <DashboardRoutes />

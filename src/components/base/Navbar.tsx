@@ -1,4 +1,4 @@
-import { Settings, Moon, Sun, LogOut, User } from "lucide-react"
+import { Settings, Moon, Sun, LogOut, User, Bell } from "lucide-react"
 import { useUser } from "../../store/Userstore"
 import Avatar from "./Avatar"
 import IconButton from "./IconButton"
@@ -19,8 +19,10 @@ const Navbar = () => {
     const { current, name, toggleTheme } = useTheme()
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
     const isAdminPage = location.pathname.startsWith('/admin')
     const menuRef = useRef<HTMLDivElement>(null)
+    const notificationsRef = useRef<HTMLDivElement>(null)
 
     const handleSettingsClick = () => {
         navigate('/settings')
@@ -39,28 +41,61 @@ const Navbar = () => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setIsUserMenuOpen(false)
             }
+            if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+                setIsNotificationsOpen(false)
+            }
         }
 
-        if (isUserMenuOpen) {
+        if (isUserMenuOpen || isNotificationsOpen) {
             document.addEventListener('mousedown', handleClickOutside)
         }
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
         }
-    }, [isUserMenuOpen])
+    }, [isUserMenuOpen, isNotificationsOpen])
 
     return (
         <>
             <View
                 mode="foreground"
-                className="h-[7vh] flex items-center"
-                style={{ zIndex: 1000 }}
+                className="h-[7vh] flex items-center border-b"
+                style={{ zIndex: 1000, borderColor: current?.dark + "10" }}
             >
                 <View className="m-auto flex justify-between items-center max-w-[90vw] min-w-[96vw]">
                     <Logo />
                     <Search onFilterClick={isAdminPage ? () => setIsFilterOpen(true) : undefined} />
-                    <View className="flex items-center gap-6">
+                    <View className="flex items-center gap-2">
+                        <View className="relative" ref={notificationsRef}>
+                            <IconButton
+                                icon={<Bell color={current?.dark} size={18} />}
+                                action={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                                title="Notifications"
+                            />
+                            <AnimatePresence>
+                                {isNotificationsOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="absolute right-0 top-12 z-50 min-w-[280px]"
+                                        style={{
+                                            backgroundColor: current?.foreground,
+                                            borderRadius: '0.5rem',
+                                            boxShadow: `0 2px 8px ${current?.dark}12`
+                                        }}
+                                    >
+                                        <View className="p-4">
+                                            <Text value="Notifications" className="font-semibold mb-3" />
+                                            <View className="py-6 text-center" style={{ backgroundColor: current?.dark + "08", borderRadius: '0.25rem' }}>
+                                                <Text value="No notifications yet" size="sm" className="opacity-60" />
+                                            </View>
+                                        </View>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </View>
                         <IconButton
                             icon={name === "dark" ? <Sun color={current?.dark} size={18} /> : <Moon color={current?.dark} size={18} />}
                             action={toggleTheme}

@@ -85,12 +85,12 @@ const AdminSidebar = ({ className }: Props) => {
 
     return (
         <View 
-            className={`flex flex-col ${className}`} 
+            className={`flex flex-col rounded-xl ${className}`} 
             mode='foreground' 
             style={{ 
                 height: '100%', 
                 overflowY: 'auto',
-                padding: '1.5rem 1rem',
+                padding: '1rem',
                 boxShadow: 'none'
             }}
         >
@@ -126,17 +126,13 @@ const AdminSidebar = ({ className }: Props) => {
                             <View className="flex items-center gap-3 flex-1">
                                 <View style={{ 
                                     color: active ? current?.primary : current?.dark,
-                                    opacity: active ? 1 : 0.7
+                                    opacity: active ? 1 : 0.8
                                 }}>
                                     {item.icon}
                                 </View>
                                 <Text 
                                     value={item.label} 
-                                    style={{ 
-                                        fontSize: '1rem', 
-                                        fontWeight: active ? 500 : 400,
-                                        color: active ? current?.primary : current?.dark
-                                    }} 
+                                    style={{ color: active ? current?.primary : current?.dark, fontWeight: 400 }} 
                                 />
                             </View>
                             {active && (
@@ -169,11 +165,8 @@ const AdminSidebar = ({ className }: Props) => {
                     >
                         <Text 
                             value="v1.0.0" 
-                            style={{ 
-                                fontSize: '0.74rem', 
-                                opacity: 0.6,
-                                color: current?.primary
-                            }} 
+                            className="opacity-70"
+                            style={{ color: current?.primary, fontSize: '0.89rem' }} 
                         />
                     </View>
                 </View>

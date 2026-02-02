@@ -52,14 +52,10 @@ const StorageReductionWorkflow = () => {
 
     const checkPendingWorkflow = async () => {
         try {
-            const response = await api.get<StorageRequest>("/storage-requests/pending-deletion")
-            if (response) {
-                setPendingRequest(response)
-            }
-        } catch (err: any) {
-            if (err.response?.status !== 404) {
-                console.error("Error checking pending workflow:", err)
-            }
+            const response = await api.get<{ request?: StorageRequest | null }>("/storage-requests/pending-deletion")
+            setPendingRequest(response?.request ?? null)
+        } catch {
+            setPendingRequest(null)
         } finally {
             setIsLoading(false)
         }

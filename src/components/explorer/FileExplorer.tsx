@@ -15,8 +15,8 @@ import ContextMenu, { ContextMenuItem } from "./ContextMenu"
 import RenameModal from "./RenameModal"
 import PropertiesModal from "./PropertiesModal"
 import FolderTree from "./FolderTree"
-import Gallery3DView from "./Gallery3DView"
 import ViewSettingsBar from "./ViewSettingsBar"
+import { getFileInputAcceptString } from "../../utils/fileTypes"
 import { FileItemSkeleton, ListItemSkeleton } from "../base/Skeleton"
 import {
     FolderOpen,
@@ -59,6 +59,7 @@ const FileExplorer = () => {
         visitedPaths,
         highlightedFileId,
         fetchDisks,
+        refreshCurrentDisk,
         isLoading,
     } = useFileStore()
 
@@ -107,17 +108,17 @@ const FileExplorer = () => {
     // Generate autocomplete suggestions
     const suggestions = useMemo(() => {
         if (!pathInputValue.trim() || !isEditingPath) return []
-        
+
         const query = pathInputValue.toLowerCase().trim()
         const results: Array<{ path: string; type: 'visited' | 'suggestion' }> = []
-        
+
         // Add visited paths that match
         visitedPaths.forEach(path => {
             if (path.toLowerCase().includes(query)) {
                 results.push({ path, type: 'visited' })
             }
         })
-        
+
         // Add suggestions from all folders/disks
         disks.forEach(disk => {
             // Check disk name
@@ -127,21 +128,21 @@ const FileExplorer = () => {
                     results.push({ path, type: 'suggestion' })
                 }
             }
-            
+
             // Recursively find matching folders
             const findMatchingFolders = (files: FileItem[], currentPath: string[]) => {
                 files.forEach(file => {
                     if (file.isFolder) {
                         const newPath = [...currentPath, file.name]
                         const fullPath = [disk.name, ...newPath].join("\\")
-                        
+
                         // Check if any part of the path matches
                         if (fullPath.toLowerCase().includes(query)) {
                             if (!results.find(r => r.path === fullPath)) {
                                 results.push({ path: fullPath, type: 'suggestion' })
                             }
                         }
-                        
+
                         // Recurse into children
                         if (file.children) {
                             findMatchingFolders(file.children, newPath)
@@ -149,10 +150,10 @@ const FileExplorer = () => {
                     }
                 })
             }
-            
+
             findMatchingFolders(disk.files, [])
         })
-        
+
         // Sort: visited first, then by relevance (shorter/more exact matches first)
         return results
             .sort((a, b) => {
@@ -174,7 +175,7 @@ const FileExplorer = () => {
         const handleKeyDown = async (e: KeyboardEvent) => {
             if (e.key === "ArrowDown") {
                 e.preventDefault()
-                setSelectedSuggestionIndex(prev => 
+                setSelectedSuggestionIndex(prev =>
                     prev < suggestions.length - 1 ? prev + 1 : prev
                 )
             } else if (e.key === "ArrowUp") {
@@ -187,27 +188,27 @@ const FileExplorer = () => {
                 setShowSuggestions(false)
                 setSelectedSuggestionIndex(-1)
                 setIsEditingPath(false)
-                
+
                 // Navigate to the selected path
                 const parts = selected.path.split("\\").filter(p => p.trim())
                 if (parts.length === 0) return
-                
+
                 const targetDisk = disks.find(d => d.name === parts[0])
                 if (!targetDisk) return
-                
+
                 if (targetDisk.id !== currentDiskId) {
                     await setCurrentDisk(targetDisk.id)
                 }
-                
+
                 if (parts.length === 1) {
                     setCurrentPath([])
                     return
                 }
-                
+
                 const folderParts = parts.slice(1)
                 const newPath: string[] = []
                 let currentFolderId: string | null = null
-                
+
                 for (const folderName of folderParts) {
                     let folderFiles: FileItem[] = []
                     if (currentFolderId) {
@@ -223,11 +224,11 @@ const FileExplorer = () => {
                         const disk = disks.find(d => d.id === targetDisk.id)
                         folderFiles = disk?.files || []
                     }
-                    
-                    const folder = folderFiles.find(f => 
+
+                    const folder = folderFiles.find(f =>
                         f.isFolder && f.name.toLowerCase() === folderName.toLowerCase()
                     )
-                    
+
                     if (folder) {
                         newPath.push(folder.id)
                         currentFolderId = folder.id
@@ -235,7 +236,7 @@ const FileExplorer = () => {
                         break
                     }
                 }
-                
+
                 setCurrentPath(newPath)
             } else if (e.key === "Escape") {
                 setShowSuggestions(false)
@@ -285,7 +286,7 @@ const FileExplorer = () => {
             // First part is a disk name
             targetDiskId = potentialDisk.id
             folderParts = parts.slice(1)
-            
+
             // Switch to that disk if different
             if (targetDiskId !== currentDiskId) {
                 await setCurrentDisk(targetDiskId)
@@ -306,7 +307,7 @@ const FileExplorer = () => {
 
         for (let i = 0; i < folderParts.length; i++) {
             const folderName = folderParts[i]
-            
+
             // Get files in current folder
             let folderFiles: FileItem[] = []
             if (currentFolderId) {
@@ -333,10 +334,10 @@ const FileExplorer = () => {
             }
 
             // Find folder by name (case-insensitive for better UX)
-            const folder = folderFiles.find(f => 
+            const folder = folderFiles.find(f =>
                 f.isFolder && f.name.toLowerCase() === folderName.toLowerCase()
             )
-            
+
             if (!folder) {
                 alert(`Folder "${folderName}" not found`)
                 setPathInputValue(fullPath)
@@ -392,7 +393,7 @@ const FileExplorer = () => {
         try {
             let entries: FileSystemEntry[] = []
             let batch: FileSystemEntry[]
-            
+
             // Read all entries (reader.readEntries may need to be called multiple times)
             do {
                 batch = await readEntries()
@@ -422,14 +423,14 @@ const FileExplorer = () => {
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault()
         e.stopPropagation()
-        
+
         // Check if dragging a folder (from within app)
         const fileId = e.dataTransfer.getData("application/x-file-id") || e.dataTransfer.getData("text/plain")
         if (fileId) {
             setIsDraggingFolder(true)
             return
         }
-        
+
         // Check if dragging files from outside (file upload)
         if (e.dataTransfer.types.includes("Files")) {
             setIsDragging(true)
@@ -439,12 +440,12 @@ const FileExplorer = () => {
     const handleDragLeave = useCallback((e: React.DragEvent) => {
         e.preventDefault()
         e.stopPropagation()
-        
+
         // Only clear if leaving the main container
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
         const x = e.clientX
         const y = e.clientY
-        
+
         if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
             setIsDragging(false)
             setIsDraggingFolder(false)
@@ -468,12 +469,12 @@ const FileExplorer = () => {
             if (draggedFile && draggedFile.isFolder) {
                 // Get the current folder ID - if we're in a nested folder, use the last folder in the path
                 const targetFolderId = currentPath.length > 0 ? currentPath[currentPath.length - 1] : null
-                
+
                 // Don't allow dropping folder into itself or its children
                 if (draggedFile.id === targetFolderId) return
                 const draggedPath = getPathForFile(draggedFile.id)
                 if (targetFolderId && draggedPath.includes(targetFolderId)) return
-                
+
                 // Move the folder using cut/paste
                 cutFiles([fileId])
                 pasteFiles(targetFolderId, currentDiskId)
@@ -548,7 +549,7 @@ const FileExplorer = () => {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
         const x = e.clientX
         const y = e.clientY
-        
+
         if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
             setDragOverFolderId(null)
         }
@@ -598,7 +599,7 @@ const FileExplorer = () => {
         if (highlightedFileId) {
             useFileStore.getState().setHighlightedFile(null)
         }
-        
+
         if (isFolder) {
             navigateToFolder(fileId)
         } else {
@@ -632,7 +633,7 @@ const FileExplorer = () => {
                     label: "Refresh",
                     icon: <RotateCw size={16} />,
                     action: () => {
-                        fetchDisks()
+                        refreshCurrentDisk()
                         setContextMenu(null)
                     }
                 },
@@ -837,7 +838,7 @@ const FileExplorer = () => {
             <View className="flex-1 flex flex-col">
                 {/* View Settings Bar */}
                 <ViewSettingsBar />
-                
+
                 {/* Toolbar */}
                 <View className="flex items-center gap-3 mb-4 pb-3 pt-3 border-b" style={{ borderColor: current?.dark + "20" }}>
                     {/* Left: Navigation buttons */}
@@ -945,30 +946,30 @@ const FileExplorer = () => {
                                                         setShowSuggestions(false)
                                                         setSelectedSuggestionIndex(-1)
                                                         setIsEditingPath(false)
-                                                        
+
                                                         // Navigate to the selected path
                                                         const parts = suggestion.path.split("\\").filter(p => p.trim())
                                                         if (parts.length === 0) return
-                                                        
+
                                                         // Find disk
                                                         const targetDisk = disks.find(d => d.name === parts[0])
                                                         if (!targetDisk) return
-                                                        
+
                                                         // Switch disk if needed
                                                         if (targetDisk.id !== currentDiskId) {
                                                             await setCurrentDisk(targetDisk.id)
                                                         }
-                                                        
+
                                                         // Navigate through folders
                                                         if (parts.length === 1) {
                                                             setCurrentPath([])
                                                             return
                                                         }
-                                                        
+
                                                         const folderParts = parts.slice(1)
                                                         const newPath: string[] = []
                                                         let currentFolderId: string | null = null
-                                                        
+
                                                         for (const folderName of folderParts) {
                                                             let folderFiles: FileItem[] = []
                                                             if (currentFolderId) {
@@ -984,11 +985,11 @@ const FileExplorer = () => {
                                                                 const disk = disks.find(d => d.id === targetDisk.id)
                                                                 folderFiles = disk?.files || []
                                                             }
-                                                            
-                                                            const folder = folderFiles.find(f => 
+
+                                                            const folder = folderFiles.find(f =>
                                                                 f.isFolder && f.name.toLowerCase() === folderName.toLowerCase()
                                                             )
-                                                            
+
                                                             if (folder) {
                                                                 newPath.push(folder.id)
                                                                 currentFolderId = folder.id
@@ -996,15 +997,15 @@ const FileExplorer = () => {
                                                                 break
                                                             }
                                                         }
-                                                        
+
                                                         setCurrentPath(newPath)
                                                     }}
                                                     className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-opacity-50 transition-colors"
                                                     style={{
-                                                        backgroundColor: selectedSuggestionIndex === index 
-                                                            ? current?.primary + "15" 
-                                                            : index % 2 === 0 
-                                                                ? current?.dark + "05" 
+                                                        backgroundColor: selectedSuggestionIndex === index
+                                                            ? current?.primary + "15"
+                                                            : index % 2 === 0
+                                                                ? current?.dark + "05"
                                                                 : "transparent",
                                                         color: current?.dark,
                                                     }}
@@ -1012,7 +1013,7 @@ const FileExplorer = () => {
                                                 >
                                                     <View className="flex items-center gap-2 flex-1 min-w-0">
                                                         {suggestion.type === 'visited' && (
-                                                            <View 
+                                                            <View
                                                                 className="w-4 h-4 rounded-full flex-shrink-0"
                                                                 style={{ backgroundColor: current?.primary + "40" }}
                                                             />
@@ -1054,7 +1055,7 @@ const FileExplorer = () => {
                             icon={<RotateCw size={18} color={current?.dark} />}
                             action={() => {
                                 if (currentDiskId) {
-                                    fetchDisks()
+                                    refreshCurrentDisk()
                                 }
                             }}
                             title="Refresh"
@@ -1106,33 +1107,8 @@ const FileExplorer = () => {
                     </View>
                 </View>
 
-                {/* File Grid/List/Gallery3D */}
-                {viewMode === "gallery3d" ? (
-                    <View
-                        className={`flex-1 overflow-hidden ${isDragging ? "opacity-50" : ""}`}
-                        style={{
-                            border: isDragging ? `2px dashed ${current?.primary}` : "2px dashed transparent",
-                            borderRadius: "8px",
-                            transition: "all 0.2s",
-                            backgroundColor: isDragging ? current?.primary + "05" : "transparent"
-                        }}
-                    >
-                        {isLoading ? (
-                            <View className="grid grid-cols-6 gap-4 p-2 h-full overflow-auto">
-                                {Array.from({ length: 12 }).map((_, i) => (
-                                    <FileItemSkeleton key={i} />
-                                ))}
-                            </View>
-                        ) : (
-                            <Gallery3DView
-                                files={files}
-                                onFileClick={handleFileClick}
-                                onContextMenu={handleContextMenu}
-                            />
-                        )}
-                    </View>
-                ) : (
-                    <View
+                {/* File Grid/List */}
+                <View
                         className={`flex-1 overflow-auto ${isDragging ? "opacity-50" : ""}`}
                         style={{
                             border: isDragging ? `2px dashed ${current?.primary}` : "2px dashed transparent",
@@ -1149,9 +1125,10 @@ const FileExplorer = () => {
                                 e.nativeEvent.preventDefault()
                                 e.nativeEvent.stopPropagation()
                             }
-                            // Only show empty space menu if clicking on the container itself
+                            // Show empty space menu when not clicking on a file item
                             const target = e.target as HTMLElement
-                            if (target === e.currentTarget || target.classList.contains("empty-space")) {
+                            const clickedOnFile = target.closest("[data-file-id]")
+                            if (!clickedOnFile) {
                                 const targetFolderId = currentPath.length > 0 ? currentPath[currentPath.length - 1] : null
                                 setContextMenu({
                                     x: e.clientX,
@@ -1171,11 +1148,11 @@ const FileExplorer = () => {
                         }}
                     >
                         {isDragging && !isDraggingFolder && (
-                            <View 
+                            <View
                                 className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
                                 style={{ backgroundColor: current?.primary + "08" }}
                             >
-                                <View 
+                                <View
                                     className="flex flex-col items-center gap-3 p-6 rounded-lg"
                                     style={{ backgroundColor: current?.foreground }}
                                 >
@@ -1189,10 +1166,10 @@ const FileExplorer = () => {
                                 {viewMode === "grid"
                                     ? Array.from({ length: 12 }).map((_, i) => (
                                         <FileItemSkeleton key={i} />
-                                      ))
+                                    ))
                                     : Array.from({ length: 8 }).map((_, i) => (
                                         <ListItemSkeleton key={i} />
-                                      ))}
+                                    ))}
                             </View>
                         ) : files.length === 0 ? (
                             <View className="h-full flex items-center justify-center empty-space">
@@ -1204,10 +1181,10 @@ const FileExplorer = () => {
                                     // Separate highlighted file from others
                                     const highlightedFile = highlightedFileId ? files.find(f => f.id === highlightedFileId) : null
                                     const otherFiles = files.filter(f => f.id !== highlightedFileId)
-                                    
+
                                     // Sort: highlighted file first, then others
                                     const sortedFiles = highlightedFile ? [highlightedFile, ...otherFiles] : files
-                                    
+
                                     return sortedFiles.map((file) => (
                                         <FileItemComponent
                                             key={file.id}
@@ -1228,13 +1205,13 @@ const FileExplorer = () => {
                             </View>
                         )}
                     </View>
-                )}
 
                 {/* Hidden file input */}
                 <input
                     ref={fileInputRef}
                     type="file"
                     multiple
+                    accept={getFileInputAcceptString()}
                     style={{ display: "none" }}
                     onChange={handleFileSelect}
                 />

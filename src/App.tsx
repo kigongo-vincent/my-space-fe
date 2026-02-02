@@ -1,13 +1,19 @@
 import { useEffect } from 'react'
 import Index from './routes/Index'
-import { useTheme } from './store/Themestore'
+import { useTheme, applyAppearanceSettings } from './store/Themestore'
 import { AppSplash } from './components/auth/AppSplash'
 import BackgroundJobModal from './components/explorer/BackgroundJobModal'
 import UploadModal from './components/explorer/UploadModal'
 import StorageReductionWorkflow from './components/explorer/StorageReductionWorkflow'
+import GlobalAlert from './components/base/GlobalAlert'
 
 const App = () => {
   const { current, name } = useTheme()
+
+  useEffect(() => {
+    // Apply appearance settings (font size, font family, reduced motion) globally on mount
+    applyAppearanceSettings()
+  }, [])
 
   useEffect(() => {
     // Initialize theme on app load
@@ -27,6 +33,7 @@ const App = () => {
         <BackgroundJobModal />
         <UploadModal />
         <StorageReductionWorkflow />
+        <GlobalAlert />
       </div>
     </AppSplash>
   )

@@ -2,10 +2,14 @@ import { useState } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
 import IconButton from "../base/IconButton"
+import Select from "../base/Select"
 import { useTheme } from "../../store/Themestore"
 import { X } from "lucide-react"
 import api from "../../utils/api"
 import AnimatedModal from "../base/AnimatedModal"
+import { convertToGB } from "../../utils/storage"
+
+type StorageUnit = "MB" | "GB" | "TB"
 
 interface Props {
     onClose: () => void
@@ -14,7 +18,8 @@ interface Props {
 
 const RequestStorageModal = ({ onClose, onSuccess }: Props) => {
     const { current } = useTheme()
-    const [requestedGB, setRequestedGB] = useState("")
+    const [requestedAmount, setRequestedAmount] = useState("")
+    const [requestedUnit, setRequestedUnit] = useState<StorageUnit>("GB")
     const [reason, setReason] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState("")
@@ -23,9 +28,15 @@ const RequestStorageModal = ({ onClose, onSuccess }: Props) => {
         e.preventDefault()
         setError("")
 
-        const gb = parseFloat(requestedGB)
-        if (!gb || gb < 1) {
-            setError("Please enter a valid amount (minimum 1 GB)")
+        const amount = parseFloat(requestedAmount)
+        if (!amount || amount <= 0) {
+            setError("Please enter a valid amount")
+            return
+        }
+
+        const gb = convertToGB(amount, requestedUnit)
+        if (gb < 1) {
+            setError("Minimum request is 1 GB")
             return
         }
 
@@ -46,7 +57,7 @@ const RequestStorageModal = ({ onClose, onSuccess }: Props) => {
     }
 
     return (
-        <AnimatedModal isOpen={true} onClose={onClose} size="md" position="center">
+        <AnimatedModal isOpen={true} onClose={onClose} size="lg" position="center">
             <View
                 className="p-6 rounded-lg flex flex-col gap-6"
                 style={{ backgroundColor: current?.foreground }}
@@ -62,23 +73,37 @@ const RequestStorageModal = ({ onClose, onSuccess }: Props) => {
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <View className="flex flex-col gap-2">
-                        <Text value="Requested Storage (GB)" className="font-medium" />
-                        <input
-                            type="number"
-                            min="1"
-                            step="0.1"
-                            value={requestedGB}
-                            onChange={(e) => setRequestedGB(e.target.value)}
-                            placeholder="e.g., 50"
-                            className="px-4 py-2 rounded-lg"
-                            style={{
-                                backgroundColor: current?.background,
-                                color: current?.dark,
-                                outline: "none",
-                            }}
-                            required
-                        />
-                        <Text value="Enter the amount of additional storage you need in GB" size="sm" className="opacity-60" />
+                        <Text value="Requested Storage" className="font-medium" />
+                        <View className="flex gap-2 items-stretch" style={{ minHeight: "2.75rem" }}>
+                            <input
+                                type="number"
+                                min="0.001"
+                                step="0.1"
+                                value={requestedAmount}
+                                onChange={(e) => setRequestedAmount(e.target.value)}
+                                placeholder="e.g., 50"
+                                className="flex-1 px-4 py-2 rounded-lg min-w-0"
+                                style={{
+                                    backgroundColor: current?.background,
+                                    color: current?.dark,
+                                    outline: "none",
+                                }}
+                                required
+                            />
+                            <View className="w-20 flex-shrink-0" style={{ overflow: "visible" }}>
+                                <Select
+                                    value={requestedUnit}
+                                    onChange={(v) => setRequestedUnit(v as StorageUnit)}
+                                    options={[
+                                        { value: "MB", label: "MB" },
+                                        { value: "GB", label: "GB" },
+                                        { value: "TB", label: "TB" },
+                                    ]}
+                                    useBackgroundMode
+                                />
+                            </View>
+                        </View>
+                        <Text value="Enter the amount of additional storage you need" size="sm" className="opacity-60" />
                     </View>
 
                     <View className="flex flex-col gap-2">

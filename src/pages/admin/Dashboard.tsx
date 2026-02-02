@@ -1,7 +1,8 @@
 import View from "../../components/base/View"
 import Text from "../../components/base/Text"
+import AdminPageHeader from "../../components/admin/AdminPageHeader"
 import { useTheme } from "../../store/Themestore"
-import { useUser } from "../../store/Userstore"
+import { useAdminStatsStore } from "../../store/AdminStatsStore"
 import { Users, HardDrive, Activity, TrendingUp, FileText, BarChart3 } from "lucide-react"
 import { useNavigate } from "react-router"
 import { useMemo } from "react"
@@ -12,38 +13,28 @@ import { getPastelColor } from "../../utils/colorUtils"
 const AdminDashboard = () => {
     const navigate = useNavigate()
     const { current } = useTheme()
-    const { users } = useUser()
+    const { stats, isLoading } = useAdminStatsStore()
 
-    // Calculate stats
-    const totalUsers = users.length
-    const activeUsers = users.filter(u => !u.suspended && u.role === "user").length
-    const totalStorage = users.reduce((sum, u) => sum + (u.storage?.total || 0), 0)
-    const totalUsed = users.reduce((sum, u) => sum + (u.storage?.used || 0), 0)
-    const avgStorageUsage = totalUsers > 0 ? totalStorage / totalUsers : 0
+    const totalUsers = stats?.totalUsers ?? 0
+    const activeUsers = stats?.activeUsers ?? 0
+    const totalStorage = stats?.totalStorageGB ?? 0
+    const totalUsed = stats?.usedStorageGB ?? 0
+    const avgStorageUsage = stats?.avgStorageGB ?? 0
+    const usagePercent = stats?.usagePercent ?? 0
 
-    // Chart colors - use primary color variations
     const primaryColors = getPrimaryColorVariations(current?.primary || "#EE7E06")
-    
-    // Chart data
-    const userGrowthData = useMemo(() => [
-        { month: "Jan", users: 45 },
-        { month: "Feb", users: 52 },
-        { month: "Mar", users: 48 },
-        { month: "Apr", users: 61 },
-        { month: "May", users: 55 },
-        { month: "Jun", users: totalUsers }
-    ], [totalUsers])
 
-    const storageTrendData = useMemo(() => [
-        { month: "Jan", storage: 420 },
-        { month: "Feb", storage: 480 },
-        { month: "Mar", storage: 510 },
-        { month: "Apr", storage: 550 },
-        { month: "May", storage: 580 },
-        { month: "Jun", storage: totalStorage }
-    ], [totalStorage])
+    const userGrowthData = useMemo(() => {
+        const data = (stats?.userGrowth ?? []).map((g) => ({ month: g.month, users: g.count }))
+        return data.length > 0 ? data : [{ month: "Current", users: totalUsers }]
+    }, [stats?.userGrowth, totalUsers])
 
-    const stats = [
+    const storageTrendData = useMemo(() => {
+        const data = (stats?.storageTrend ?? []).map((t) => ({ month: t.month, storage: t.valueGB }))
+        return data.length > 0 ? data : [{ month: "Current", storage: totalStorage }]
+    }, [stats?.storageTrend, totalStorage])
+
+    const statCards = [
         {
             label: "Total Users",
             value: totalUsers.toString(),
@@ -81,7 +72,7 @@ const AdminDashboard = () => {
         },
         {
             label: "Storage Usage",
-            value: `${totalStorage > 0 ? ((totalUsed / totalStorage) * 100).toFixed(1) : 0}%`,
+            value: `${usagePercent.toFixed(1)}%`,
             icon: <FileText size={20} />,
             color: "#ef4444",
             action: () => navigate("/admin/storage")
@@ -89,33 +80,30 @@ const AdminDashboard = () => {
     ]
 
     return (
-        <View className="px-8 pt-8 pb-4" style={{ backgroundColor: current?.background }}>
-            <View className="mb-8">
-                <Text value="Admin Dashboard" style={{ color: current?.dark, fontSize: '1.11rem', fontWeight: 500 }} />
-                <Text value="Overview of your application" style={{ fontSize: '1rem', opacity: 0.6, marginTop: '0.5rem' }} />
-            </View>
+        <View className="flex flex-col">
+            <AdminPageHeader title="Admin Dashboard" subtitle="Overview of your application" />
+            {isLoading && (
+                <View className="mb-4 p-2 rounded" style={{ backgroundColor: current?.primary + "15" }}>
+                    <Text value="Loading stats..." style={{ fontSize: "0.89rem", color: current?.primary }} />
+                </View>
+            )}
 
             {/* Summary Cards */}
-            <View className="grid grid-cols-3 gap-6 mb-8">
-                {stats.map((stat, index) => (
+            <View className="grid grid-cols-3 gap-6 mb-6">
+                {statCards.map((stat, index) => (
                     <button
                         key={index}
                         onClick={stat.action}
-                        className="text-left transition-all hover:opacity-90"
+                        className="text-left transition-all hover:opacity-90 rounded-xl p-4"
                         style={{
                             backgroundColor: current?.foreground,
-                            borderRadius: '0.25rem',
-                            padding: '1.5rem',
                         }}
                     >
                         <View className="flex items-start justify-between mb-3">
                             <Text 
                                 value={stat.label} 
-                                style={{ 
-                                    fontSize: '1rem', 
-                                    opacity: 0.6,
-                                    color: current?.dark
-                                }} 
+                                className="opacity-70"
+                                style={{ color: current?.dark, fontSize: '0.89rem' }} 
                             />
                             <View 
                                 className="flex items-center justify-center"
@@ -134,39 +122,34 @@ const AdminDashboard = () => {
                         </View>
                         <Text 
                             value={stat.value} 
-                            style={{ 
-                                color: current?.dark, 
-                                fontSize: '1.33rem', 
-                                fontWeight: 500,
-                                lineHeight: '1.2'
-                            }} 
+                            style={{ color: current?.dark, lineHeight: '1.2', fontSize: '1rem', fontWeight: 400 }} 
                         />
                     </button>
                 ))}
             </View>
 
             {/* Charts */}
-            <View className="grid grid-cols-2 gap-6 mb-8">
+            <View className="grid grid-cols-2 gap-6 mb-6">
                 <View
+                    className="rounded-xl p-4"
                     style={{
                         backgroundColor: current?.foreground,
-                        borderRadius: '0.25rem',
-                        padding: '1.5rem',
                         boxShadow: `0 1px 3px ${current?.dark}08`
                     }}
                 >
-                    <Text value="User Growth" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500, marginBottom: '1rem' }} />
+                    <Text value="User Growth" className="font-medium mb-4" style={{ color: current?.dark, fontSize: '1rem' }} />
                     <ResponsiveContainer width="100%" height={250}>
                         <AreaChart data={userGrowthData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}20`} />
-                            <XAxis dataKey="month" stroke={current?.dark} style={{ fontSize: '0.815rem' }} />
-                            <YAxis stroke={current?.dark} style={{ fontSize: '0.815rem' }} />
+                            <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
+                            <XAxis dataKey="month" stroke={current?.dark} style={{ fontSize: '0.85rem' }} />
+                            <YAxis stroke={current?.dark} style={{ fontSize: '0.85rem' }} />
                             <Tooltip 
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',
+                                    boxShadow: 'none',
                                     borderRadius: '0.25rem',
-                                    fontSize: '0.815rem'
+                                    fontSize: '0.85rem'
                                 }}
                             />
                             <Area type="monotone" dataKey="users" stroke={primaryColors[0]} fill={getPrimaryColorWithOpacity(primaryColors[0], 0.2)} />
@@ -175,25 +158,25 @@ const AdminDashboard = () => {
                 </View>
 
                 <View
+                    className="rounded-xl p-4"
                     style={{
                         backgroundColor: current?.foreground,
-                        borderRadius: '0.25rem',
-                        padding: '1.5rem',
                         boxShadow: `0 1px 3px ${current?.dark}08`
                     }}
                 >
-                    <Text value="Storage Allocation Trend" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500, marginBottom: '1rem' }} />
+                    <Text value="Storage Allocation Trend" className="font-medium mb-4" style={{ color: current?.dark, fontSize: '1rem' }} />
                     <ResponsiveContainer width="100%" height={250}>
                         <LineChart data={storageTrendData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}20`} />
-                            <XAxis dataKey="month" stroke={current?.dark} style={{ fontSize: '0.815rem' }} />
-                            <YAxis stroke={current?.dark} style={{ fontSize: '0.815rem' }} />
+                            <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
+                            <XAxis dataKey="month" stroke={current?.dark} style={{ fontSize: '0.85rem' }} />
+                            <YAxis stroke={current?.dark} style={{ fontSize: '0.85rem' }} />
                             <Tooltip 
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',
+                                    boxShadow: 'none',
                                     borderRadius: '0.25rem',
-                                    fontSize: '0.815rem'
+                                    fontSize: '0.85rem'
                                 }}
                             />
                             <Line type="monotone" dataKey="storage" stroke={primaryColors[0]} strokeWidth={2} />
@@ -204,56 +187,43 @@ const AdminDashboard = () => {
 
             {/* Quick Actions */}
             <View>
-                <Text value="Quick Actions" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500, marginBottom: '1.5rem' }} />
+                <Text value="Quick Actions" className="font-medium mb-4 uppercase tracking-wider opacity-80" style={{ color: current?.dark, letterSpacing: '0.1em', fontSize: '1rem' }} />
                 <View className="grid grid-cols-4 gap-6">
                     <button
                         onClick={() => navigate("/admin/users")}
-                        className="text-left transition-all hover:opacity-90"
-                        style={{
-                            backgroundColor: current?.foreground,
-                            borderRadius: '0.25rem',
-                            padding: '1.5rem',
-                        }}
+                        className="text-left transition-all hover:opacity-90 rounded-xl p-4"
+                        style={{ backgroundColor: current?.foreground }}
                     >
-                        <Users size={18} color={current?.primary} style={{ marginBottom: '0.5rem' }} />
-                        <Text value="Manage Users" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
-                        <Text value="View and edit users" style={{ fontSize: '0.815rem', opacity: 0.7, marginTop: '0.25rem' }} />
+                        <Users size={18} color={current?.primary} className="mb-2 block" />
+                        <Text value="Manage Users" className="font-medium" style={{ color: current?.dark, fontSize: '1rem' }} />
+                        <Text value="View and edit users" className="opacity-70 mt-1 block" style={{ fontSize: '0.89rem' }} />
                     </button>
                     <button
                         onClick={() => navigate("/admin/storage")}
-                        className="p-4 text-left transition-all hover:opacity-80"
-                        style={{
-                            backgroundColor: current?.foreground,
-                            borderRadius: '0.25rem'
-                        }}
+                        className="text-left transition-all hover:opacity-90 rounded-xl p-4"
+                        style={{ backgroundColor: current?.foreground }}
                     >
-                        <HardDrive size={18} color={current?.primary} style={{ marginBottom: '0.5rem' }} />
-                        <Text value="Storage Overview" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
-                        <Text value="Monitor storage usage" style={{ fontSize: '0.815rem', opacity: 0.7, marginTop: '0.25rem' }} />
+                        <HardDrive size={18} color={current?.primary} className="mb-2 block" />
+                        <Text value="Storage Overview" className="font-medium" style={{ color: current?.dark, fontSize: '1rem' }} />
+                        <Text value="Monitor storage usage" className="opacity-70 mt-1 block" style={{ fontSize: '0.89rem' }} />
                     </button>
                     <button
                         onClick={() => navigate("/admin/analytics")}
-                        className="p-4 text-left transition-all hover:opacity-80"
-                        style={{
-                            backgroundColor: current?.foreground,
-                            borderRadius: '0.25rem'
-                        }}
+                        className="text-left transition-all hover:opacity-90 rounded-xl p-4"
+                        style={{ backgroundColor: current?.foreground }}
                     >
-                        <BarChart3 size={18} color={current?.primary} style={{ marginBottom: '0.5rem' }} />
-                        <Text value="Analytics" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
-                        <Text value="View app analytics" style={{ fontSize: '0.815rem', opacity: 0.7, marginTop: '0.25rem' }} />
+                        <BarChart3 size={18} color={current?.primary} className="mb-2 block" />
+                        <Text value="Analytics" className="font-medium" style={{ color: current?.dark, fontSize: '1rem' }} />
+                        <Text value="View app analytics" className="opacity-70 mt-1 block" style={{ fontSize: '0.89rem' }} />
                     </button>
                     <button
                         onClick={() => navigate("/admin/activity")}
-                        className="p-4 text-left transition-all hover:opacity-80"
-                        style={{
-                            backgroundColor: current?.foreground,
-                            borderRadius: '0.25rem'
-                        }}
+                        className="text-left transition-all hover:opacity-90 rounded-xl p-4"
+                        style={{ backgroundColor: current?.foreground }}
                     >
-                        <Activity size={18} color={current?.primary} style={{ marginBottom: '0.5rem' }} />
-                        <Text value="Activity Log" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
-                        <Text value="View system activity" style={{ fontSize: '0.815rem', opacity: 0.7, marginTop: '0.25rem' }} />
+                        <Activity size={18} color={current?.primary} className="mb-2 block" />
+                        <Text value="Activity Log" className="font-medium" style={{ color: current?.dark, fontSize: '1rem' }} />
+                        <Text value="View system activity" className="opacity-70 mt-1 block" style={{ fontSize: '0.89rem' }} />
                     </button>
                 </View>
             </View>

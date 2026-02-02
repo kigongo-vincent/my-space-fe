@@ -8,7 +8,7 @@ interface PublicRouteProps {
 }
 
 export const PublicRoute = ({ children }: PublicRouteProps) => {
-    const { isAuthenticated, current, fetchCurrentUser, isLoading } = useUser()
+    const { isAuthenticated, current, fetchCurrentUser } = useUser()
     const [checking, setChecking] = useState(true)
 
     useEffect(() => {
@@ -22,7 +22,11 @@ export const PublicRoute = ({ children }: PublicRouteProps) => {
         checkAuth()
     }, [isAuthenticated, fetchCurrentUser])
 
-    if (checking || isLoading) {
+    // Only show LoadingScreen during initial auth check (checking).
+    // Do NOT use isLoading here: when user submits login/signup, isLoading becomes true
+    // and we were replacing children with LoadingScreen, unmounting the form. On error,
+    // children remounted with fresh state, so the error modal was lost.
+    if (checking) {
         return <LoadingScreen message="Checking authentication..." />
     }
 

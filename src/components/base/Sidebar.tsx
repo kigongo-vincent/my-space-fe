@@ -7,7 +7,6 @@ import documentsIcon from "../../assets/categories/documents.webp"
 import httpIcon from "../../assets/categories/http.webp"
 import notesIcon from "../../assets/categories/notes.webp"
 import speakerIcon from "../../assets/categories/speaker.webp"
-import othersIcon from "../../assets/categories/others.webp"
 import picturesIcon from "../../assets/categories/pictures.webp"
 import folderIcon from "../../assets/categories/folder.webp"
 import Usage from '../sidebar/Usage'
@@ -32,6 +31,8 @@ export const getImageByFileType = (type: fileType): string => {
             return folderIcon
         case "video":
             return cameraIcon
+        case "url":
+            return httpIcon
         default:
             return folderIcon
     }
@@ -44,9 +45,10 @@ const Sidebar = ({ className }: Props) => {
         {
             thumbNail: ComputerIcon,
             label: "My Computer",
-            action: async () => {
-                await setFilterByType(null)
-                setCurrentDisk(null)
+            action: () => {
+                localStorage.removeItem('currentPath')
+                localStorage.removeItem('currentDiskId')
+                window.location.reload()
             }
         },
         {
@@ -90,16 +92,6 @@ const Sidebar = ({ className }: Props) => {
             }
         },
         {
-            thumbNail: othersIcon,
-            label: "Others",
-            action: async () => {
-                await setFilterByType("others")
-                if (disks.length > 0) {
-                    setCurrentDisk(disks[0]?.id || null)
-                }
-            }
-        },
-        {
             thumbNail: notesIcon,
             label: "Notes",
             action: async () => {
@@ -132,7 +124,6 @@ const Sidebar = ({ className }: Props) => {
                             (l.label === "Documents" && filterByType === "document") ||
                             (l.label === "Videos" && filterByType === "video") ||
                             (l.label === "Pictures" && filterByType === "picture") ||
-                            (l.label === "Others" && filterByType === "others") ||
                             (l.label === "Notes" && filterByType === "note") ||
                             (l.label === "URLs" && filterByType === "url")
                         return <Category {...l} key={i} isActive={isActive} />

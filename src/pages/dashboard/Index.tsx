@@ -892,6 +892,14 @@ const Index = () => {
                                 setDiskContextMenu(null)
                             }
                         },
+                        {
+                            label: "Refresh",
+                            icon: <RefreshCw size={16} />,
+                            action: () => {
+                                fetchDisks()
+                                setDiskContextMenu(null)
+                            }
+                        },
                         { separator: true },
                         {
                             label: "Rename",

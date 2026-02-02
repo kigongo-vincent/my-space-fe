@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react"
 import { useParams, useNavigate } from "react-router"
 import View from "../../components/base/View"
 import Text from "../../components/base/Text"
+import AdminPageHeader from "../../components/admin/AdminPageHeader"
 import { useTheme } from "../../store/Themestore"
 import { useUser } from "../../store/Userstore"
 import Avatar from "../../components/base/Avatar"
@@ -40,8 +41,8 @@ const UserDetails = () => {
 
     if (!user) {
         return (
-            <View className="px-8 pt-8 pb-4 flex items-center justify-center" style={{ backgroundColor: current?.background, minHeight: '50vh' }}>
-                <Text value="User not found. Redirecting..." style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
+            <View className="flex items-center justify-center min-h-[50vh]">
+                <Text value="User not found. Redirecting..." size="md" className="opacity-60" style={{ color: current?.dark }} />
             </View>
         )
     }
@@ -81,18 +82,17 @@ const UserDetails = () => {
     const secondaryColor = name === 'dark' ? '#2a2a2a' : '#e8e8e8'
     
     return (
-        <View className="px-8 pt-8 pb-4" style={{ backgroundColor: current?.background }}>
-            {/* Header - 60% neutral background */}
-            <View className="mb-8 flex items-center gap-4">
+        <View className="flex flex-col">
+            {/* Header */}
+            <View className="mb-6 flex items-start gap-4">
                 <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => navigate('/admin/users')}
-                    className="flex items-center justify-center"
+                    className="flex items-center justify-center rounded-lg flex-shrink-0"
                     style={{
-                        width: '2rem',
-                        height: '2rem',
-                        borderRadius: '0.25rem',
+                        width: '2.5rem',
+                        height: '2.5rem',
                         backgroundColor: current?.foreground,
                         border: 'none',
                         cursor: 'pointer'
@@ -100,9 +100,8 @@ const UserDetails = () => {
                 >
                     <ArrowLeft size={18} color={current?.dark} />
                 </motion.button>
-                <View>
-                    <Text value="User Details" style={{ color: current?.dark, fontSize: '1.11rem', fontWeight: 500 }} />
-                    <Text value="View and manage user information" style={{ fontSize: '1rem', opacity: 0.6, marginTop: '0.5rem' }} />
+                <View className="flex-1">
+                    <AdminPageHeader title="User Details" subtitle="View and manage user information" />
                 </View>
             </View>
 
@@ -133,7 +132,7 @@ const UserDetails = () => {
                         </View>
                         <View>
                             <View className="flex items-center gap-2 mb-1">
-                                <Text value={user.username} style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500 }} />
+                                <Text value={user.username} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400 }} />
                                 {user.suspended && (
                                     <View
                                         className="px-2 py-0.5 flex items-center gap-1"
@@ -237,7 +236,7 @@ const UserDetails = () => {
                     </View>
                     <Text 
                         value={user.storage ? `${user.storage.used} / ${user.storage.total} ${user.storage.unit}` : "N/A"} 
-                        style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} 
+                        style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }} 
                     />
                     <Text 
                         value={`${storagePercentage.toFixed(1)}% used`} 
@@ -277,8 +276,8 @@ const UserDetails = () => {
                         value={user.suspended ? "Suspended" : "Active"} 
                         style={{ 
                             color: user.suspended ? (current?.error || "#ef4444") : "#10b981", 
-                            fontSize: '1.33rem', 
-                            fontWeight: 500, 
+                            fontSize: '1rem', 
+                            fontWeight: 400, 
                             lineHeight: '1.2' 
                         }} 
                     />
@@ -310,7 +309,7 @@ const UserDetails = () => {
                     </View>
                     <Text 
                         value={user.role === "admin" ? "Administrator" : "User"} 
-                        style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500, lineHeight: '1.2' }} 
+                        style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }} 
                     />
                 </View>
             </View>
@@ -379,16 +378,16 @@ const UserDetails = () => {
                 </View>
                 <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={activityData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={secondaryColor} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
                         <XAxis dataKey="month" stroke={current?.dark} style={{ fontSize: '0.815rem', opacity: 0.7 }} />
                         <YAxis stroke={current?.dark} style={{ fontSize: '0.815rem', opacity: 0.7 }} />
                         <Tooltip 
                             contentStyle={{
                                 backgroundColor: current?.foreground,
-                                border: `1px solid ${secondaryColor}`,
+                                border: 'none',
+                                boxShadow: 'none',
                                 borderRadius: '0.5rem',
-                                fontSize: '0.815rem',
-                                boxShadow: `0 4px 12px ${current?.dark}10`
+                                fontSize: '0.815rem'
                             }}
                         />
                         <Bar dataKey="uploads" fill={primaryColors[0]} radius={[6, 6, 0, 0]} />

@@ -11,7 +11,7 @@ import { formatFileSize } from "../../utils/storage"
 
 interface Props {
     file: FileItemType
-    viewMode: "grid" | "list" | "gallery3d"
+    viewMode: "grid" | "list"
     onClick: () => void
     onContextMenu?: (e: React.MouseEvent, file: FileItemType) => void
     onDragStart?: (e: React.DragEvent, file: FileItemType) => void
@@ -121,6 +121,7 @@ const FileItem = ({
     if (viewMode === "list") {
         const listItem = (
             <View
+                data-file-id={file.id}
                 className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:opacity-80 transition-all ${
                     isDragging ? "opacity-50" : ""
                 } ${isDragOver ? "ring-2 ring-offset-2" : ""} ${isHighlighted ? "ring-2" : ""}`}
@@ -210,6 +211,7 @@ const FileItem = ({
 
     return (
         <View
+            data-file-id={file.id}
             className={`flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-all ${
                 isDragging ? "opacity-50" : ""
             } ${isDragOver ? "ring-2 ring-offset-2" : ""}`}

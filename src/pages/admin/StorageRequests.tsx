@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react"
 import View from "../../components/base/View"
 import Text from "../../components/base/Text"
+import AdminPageHeader from "../../components/admin/AdminPageHeader"
 import { useTheme } from "../../store/Themestore"
+import { useUser } from "../../store/Userstore"
 import { Check, X, Clock } from "lucide-react"
 import api from "../../utils/api"
 
@@ -23,6 +25,7 @@ interface StorageRequest {
 
 const StorageRequests = () => {
     const { current } = useTheme()
+    const { fetchAllUsers } = useUser()
     const [requests, setRequests] = useState<StorageRequest[]>([])
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState<"all" | "pending" | "approved" | "denied">("all")
@@ -50,9 +53,8 @@ const StorageRequests = () => {
             setProcessingId(id)
             await api.patch(`/storage-requests/${id}/status`, { status })
             await fetchRequests()
-            // Refresh users to get updated storage
             if (status === "approved") {
-                window.location.reload() // Simple refresh to update user storage
+                await fetchAllUsers()
             }
         } catch (error: any) {
             alert(error.message || "Failed to update request status")
@@ -88,19 +90,22 @@ const StorageRequests = () => {
         : requests.filter(r => r.status === filter)
 
     return (
-        <View className="h-full flex flex-col" style={{ backgroundColor: current?.background }}>
-            <View className="p-8 border-b" style={{ borderColor: current?.dark + "15" }}>
-                <Text value="Storage Requests" className="font-semibold text-2xl mb-2" />
-                <Text value="Review and manage user storage increase requests" size="sm" className="opacity-60" />
-            </View>
+        <View className="flex flex-col">
+            <AdminPageHeader title="Storage Requests" subtitle="Review and manage user storage increase requests" />
 
             {/* Filters */}
-            <View className="px-8 pt-6 flex items-center gap-2">
+            <View className="flex items-center gap-2 mb-6">
                 {(["all", "pending", "approved", "denied"] as const).map((f) => (
                     <button
                         key={f}
                         onClick={() => setFilter(f)}
-                        className="px-4 py-2 rounded-lg font-medium transition-all capitalize"
+                        className="px-4 py-2 rounded-lg transition-all capitalize"
+                        style={{
+                            backgroundColor: filter === f ? current?.primary + "15" : current?.dark + "08",
+                            color: filter === f ? current?.primary : current?.dark,
+                            fontSize: "1rem",
+                            fontWeight: 400,
+                        }}
                         style={{
                             backgroundColor: filter === f ? current?.primary + "15" : current?.dark + "08",
                             color: filter === f ? current?.primary : current?.dark,
@@ -112,7 +117,7 @@ const StorageRequests = () => {
             </View>
 
             {/* Requests List */}
-            <View className="flex-1 overflow-auto p-8">
+            <View className="flex-1 overflow-auto">
                 {loading ? (
                     <View className="flex items-center justify-center h-64">
                         <Text value="Loading..." className="opacity-60" />
@@ -126,7 +131,7 @@ const StorageRequests = () => {
                         {filteredRequests.map((request) => (
                             <View
                                 key={request.id}
-                                className="p-6 rounded-lg border"
+                                className="p-6 rounded-xl border"
                                 style={{
                                     backgroundColor: current?.foreground,
                                     borderColor: current?.dark + "15",

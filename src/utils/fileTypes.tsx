@@ -21,6 +21,25 @@ import { ReactNode } from "react"
 // Extended file type mapping
 export type ExtendedFileType = fileType | "code" | "data" | "archive" | "spreadsheet" | "presentation"
 
+// Allowed upload extensions: audio, video, documents (pdf, word, excel, ppt), pictures
+export const ALLOWED_UPLOAD_EXTENSIONS = [
+    // Audio
+    "mp3", "wav", "flac", "aac", "ogg", "m4a", "wma", "opus",
+    // Video
+    "mp4", "avi", "mov", "mkv", "webm", "flv", "wmv", "m4v", "3gp",
+    // Documents
+    "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt",
+    // Pictures
+    "jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico", "tiff", "tif"
+] as const
+
+export const isAllowedUploadExtension = (ext: string): boolean =>
+    ALLOWED_UPLOAD_EXTENSIONS.includes(ext.toLowerCase() as typeof ALLOWED_UPLOAD_EXTENSIONS[number])
+
+/** MIME-type style accept string for file input (e.g. ".mp3,.wav,.mp4,...") */
+export const getFileInputAcceptString = (): string =>
+    ALLOWED_UPLOAD_EXTENSIONS.map(e => `.${e}`).join(",")
+
 // Map file extensions to file types
 export const getFileTypeFromExtension = (extension: string): fileType => {
     const ext = extension.toLowerCase()
@@ -41,7 +60,7 @@ export const getFileTypeFromExtension = (extension: string): fileType => {
     }
 
     // Documents
-    if (['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'pages'].includes(ext)) {
+    if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf', 'odt', 'pages'].includes(ext)) {
         return "document"
     }
 

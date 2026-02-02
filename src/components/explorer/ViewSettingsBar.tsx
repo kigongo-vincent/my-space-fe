@@ -1,7 +1,7 @@
 import View from "../base/View"
 import Text from "../base/Text"
 import IconButton from "../base/IconButton"
-import { Grid, List, Box, Settings } from "lucide-react"
+import { Grid, List, Settings } from "lucide-react"
 import { useTheme } from "../../store/Themestore"
 import { useFileStore } from "../../store/Filestore"
 
@@ -37,11 +37,6 @@ const ViewSettingsBar = () => {
                     icon={<List size={18} color={viewMode === "list" ? current?.primary : current?.dark} />}
                     action={() => setViewMode("list")}
                     title="List View"
-                />
-                <IconButton
-                    icon={<Box size={18} color={viewMode === "gallery3d" ? current?.primary : current?.dark} />}
-                    action={() => setViewMode("gallery3d")}
-                    title="3D Gallery View"
                 />
             </View>
         </View>

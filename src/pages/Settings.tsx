@@ -17,11 +17,14 @@ import {
 import { useNavigate } from "react-router"
 import IconButton from "../components/base/IconButton"
 import Button from "../components/base/Button"
+import Select from "../components/base/Select"
 
 const Settings = () => {
     const { current, name, toggleTheme } = useTheme()
     const navigate = useNavigate()
     const [activeSection, setActiveSection] = useState("general")
+    const [language, setLanguage] = useState("English")
+    const [timezone, setTimezone] = useState("UTC")
 
     const sections = [
         { id: "general", label: "General", icon: <SettingsIcon size={20} /> },
@@ -86,18 +89,17 @@ const Settings = () => {
                                         <Text value="Language" className="font-medium mb-1" />
                                         <Text value="Choose your preferred language" size="sm" className="opacity-60" />
                                     </View>
-                                    <select
-                                        className="px-4 py-2 rounded-lg outline-none"
-                                        style={{
-                                            backgroundColor: current?.background,
-                                            color: current?.dark,
-                                            border: `1px solid ${current?.dark}20`
-                                        }}
-                                    >
-                                        <option>English</option>
-                                        <option>Spanish</option>
-                                        <option>French</option>
-                                    </select>
+                                    <Select
+                                        value={language}
+                                        onChange={(v) => setLanguage(String(v))}
+                                        options={[
+                                            { value: "English", label: "English" },
+                                            { value: "Spanish", label: "Spanish" },
+                                            { value: "French", label: "French" },
+                                        ]}
+                                        className="min-w-[140px]"
+                                        useBackgroundMode
+                                    />
                                 </View>
 
                                 <View className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: current?.background }}>
@@ -105,18 +107,17 @@ const Settings = () => {
                                         <Text value="Timezone" className="font-medium mb-1" />
                                         <Text value="Set your timezone" size="sm" className="opacity-60" />
                                     </View>
-                                    <select
-                                        className="px-4 py-2 rounded-lg outline-none"
-                                        style={{
-                                            backgroundColor: current?.background,
-                                            color: current?.dark,
-                                            border: `1px solid ${current?.dark}20`
-                                        }}
-                                    >
-                                        <option>UTC</option>
-                                        <option>EST</option>
-                                        <option>PST</option>
-                                    </select>
+                                    <Select
+                                        value={timezone}
+                                        onChange={(v) => setTimezone(String(v))}
+                                        options={[
+                                            { value: "UTC", label: "UTC" },
+                                            { value: "EST", label: "EST" },
+                                            { value: "PST", label: "PST" },
+                                        ]}
+                                        className="min-w-[140px]"
+                                        useBackgroundMode
+                                    />
                                 </View>
                             </View>
                         </View>

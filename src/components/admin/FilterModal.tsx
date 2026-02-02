@@ -4,7 +4,7 @@ import Text from "../base/Text"
 import { useTheme } from "../../store/Themestore"
 import { useLocation } from "react-router"
 import { useAdminFilterStore } from "../../store/AdminFilterStore"
-import CustomSelect from "./CustomSelect"
+import Select from "../base/Select"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import AnimatedModal from "../base/AnimatedModal"
@@ -87,7 +87,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
                     <View className="flex flex-col gap-4">
                         <View>
                             <Text value="Activity Type" style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.5rem', color: current?.dark }} />
-                            <CustomSelect
+                            <Select
                                 value={tempActivityType}
                                 onChange={(value) => setTempActivityType(value as string)}
                                 options={[
@@ -108,7 +108,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
                     <View className="flex flex-col gap-4">
                         <View>
                             <Text value="Role" style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.5rem', color: current?.dark }} />
-                            <CustomSelect
+                            <Select
                                 value={tempUserRole}
                                 onChange={(value) => setTempUserRole(value as string)}
                                 options={[
@@ -121,7 +121,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
                         </View>
                         <View>
                             <Text value="Status" style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.5rem', color: current?.dark }} />
-                            <CustomSelect
+                            <Select
                                 value={tempUserStatus}
                                 onChange={(value) => setTempUserStatus(value as string)}
                                 options={[
@@ -140,7 +140,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
                     <View className="flex flex-col gap-4">
                         <View>
                             <Text value="Date Range" style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.5rem', color: current?.dark }} />
-                            <CustomSelect
+                            <Select
                                 value={tempDateRange}
                                 onChange={(value) => setTempDateRange(value as string)}
                                 options={[
@@ -155,7 +155,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
                         </View>
                         <View>
                             <Text value="Analytics Type" style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.5rem', color: current?.dark }} />
-                            <CustomSelect
+                            <Select
                                 value={tempAnalyticsType}
                                 onChange={(value) => setTempAnalyticsType(value as string)}
                                 options={[
@@ -175,7 +175,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
                     <View className="flex flex-col gap-4">
                         <View>
                             <Text value="Storage Range" style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.5rem', color: current?.dark }} />
-                            <CustomSelect
+                            <Select
                                 value={tempStorageRange}
                                 onChange={(value) => setTempStorageRange(value as string)}
                                 options={[

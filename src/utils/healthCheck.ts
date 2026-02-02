@@ -1,4 +1,5 @@
-const API_BASE_URL = "https://myspace-apiv1.bvrdesign.africa/api";
+import { API_BASE_URL as A } from "./api";
+const API_BASE_URL = A;
 // import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 export interface HealthStatus {
