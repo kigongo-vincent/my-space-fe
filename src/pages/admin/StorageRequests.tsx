@@ -106,10 +106,6 @@ const StorageRequests = () => {
                             fontSize: "1rem",
                             fontWeight: 400,
                         }}
-                        style={{
-                            backgroundColor: filter === f ? current?.primary + "15" : current?.dark + "08",
-                            color: filter === f ? current?.primary : current?.dark,
-                        }}
                     >
                         {f}
                     </button>

@@ -1,5 +1,4 @@
 import { useTheme } from "../../store/Themestore"
-import Logo from "./Logo"
 import { motion } from "framer-motion"
 
 interface LoadingScreenProps {
