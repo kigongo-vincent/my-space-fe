@@ -209,7 +209,7 @@ const Index = () => {
                                 key={i}
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                transition={{ 
+                                transition={{
                                     duration: 0.2,
                                     delay: i * 0.03
                                 }}
@@ -324,10 +324,10 @@ const Index = () => {
     const navigateToParentFolder = async (file: FileItem) => {
         try {
             console.log("Navigating to parent folder for file:", file.name, "Path:", file.path, "ParentId:", file.parentId)
-            
+
             // Clear search query to show the file explorer
             useFileStore.getState().setSearchQuery("")
-            
+
             // Find the disk for this file
             const disk = disks.find(d => d.id === file.diskId)
             if (!disk) {
@@ -337,25 +337,25 @@ const Index = () => {
 
             // Set the current disk and fetch all files to build complete tree
             await setCurrentDisk(disk.id)
-            
+
             // Wait a bit for files to load
             await new Promise(resolve => setTimeout(resolve, 300))
-            
+
             // Use the path from backend if available
             if (file.path && file.path.length > 0) {
                 // Path is array of folder IDs from root to parent
                 // Set the current path directly
                 useFileStore.getState().setCurrentPath(file.path)
-                
+
                 // Navigate to the last folder in the path (the parent folder)
                 const parentFolderId = file.path[file.path.length - 1]
                 console.log("Navigating to parent folder ID:", parentFolderId)
-                
+
                 // Set the file to highlight after navigation
                 useFileStore.getState().setHighlightedFile(file.id)
-                
+
                 await navigateToFolder(parentFolderId)
-                
+
                 // Clear highlight after 5 seconds
                 setTimeout(() => {
                     useFileStore.getState().setHighlightedFile(null)
@@ -365,12 +365,12 @@ const Index = () => {
                 const parentFile = useFileStore.getState().getFileById(file.parentId)
                 if (parentFile && parentFile.isFolder) {
                     console.log("Navigating to parent folder ID (fallback):", file.parentId)
-                    
+
                     // Set the file to highlight after navigation
                     useFileStore.getState().setHighlightedFile(file.id)
-                    
+
                     await navigateToFolder(file.parentId)
-                    
+
                     // Clear highlight after 5 seconds
                     setTimeout(() => {
                         useFileStore.getState().setHighlightedFile(null)
@@ -425,7 +425,7 @@ const Index = () => {
                                 key={`${file.diskId}-${file.id}-${i}`}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                transition={{ 
+                                transition={{
                                     duration: 0.2,
                                     delay: i * 0.02
                                 }}
@@ -463,7 +463,7 @@ const Index = () => {
 
     // Show home view
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -511,7 +511,7 @@ const Index = () => {
                                         key={disk?.id || `disk-${i}`}
                                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                                        transition={{ 
+                                        transition={{
                                             duration: 0.3,
                                             delay: i * 0.1,
                                             type: "spring",
@@ -533,8 +533,8 @@ const Index = () => {
                                             onMenuClick={(e, diskIdNum) => {
                                                 e.stopPropagation()
                                                 // Find disk by matching the numeric ID or the full ID
-                                                const matchingDisk = disks.find(d => 
-                                                    d.id === diskIdNum.toString() || 
+                                                const matchingDisk = disks.find(d =>
+                                                    d.id === diskIdNum.toString() ||
                                                     parseInt(d.id) === diskIdNum ||
                                                     parseInt(d.id.split('-')[1]) === diskIdNum
                                                 )
@@ -572,7 +572,7 @@ const Index = () => {
                                     key={r.fileId || i}
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ 
+                                    transition={{
                                         duration: 0.2,
                                         delay: 0.3 + (i * 0.03),
                                         type: "spring",
@@ -612,7 +612,7 @@ const Index = () => {
                                         key={r.fileId || i}
                                         initial={{ opacity: 0, scale: 0.8 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ 
+                                        transition={{
                                             duration: 0.2,
                                             delay: 0.5 + (i * 0.03),
                                             type: "spring",
@@ -656,7 +656,7 @@ const Index = () => {
                 {currentDiskId ? (() => {
                     const disk = disks.find(d => d.id === currentDiskId)
                     if (!disk) return <Text value={pathname} />
-                    
+
                     // Build path breadcrumb - always show disk name, then folders in path
                     const pathParts: string[] = [disk.name]
                     currentPath.forEach(folderId => {
@@ -668,20 +668,20 @@ const Index = () => {
                             pathParts.push(`Folder ${folderId.slice(0, 8)}...`)
                         }
                     })
-                    
+
                     // Only show path if we have at least the disk name
                     if (pathParts.length === 0) {
                         return <Text value={pathname} />
                     }
-                    
+
                     return (
                         <View className="flex items-center gap-1 flex-1 overflow-hidden">
                             {pathParts.map((part, index) => (
                                 <View key={index} className="flex items-center gap-1">
-                                    <Text 
-                                        value={part} 
+                                    <Text
+                                        value={part}
                                         className={index === 0 ? "font-medium" : ""}
-                                        style={{ 
+                                        style={{
                                             color: index === 0 ? current?.dark : current?.dark + "CC"
                                         }}
                                     />
@@ -762,7 +762,7 @@ const Index = () => {
 
                                 await setCurrentDisk(disk.id)
                                 await new Promise(resolve => setTimeout(resolve, 200))
-                                
+
                                 if (file.parentId) {
                                     const parentFile = useFileStore.getState().getFileById(file.parentId)
                                     if (parentFile && parentFile.isFolder) {
@@ -778,9 +778,9 @@ const Index = () => {
                                 } else {
                                     useFileStore.getState().setCurrentPath([])
                                 }
-                                
+
                                 await new Promise(resolve => setTimeout(resolve, 100))
-                                
+
                                 if (!file.isFolder) {
                                     openFileModal(file.id)
                                 } else {
