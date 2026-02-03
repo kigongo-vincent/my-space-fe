@@ -100,14 +100,14 @@ const AdminDashboard = () => {
                         }}
                     >
                         <View className="flex items-start justify-between mb-3">
-                            <Text 
-                                value={stat.label} 
+                            <Text
+                                value={stat.label}
                                 className="opacity-70"
-                                style={{ color: current?.dark, fontSize: '0.89rem' }} 
+                                style={{ color: current?.dark, fontSize: '0.89rem' }}
                             />
-                            <View 
+                            <View
                                 className="flex items-center justify-center"
-                                style={{ 
+                                style={{
                                     width: '3.5rem',
                                     height: '3.5rem',
                                     borderRadius: '50%',
@@ -120,9 +120,9 @@ const AdminDashboard = () => {
                                 </View>
                             </View>
                         </View>
-                        <Text 
-                            value={stat.value} 
-                            style={{ color: current?.dark, lineHeight: '1.2', fontSize: '1rem', fontWeight: 400 }} 
+                        <Text
+                            value={stat.value}
+                            style={{ color: current?.dark, lineHeight: '1.2', fontSize: '1rem', fontWeight: 400 }}
                         />
                     </button>
                 ))}
@@ -143,7 +143,7 @@ const AdminDashboard = () => {
                             <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
                             <XAxis dataKey="month" stroke={current?.dark} style={{ fontSize: '0.85rem' }} />
                             <YAxis stroke={current?.dark} style={{ fontSize: '0.85rem' }} />
-                            <Tooltip 
+                            <Tooltip
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',
@@ -170,7 +170,7 @@ const AdminDashboard = () => {
                             <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
                             <XAxis dataKey="month" stroke={current?.dark} style={{ fontSize: '0.85rem' }} />
                             <YAxis stroke={current?.dark} style={{ fontSize: '0.85rem' }} />
-                            <Tooltip 
+                            <Tooltip
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',

@@ -2,12 +2,12 @@ import { HTMLAttributes } from 'react'
 import View from '../base/View'
 import Text from '../base/Text'
 import { useTheme } from '../../store/Themestore'
-import { 
-    LayoutDashboard, 
-    Users, 
-    HardDrive, 
-    BarChart3, 
-    Settings, 
+import {
+    LayoutDashboard,
+    Users,
+    HardDrive,
+    BarChart3,
+    Settings,
     Activity,
     ChevronRight,
     AlertCircle
@@ -84,11 +84,11 @@ const AdminSidebar = ({ className }: Props) => {
     }
 
     return (
-        <View 
-            className={`flex flex-col rounded-xl ${className}`} 
-            mode='foreground' 
-            style={{ 
-                height: '100%', 
+        <View
+            className={`flex flex-col rounded-xl ${className}`}
+            mode='foreground'
+            style={{
+                height: '100%',
                 overflowY: 'auto',
                 padding: '1rem',
                 boxShadow: 'none'
@@ -124,20 +124,20 @@ const AdminSidebar = ({ className }: Props) => {
                             }}
                         >
                             <View className="flex items-center gap-3 flex-1">
-                                <View style={{ 
+                                <View style={{
                                     color: active ? current?.primary : current?.dark,
                                     opacity: active ? 1 : 0.8
                                 }}>
                                     {item.icon}
                                 </View>
-                                <Text 
-                                    value={item.label} 
-                                    style={{ color: active ? current?.primary : current?.dark, fontWeight: 400 }} 
+                                <Text
+                                    value={item.label}
+                                    style={{ color: active ? current?.primary : current?.dark, fontWeight: 400 }}
                                 />
                             </View>
                             {active && (
-                                <ChevronRight 
-                                    size={16} 
+                                <ChevronRight
+                                    size={16}
                                     color={current?.primary}
                                     style={{ opacity: 0.6 }}
                                 />
@@ -148,25 +148,25 @@ const AdminSidebar = ({ className }: Props) => {
             </View>
 
             {/* Footer Section */}
-            <View 
-                className="mt-4 pt-4" 
-                style={{ 
+            <View
+                className="mt-4 pt-4"
+                style={{
                     borderTop: `1px solid ${current?.dark}15`,
                     paddingTop: '1rem'
                 }}
             >
                 <View className="flex items-center gap-2">
-                    <View 
+                    <View
                         className="px-2 py-1"
                         style={{
                             backgroundColor: `${current?.primary}10`,
                             borderRadius: '0.25rem'
                         }}
                     >
-                        <Text 
-                            value="v1.0.0" 
+                        <Text
+                            value="v1.0.0"
                             className="opacity-70"
-                            style={{ color: current?.primary, fontSize: '0.89rem' }} 
+                            style={{ color: current?.primary, fontSize: '0.89rem' }}
                         />
                     </View>
                 </View>

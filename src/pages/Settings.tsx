@@ -2,13 +2,13 @@ import { useState } from "react"
 import View from "../components/base/View"
 import Text from "../components/base/Text"
 import { useTheme } from "../store/Themestore"
-import { 
-    Settings as SettingsIcon, 
-    User, 
-    Bell, 
-    Shield, 
-    Palette, 
-    Moon, 
+import {
+    Settings as SettingsIcon,
+    User,
+    Bell,
+    Shield,
+    Palette,
+    Moon,
     Sun,
     Download,
     Trash2,
@@ -36,7 +36,7 @@ const Settings = () => {
     ]
 
     return (
-        <View 
+        <View
             className="h-full flex flex-col p-6"
             style={{ backgroundColor: current?.background }}
         >
@@ -52,7 +52,7 @@ const Settings = () => {
 
             <View className="flex flex-row gap-6 flex-1">
                 {/* Sidebar */}
-                <View 
+                <View
                     mode="foreground"
                     className="w-64 flex-shrink-0 rounded-lg p-4 flex flex-col gap-2"
                 >
@@ -60,9 +60,8 @@ const Settings = () => {
                         <button
                             key={section.id}
                             onClick={() => setActiveSection(section.id)}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
-                                activeSection === section.id ? "font-medium" : "opacity-70"
-                            }`}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${activeSection === section.id ? "font-medium" : "opacity-70"
+                                }`}
                             style={{
                                 backgroundColor: activeSection === section.id ? current?.primary + "20" : "transparent",
                                 color: activeSection === section.id ? current?.primary : current?.dark
@@ -75,14 +74,14 @@ const Settings = () => {
                 </View>
 
                 {/* Content */}
-                <View 
+                <View
                     mode="foreground"
                     className="flex-1 rounded-lg p-6 overflow-auto"
                 >
                     {activeSection === "general" && (
                         <View className="flex flex-col gap-6">
                             <Text value="General Settings" className="text-xl font-bold mb-2" />
-                            
+
                             <View className="flex flex-col gap-4">
                                 <View className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: current?.background }}>
                                     <View>
@@ -134,7 +133,7 @@ const Settings = () => {
                     {activeSection === "notifications" && (
                         <View className="flex flex-col gap-6">
                             <Text value="Notification Settings" className="text-xl font-bold mb-2" />
-                            
+
                             <View className="flex flex-col gap-4">
                                 {[
                                     { label: "Email notifications", desc: "Receive updates via email" },
@@ -148,7 +147,7 @@ const Settings = () => {
                                         </View>
                                         <label className="relative inline-flex items-center cursor-pointer">
                                             <input type="checkbox" className="sr-only peer" defaultChecked />
-                                            <div 
+                                            <div
                                                 className="w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"
                                                 style={{
                                                     backgroundColor: current?.dark + "30",
@@ -165,7 +164,7 @@ const Settings = () => {
                     {activeSection === "privacy" && (
                         <View className="flex flex-col gap-6">
                             <Text value="Privacy & Security" className="text-xl font-bold mb-2" />
-                            
+
                             <View className="flex flex-col gap-4">
                                 <Button title="Change Password" action={() => alert("Feature coming soon")} />
                                 <Button title="Two-Factor Authentication" action={() => alert("Feature coming soon")} />
@@ -177,7 +176,7 @@ const Settings = () => {
                     {activeSection === "appearance" && (
                         <View className="flex flex-col gap-6">
                             <Text value="Appearance" className="text-xl font-bold mb-2" />
-                            
+
                             <View className="flex flex-col gap-4">
                                 <View className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: current?.background }}>
                                     <View className="flex items-center gap-3">
@@ -187,8 +186,8 @@ const Settings = () => {
                                             <Text value={`Currently using ${name} theme`} size="sm" className="opacity-60" />
                                         </View>
                                     </View>
-                                    <Button 
-                                        title={name === "dark" ? "Switch to Light" : "Switch to Dark"} 
+                                    <Button
+                                        title={name === "dark" ? "Switch to Light" : "Switch to Dark"}
                                         action={toggleTheme}
                                     />
                                 </View>
@@ -199,7 +198,7 @@ const Settings = () => {
                     {activeSection === "data" && (
                         <View className="flex flex-col gap-6">
                             <Text value="Data & Storage" className="text-xl font-bold mb-2" />
-                            
+
                             <View className="flex flex-col gap-4">
                                 <Button title="Download My Data" action={() => alert("Feature coming soon")} />
                                 <Button title="Clear Cache" action={() => alert("Feature coming soon")} />

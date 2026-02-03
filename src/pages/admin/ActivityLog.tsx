@@ -83,7 +83,7 @@ const ActivityLog = () => {
 
     // Chart colors - use primary color variations
     const primaryColors = getPrimaryColorVariations(current?.primary || "#EE7E06")
-    
+
     // Chart data - Activity over time (from current page data)
     const activityOverTimeData = useMemo(() => {
         const dayCounts: Record<string, number> = {}
@@ -121,9 +121,9 @@ const ActivityLog = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="Total Activities" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3.5rem',
                                 height: '3.5rem',
                                 borderRadius: '50%',
@@ -146,9 +146,9 @@ const ActivityLog = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="User Actions" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3.5rem',
                                 height: '3.5rem',
                                 borderRadius: '50%',
@@ -171,9 +171,9 @@ const ActivityLog = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="Storage Actions" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3.5rem',
                                 height: '3.5rem',
                                 borderRadius: '50%',
@@ -196,9 +196,9 @@ const ActivityLog = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="Security Actions" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3.5rem',
                                 height: '3.5rem',
                                 borderRadius: '50%',
@@ -228,7 +228,7 @@ const ActivityLog = () => {
                             <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
                             <XAxis dataKey="day" stroke={current?.dark} style={{ fontSize: '0.815rem' }} />
                             <YAxis stroke={current?.dark} style={{ fontSize: '0.815rem' }} />
-                            <Tooltip 
+                            <Tooltip
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',
@@ -267,7 +267,7 @@ const ActivityLog = () => {
                                     <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                                 ))}
                             </Pie>
-                            <Tooltip 
+                            <Tooltip
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',
@@ -291,9 +291,9 @@ const ActivityLog = () => {
                     }}
                 >
                     <View className="flex items-center gap-2 mb-3">
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3.5rem',
                                 height: '3.5rem',
                                 borderRadius: '50%',
@@ -317,9 +317,9 @@ const ActivityLog = () => {
                     }}
                 >
                     <View className="flex items-center gap-2 mb-3">
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3.5rem',
                                 height: '3.5rem',
                                 borderRadius: '50%',
@@ -345,7 +345,7 @@ const ActivityLog = () => {
                     borderRadius: '0.25rem'
                 }}
             >
-                <View 
+                <View
                     className="grid grid-cols-12 gap-4 p-3"
                     style={{
                         backgroundColor: current?.foreground
@@ -392,7 +392,7 @@ const ActivityLog = () => {
                                     <Text value={activity.timestamp.split(" ")[0]} style={{ fontSize: '0.74rem', opacity: 0.6 }} />
                                 </View>
                                 <View className="col-span-2">
-                                        <Text value={activity.user} style={{ color: current?.dark, fontSize: '1rem' }} />
+                                    <Text value={activity.user} style={{ color: current?.dark, fontSize: '1rem' }} />
                                 </View>
                                 <View className="col-span-2">
                                     <View className="flex items-center gap-2">

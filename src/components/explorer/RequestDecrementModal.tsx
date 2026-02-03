@@ -141,10 +141,10 @@ const RequestDecrementModal = ({ onClose, onSuccess }: Props) => {
                         className="p-3 rounded-lg"
                         style={{ backgroundColor: (current?.warning || "#f59e0b") + "15" }}
                     >
-                        <Text 
-                            value="Note: After admin approval, you'll need to delete files to free up the requested amount before the reduction is completed." 
-                            size="sm" 
-                            style={{ color: current?.warning || "#f59e0b" }} 
+                        <Text
+                            value="Note: After admin approval, you'll need to delete files to free up the requested amount before the reduction is completed."
+                            size="sm"
+                            style={{ color: current?.warning || "#f59e0b" }}
                         />
                     </View>
 

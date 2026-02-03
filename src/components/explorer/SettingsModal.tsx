@@ -6,11 +6,11 @@ import { useTheme } from "../../store/Themestore"
 import { useUser } from "../../store/Userstore"
 import Avatar from "../base/Avatar"
 import AnimatedModal from "../base/AnimatedModal"
-import { 
-    X, 
-    User, 
-    Shield, 
-    Palette, 
+import {
+    X,
+    User,
+    Shield,
+    Palette,
     Lock,
     Key,
     Trash2,
@@ -54,7 +54,7 @@ const SettingsModal = ({ onClose }: Props) => {
                                     <Text value={user?.username || "User"} className="font-semibold text-lg" />
                                     <Text value={user?.email || "user@example.com"} size="sm" className="opacity-60 mt-1" />
                                     <View className="flex items-center gap-2 mt-2">
-                                        <View 
+                                        <View
                                             className="px-3 py-1 rounded-full text-xs font-medium"
                                             style={{ backgroundColor: current?.primary + "15", color: current?.primary }}
                                         >
@@ -231,9 +231,9 @@ const SettingsModal = ({ onClose }: Props) => {
                     }}
                 >
                     {/* Sidebar */}
-                    <View 
+                    <View
                         className="w-64 flex-shrink-0 border-r p-4 flex flex-col gap-2"
-                        style={{ 
+                        style={{
                             backgroundColor: current?.dark + "05",
                             borderColor: current?.dark + "10"
                         }}
@@ -247,9 +247,8 @@ const SettingsModal = ({ onClose }: Props) => {
                                 <button
                                     key={category.id}
                                     onClick={() => setActiveCategory(category.id)}
-                                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
-                                        activeCategory === category.id ? "font-medium" : ""
-                                    }`}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${activeCategory === category.id ? "font-medium" : ""
+                                        }`}
                                     style={{
                                         backgroundColor: activeCategory === category.id ? current?.primary + "15" : "transparent",
                                         color: activeCategory === category.id ? current?.primary : current?.dark

@@ -18,7 +18,7 @@ const Select = ({ value, onChange, options, placeholder, className, useBackgroun
     const { current, getBackgroundColor } = useTheme()
     const [isOpen, setIsOpen] = useState(false)
     const selectRef = useRef<HTMLDivElement>(null)
-    
+
     const backgroundColor = useBackgroundMode ? getBackgroundColor("background") : current?.foreground
     const dropdownBackgroundColor = useBackgroundMode ? getBackgroundColor("background") : current?.foreground
 
@@ -52,19 +52,19 @@ const Select = ({ value, onChange, options, placeholder, className, useBackgroun
                     fontSize: '1rem'
                 }}
             >
-                <Text 
-                    value={selectedOption?.label || placeholder || "Select..."} 
-                    style={{ 
+                <Text
+                    value={selectedOption?.label || placeholder || "Select..."}
+                    style={{
                         fontSize: '1rem',
                         color: selectedOption ? current?.dark : `${current?.dark}60`
-                    }} 
+                    }}
                 />
                 <motion.div
                     animate={{ rotate: isOpen ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
                 >
-                    <ChevronDown 
-                        size={18} 
+                    <ChevronDown
+                        size={18}
                         color={current?.dark}
                     />
                 </motion.div>

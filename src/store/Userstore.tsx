@@ -55,7 +55,7 @@ export const useUser = create<UserstoreI>((set, get) => ({
         try {
             set({ isLoading: true })
             const response = await api.post<{ token: string; user: any }>('/users/login', { email, password })
-            
+
             // Map backend response to frontend UserI
             const user: UserI = {
                 id: response.user.id,
@@ -71,14 +71,14 @@ export const useUser = create<UserstoreI>((set, get) => ({
                 } : undefined,
                 provider: response.user.provider || undefined,
             }
-            
+
             localStorage.setItem('token', response.token)
             localStorage.setItem('user', JSON.stringify(user))
-            set({ 
-                current: user, 
+            set({
+                current: user,
                 usage: user.storage || null,
                 isAuthenticated: true,
-                isLoading: false 
+                isLoading: false
             })
             return { success: true }
         } catch (error: any) {
@@ -90,10 +90,10 @@ export const useUser = create<UserstoreI>((set, get) => ({
         try {
             set({ isLoading: true })
             await api.post('/users/register', { username, email, password })
-            
+
             // After registration, login the user
             const loginResponse = await api.post<{ token: string; user: any }>('/users/login', { email, password })
-            
+
             // Map backend response to frontend UserI
             const user: UserI = {
                 id: loginResponse.user.id,
@@ -109,14 +109,14 @@ export const useUser = create<UserstoreI>((set, get) => ({
                 } : undefined,
                 provider: loginResponse.user.provider || undefined,
             }
-            
+
             localStorage.setItem('token', loginResponse.token)
             localStorage.setItem('user', JSON.stringify(user))
-            set({ 
-                current: user, 
+            set({
+                current: user,
                 usage: user.storage || null,
                 isAuthenticated: true,
-                isLoading: false 
+                isLoading: false
             })
             return { success: true }
         } catch (error: any) {
@@ -169,7 +169,7 @@ export const useUser = create<UserstoreI>((set, get) => ({
         try {
             set({ isLoading: true })
             const response = await api.get<any>('/users/me')
-            
+
             // Map backend response to frontend UserI
             const user: UserI = {
                 id: response.id,
@@ -185,13 +185,13 @@ export const useUser = create<UserstoreI>((set, get) => ({
                 } : undefined,
                 provider: response.provider || undefined,
             }
-            
+
             localStorage.setItem('user', JSON.stringify(user))
-            set({ 
-                current: user, 
+            set({
+                current: user,
                 usage: user.storage || null,
                 isAuthenticated: true,
-                isLoading: false 
+                isLoading: false
             })
 
             // Fetch and apply user settings from backend
@@ -246,11 +246,11 @@ export const useUser = create<UserstoreI>((set, get) => ({
     updateUserStorage: async (userId: number, storage: UsageI) => {
         try {
             await api.put(`/users/${userId}/storage`, storage)
-            const users = get().users.map(user => 
+            const users = get().users.map(user =>
                 user.id === userId ? { ...user, storage } : user
             )
             set({ ...get(), users })
-            
+
             // Update current user if it's them
             const current = get().current
             if (current && current.id === userId) {
@@ -263,11 +263,11 @@ export const useUser = create<UserstoreI>((set, get) => ({
     suspendUser: async (userId: number) => {
         try {
             await api.patch(`/users/${userId}/suspend`)
-            const users = get().users.map(user => 
+            const users = get().users.map(user =>
                 user.id === userId ? { ...user, suspended: !user.suspended } : user
             )
             set({ ...get(), users })
-            
+
             // Update current user if it's them
             const current = get().current
             if (current && current.id === userId) {
@@ -282,7 +282,7 @@ export const useUser = create<UserstoreI>((set, get) => ({
             await api.delete(`/users/${userId}`)
             const users = get().users.filter(user => user.id !== userId)
             set({ ...get(), users })
-            
+
             // If deleted user is current user, logout
             const current = get().current
             if (current && current.id === userId) {

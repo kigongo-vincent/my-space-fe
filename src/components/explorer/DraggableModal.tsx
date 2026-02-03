@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, ReactNode } from "react"
 import View from "../base/View"
 import Text from "../base/Text"
-import { X, Maximize2, Minimize2 } from "lucide-react"
+import { X, Maximize2, Minimize2, Presentation } from "lucide-react"
 import IconButton from "../base/IconButton"
 import { useTheme } from "../../store/Themestore"
 import { useFileStore } from "../../store/Filestore"
@@ -23,7 +23,7 @@ interface Props {
 const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
     const { getFileById, openModals } = useFileStore()
     const { current, name } = useTheme()
-    
+
     // Calculate initial position based on number of open modals to avoid overlapping
     const getInitialPosition = () => {
         const modalIndex = openModals.findIndex(m => m.id === modalId)
@@ -32,16 +32,18 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
         // Ensure modals don't go off-screen
         const maxX = window.innerWidth - 600
         const maxY = window.innerHeight - 500
-        return { 
-            x: Math.min(offsetX, maxX), 
-            y: Math.min(offsetY, maxY) 
+        return {
+            x: Math.min(offsetX, maxX),
+            y: Math.min(offsetY, maxY)
         }
     }
-    
+
     const [position, setPosition] = useState(getInitialPosition())
     const [isDragging, setIsDragging] = useState(false)
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
     const [isMinimized, setIsMinimized] = useState(false)
+    const [isFullScreen, setIsFullScreen] = useState(false)
+    const [isPresentationMode, setIsPresentationMode] = useState(false)
     const [resolvedAudioUrl, setResolvedAudioUrl] = useState<string | null>(null)
     const [resolvedVideoUrl, setResolvedVideoUrl] = useState<string | null>(null)
     const modalRef = useRef<HTMLDivElement>(null)
@@ -69,9 +71,20 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
 
     // Update position when fileId changes (for next/prev navigation)
     useEffect(() => {
-        // Reset minimized state when file changes
         setIsMinimized(false)
+        setIsFullScreen(false)
+        setIsPresentationMode(false)
     }, [fileId])
+
+    // Escape key exits presentation mode
+    useEffect(() => {
+        if (!isPresentationMode) return
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setIsPresentationMode(false)
+        }
+        window.addEventListener("keydown", handleKeyDown)
+        return () => window.removeEventListener("keydown", handleKeyDown)
+    }, [isPresentationMode])
 
     useEffect(() => {
         if (!isDragging) return
@@ -139,7 +152,7 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
             case "note":
                 return <NoteViewer file={file} />
             case "document":
-                return <DocumentViewer file={file} />
+                return <DocumentViewer file={file} hideToolbar={isPresentationMode} />
             case "url":
                 return <UrlViewer file={file} />
             default:
@@ -158,71 +171,138 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
     }
 
     const isMediaFile = file && (file.type === "audio" || file.type === "video")
+    const isDocument = file.type === "document"
+
+    const isExpanded = isFullScreen || isPresentationMode
+    const modalStyle = isExpanded
+        ? { left: 0, top: 0, width: "100vw", height: "100vh", borderRadius: 0 }
+        : {
+            left: `${position.x}px`,
+            top: `${position.y}px`,
+            width: isMinimized ? "300px" : isMediaFile ? "500px" : (file.type === "note" ? "800px" : isDocument ? "900px" : "600px"),
+            height: isMinimized ? "50px" : isMediaFile ? "700px" : (file.type === "note" || isDocument ? "700px" : "500px"),
+            borderRadius: 6,
+        }
 
     return (
         <View
             ref={modalRef}
             mode="foreground"
-            className="fixed rounded-md flex flex-col"
+            className="fixed flex flex-col"
             data-modal-id={modalId}
             style={{
-                left: `${position.x}px`,
-                top: `${position.y}px`,
-                width: isMinimized ? "300px" : isMediaFile ? "500px" : (file.type === "note" ? "800px" : file.type === "document" ? "900px" : "600px"),
-                height: isMinimized ? "50px" : isMediaFile ? "700px" : (file.type === "note" || file.type === "document" ? "700px" : "500px"),
-                zIndex: 1000,
+                ...modalStyle,
+                zIndex: isExpanded ? 9999 : 1000,
                 backgroundColor: current?.foreground || current?.background,
                 boxShadow: name === "dark"
                     ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
                     : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
             }}
         >
-            {/* Header */}
-            <View
-                className="flex items-center justify-between px-4 py-3.5 border-b cursor-move"
-                style={{
-                    borderColor: current?.dark + "20"
-                }}
-                onMouseDown={handleMouseDown}
-            >
-                <View className="flex items-center gap-3">
-                    <img src={getImageByFileType(file.type)} alt="" className="w-5 h-5 flex-shrink-0" />
-                    <Text
-                        value={file.name}
-                        className="font-semibold max-w-[200px]"
-                        style={{
-                            color: current?.dark,
-                            letterSpacing: "-0.01em",
-                            fontSize: "14px",
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                            wordBreak: "break-word",
-                            lineHeight: "1.2"
-                        }}
-                    />
+            {/* Header - hidden in presentation mode */}
+            {!isPresentationMode && (
+                <View
+                    className="flex items-center justify-between px-4 py-3.5 border-b cursor-move"
+                    style={{
+                        borderColor: current?.dark + "20"
+                    }}
+                    onMouseDown={handleMouseDown}
+                >
+                    <View className="flex items-center gap-3">
+                        <img src={getImageByFileType(file.type)} alt="" className="w-5 h-5 flex-shrink-0" />
+                        <Text
+                            value={file.name}
+                            className="font-semibold max-w-[200px]"
+                            style={{
+                                color: current?.dark,
+                                letterSpacing: "-0.01em",
+                                fontSize: "14px",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                wordBreak: "break-word",
+                                lineHeight: "1.2"
+                            }}
+                        />
+                    </View>
+                    <View className="flex items-center gap-1">
+                        {isDocument && (
+                            <>
+                                <IconButton
+                                    icon={<Presentation size={16} color={current?.dark} />}
+                                    action={() => {
+                                        setIsPresentationMode(true)
+                                        setIsMinimized(false)
+                                        setIsFullScreen(false)
+                                    }}
+                                    title="Presentation mode"
+                                />
+                                <IconButton
+                                    icon={
+                                        isFullScreen ? (
+                                            <Minimize2 size={16} color={current?.dark} />
+                                        ) : (
+                                            <Maximize2 size={16} color={current?.dark} />
+                                        )
+                                    }
+                                    action={() => {
+                                        setIsFullScreen(prev => {
+                                            if (!prev) setIsMinimized(false)
+                                            return !prev
+                                        })
+                                    }}
+                                    title={isFullScreen ? "Exit full screen" : "Full screen"}
+                                />
+                            </>
+                        )}
+                        {!isFullScreen && !isPresentationMode && (
+                            <IconButton
+                                icon={
+                                    isMinimized ? (
+                                        <Maximize2 size={16} color={current?.dark} />
+                                    ) : (
+                                        <Minimize2 size={16} color={current?.dark} />
+                                    )
+                                }
+                                action={() => setIsMinimized(!isMinimized)}
+                                title={isMinimized ? "Restore" : "Minimize"}
+                            />
+                        )}
+                        <IconButton
+                            icon={<X size={16} color={current?.dark} />}
+                            action={onClose}
+                            title="Close"
+                        />
+                    </View>
                 </View>
-                <View className="flex items-center gap-1">
-                    <IconButton
-                        icon={
-                            isMinimized ? (
-                                <Maximize2 size={16} color={current?.dark} />
-                            ) : (
-                                <Minimize2 size={16} color={current?.dark} />
-                            )
-                        }
-                        action={() => setIsMinimized(!isMinimized)}
-                    />
-                    <IconButton
-                        icon={<X size={16} color={current?.dark} />}
-                        action={onClose}
-                    />
+            )}
+
+            {/* Presentation mode exit overlay - corner control */}
+            {/* {isPresentationMode && ( */}
+            {false && (
+
+                <View
+                    className="absolute top-4 right-4 z-10 rounded-lg px-3 py-2 flex items-center gap-2 transition-opacity hover:opacity-100"
+                    style={{
+                        backgroundColor: current?.dark + "25",
+                        backdropFilter: "blur(8px)",
+                        opacity: 0.85,
+                    }}
+                >
+                    <Text value="Esc to exit" size="sm" style={{ color: current?.dark }} />
+                    <button
+                        onClick={() => setIsPresentationMode(false)}
+                        className="px-3 py-1.5 rounded text-sm font-medium transition-opacity hover:opacity-80"
+                        style={{ backgroundColor: current?.primary, color: "white" }}
+                    >
+                        Exit
+                    </button>
                 </View>
-            </View>
+            )}
 
             {/* Content */}
-            {!isMinimized && (
+            {(!isMinimized || isPresentationMode) && (
                 <View className="flex-1 overflow-hidden">
                     {renderFileContent()}
                 </View>

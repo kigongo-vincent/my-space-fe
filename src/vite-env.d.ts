@@ -1,5 +1,9 @@
 /// <reference types="vite/client" />
 
+declare module "pptx-parser" {
+    export default function parse(file: File, options?: { flattenGroup?: boolean }): Promise<unknown>
+}
+
 // File System API types for drag and drop folder support
 interface FileSystemEntry {
     readonly isFile: boolean;

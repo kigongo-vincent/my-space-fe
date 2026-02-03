@@ -28,11 +28,11 @@ const StorageOverview = () => {
 
     // Chart colors - use primary color variations
     const primaryColors = getPrimaryColorVariations(current?.primary || "#EE7E06")
-    
+
     const topUsersCount = useAdminSettingsStore((s) => s.topUsersCount)
 
     // Chart data
-    const storageDistributionData = useMemo(() => 
+    const storageDistributionData = useMemo(() =>
         users
             .filter(u => u.role === "user")
             .slice(0, topUsersCount)
@@ -42,7 +42,7 @@ const StorageOverview = () => {
             })), [users, topUsersCount]
     )
 
-    const userStorageDistribution = useMemo(() => 
+    const userStorageDistribution = useMemo(() =>
         users
             .filter(u => u.role === "user")
             .map(u => ({
@@ -66,9 +66,9 @@ const StorageOverview = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="Total Storage Used" size="sm" className="opacity-60" style={{ color: current?.dark }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3.5rem',
                                 height: '3.5rem',
                                 borderRadius: '50%',
@@ -89,9 +89,9 @@ const StorageOverview = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="Total Users" size="sm" className="opacity-60" style={{ color: current?.dark }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3.5rem',
                                 height: '3.5rem',
                                 borderRadius: '50%',
@@ -111,9 +111,9 @@ const StorageOverview = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="Average Usage" size="sm" className="opacity-60" style={{ color: current?.dark }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3.5rem',
                                 height: '3.5rem',
                                 borderRadius: '50%',
@@ -153,7 +153,7 @@ const StorageOverview = () => {
                                     <Cell key={`cell-${index}`} fill={primaryColors[index % primaryColors.length]} stroke="none" />
                                 ))}
                             </Pie>
-                            <Tooltip 
+                            <Tooltip
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',
@@ -176,7 +176,7 @@ const StorageOverview = () => {
                             <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
                             <XAxis dataKey="name" stroke={current?.dark} style={{ fontSize: '0.85rem' }} />
                             <YAxis stroke={current?.dark} style={{ fontSize: '0.85rem' }} />
-                            <Tooltip 
+                            <Tooltip
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',

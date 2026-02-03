@@ -13,13 +13,13 @@ interface PaginationProps {
     onItemsPerPageChange: (limit: number) => void
 }
 
-const Pagination = ({ 
-    currentPage, 
-    totalPages, 
-    itemsPerPage, 
-    totalItems, 
-    onPageChange, 
-    onItemsPerPageChange 
+const Pagination = ({
+    currentPage,
+    totalPages,
+    itemsPerPage,
+    totalItems,
+    onPageChange,
+    onItemsPerPageChange
 }: PaginationProps) => {
     const { current } = useTheme()
 
@@ -27,7 +27,7 @@ const Pagination = ({
     const endItem = Math.min(currentPage * itemsPerPage, totalItems)
 
     return (
-        <View 
+        <View
             className="flex items-center justify-between p-4"
             style={{
                 backgroundColor: current?.foreground,
@@ -35,9 +35,9 @@ const Pagination = ({
             }}
         >
             <View className="flex items-center gap-6">
-                <Text 
-                    value={`Showing ${startItem}-${endItem} of ${totalItems}`} 
-                    style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} 
+                <Text
+                    value={`Showing ${startItem}-${endItem} of ${totalItems}`}
+                    style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }}
                 />
                 <View className="flex items-center gap-2">
                     <Text value="Items per page:" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
@@ -71,7 +71,7 @@ const Pagination = ({
                 >
                     <ChevronLeft size={18} color={current?.dark} />
                 </button>
-                
+
                 <View className="flex items-center gap-1">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum: number
@@ -84,7 +84,7 @@ const Pagination = ({
                         } else {
                             pageNum = currentPage - 2 + i
                         }
-                        
+
                         return (
                             <button
                                 key={pageNum}
@@ -108,7 +108,7 @@ const Pagination = ({
                         )
                     })}
                 </View>
-                
+
                 <button
                     onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}

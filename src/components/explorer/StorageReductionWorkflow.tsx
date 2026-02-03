@@ -124,13 +124,13 @@ const StorageReductionWorkflow = () => {
             for (const fileId of fileIds) {
                 await deleteFile(fileId)
             }
-            
+
             // Wait for storage sync
             await new Promise(resolve => setTimeout(resolve, 500))
-            
+
             // Refresh disks to get updated storage
             await fetchDisks()
-            
+
             setSelectedFiles(new Set())
         } catch (err: any) {
             setError(err.message || "Failed to delete files")
@@ -195,7 +195,7 @@ const StorageReductionWorkflow = () => {
                         }}
                         onClick={() => !canComplete && setShowModal(false)}
                     />
-                    
+
                     {/* Modal */}
                     <div
                         style={{
@@ -245,11 +245,11 @@ const StorageReductionWorkflow = () => {
                                             <AlertTriangle size={24} color={current?.warning || "#f59e0b"} />
                                         </View>
                                         <View className="flex-1">
-                                            <Text 
-                                                value="Storage Reduction Approved" 
-                                                style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500 }} 
+                                            <Text
+                                                value="Storage Reduction Approved"
+                                                style={{ color: current?.dark, fontSize: '1.33rem', fontWeight: 500 }}
                                             />
-                                            <Text 
+                                            <Text
                                                 value={`You need to free ${excessStorageGB.toFixed(2)} GB to complete the reduction`}
                                                 style={{ fontSize: '0.89rem', opacity: 0.7, marginTop: '0.25rem', color: current?.dark }}
                                             />
@@ -273,26 +273,26 @@ const StorageReductionWorkflow = () => {
                                         }}
                                     >
                                         <View className="flex items-center justify-between mb-2">
-                                            {usage && <Text 
+                                            {usage && <Text
                                                 value={`Current usage: ${usage.used.toFixed(2)} ${usage.unit}`}
-                                                style={{ fontSize: '0.89rem', color: current?.dark }} 
+                                                style={{ fontSize: '0.89rem', color: current?.dark }}
                                             />}
-                                            <Text 
+                                            <Text
                                                 value={`Target: ${newTotalGB.toFixed(2)} GB`}
-                                                style={{ fontSize: '0.89rem', color: current?.dark }} 
+                                                style={{ fontSize: '0.89rem', color: current?.dark }}
                                             />
                                         </View>
                                         <View style={{ backgroundColor: current?.dark + "20", height: '8px', borderRadius: '4px', position: 'relative', overflow: 'hidden' }}>
-                                            <div 
-                                                style={{ 
+                                            <div
+                                                style={{
                                                     backgroundColor: current?.warning || "#f59e0b",
                                                     height: '100%',
                                                     width: `${Math.min(100, (excessStorageGB / requiredDeletionGB) * 100)}%`,
                                                     transition: 'width 0.3s ease'
-                                                }} 
+                                                }}
                                             />
                                         </View>
-                                        <Text 
+                                        <Text
                                             value={`Need to free ${excessStorageGB.toFixed(2)} GB more`}
                                             style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.5rem', color: current?.dark }}
                                         />
@@ -310,11 +310,11 @@ const StorageReductionWorkflow = () => {
                                     >
                                         <CheckCircle2 size={24} color={current?.success || "#10b981"} />
                                         <View className="flex-1">
-                                            <Text 
+                                            <Text
                                                 value="Great! You've freed enough space."
-                                                style={{ fontSize: '0.89rem', fontWeight: 500, color: current?.success || "#10b981" }} 
+                                                style={{ fontSize: '0.89rem', fontWeight: 500, color: current?.success || "#10b981" }}
                                             />
-                                            <Text 
+                                            <Text
                                                 value="Click 'Complete Reduction' to finalize the storage reduction."
                                                 style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '0.25rem', color: current?.dark }}
                                             />
@@ -327,12 +327,12 @@ const StorageReductionWorkflow = () => {
                                     <>
                                         <View className="flex items-center justify-between mb-3">
                                             <View className="flex items-center gap-2">
-                                                <Text 
+                                                <Text
                                                     value={`Selected: ${selectedFiles.size} files (${selectedFilesSizeGB.toFixed(2)} GB)`}
                                                     style={{ fontSize: '0.89rem', color: current?.dark }}
                                                 />
                                                 {needsMoreDeletion && (
-                                                    <Text 
+                                                    <Text
                                                         value={`Need ${(excessStorageGB - selectedFilesSizeGB).toFixed(2)} GB more`}
                                                         style={{ fontSize: '0.89rem', color: current?.error || "#ef4444" }}
                                                     />
@@ -369,7 +369,7 @@ const StorageReductionWorkflow = () => {
                                         </View>
 
                                         {/* Files List */}
-                                        <View 
+                                        <View
                                             style={{
                                                 flex: 1,
                                                 overflowY: 'auto',
@@ -387,7 +387,7 @@ const StorageReductionWorkflow = () => {
                                                     {allFiles.map((file, index) => {
                                                         const isSelected = selectedFiles.has(file.id)
                                                         // File size calculation removed - not used
-                                                        
+
                                                         return (
                                                             <motion.div
                                                                 key={file.id}
@@ -401,13 +401,13 @@ const StorageReductionWorkflow = () => {
                                                                     gap: '0.75rem',
                                                                     padding: '0.75rem 1rem',
                                                                     cursor: 'pointer',
-                                                                    backgroundColor: isSelected 
-                                                                        ? `${current?.primary}15` 
-                                                                        : index % 2 === 0 
-                                                                            ? current?.background 
+                                                                    backgroundColor: isSelected
+                                                                        ? `${current?.primary}15`
+                                                                        : index % 2 === 0
+                                                                            ? current?.background
                                                                             : 'transparent',
-                                                                    borderBottom: index < allFiles.length - 1 
-                                                                        ? `1px solid ${current?.dark}10` 
+                                                                    borderBottom: index < allFiles.length - 1
+                                                                        ? `1px solid ${current?.dark}10`
                                                                         : 'none'
                                                                 }}
                                                                 whileHover={{ backgroundColor: `${current?.primary}20` }}
@@ -419,28 +419,28 @@ const StorageReductionWorkflow = () => {
                                                                 )}
                                                                 {getFileIcon(file)}
                                                                 <View className="flex-1">
-                                                                    <Text 
+                                                                    <Text
                                                                         value={file.name}
-                                                                        style={{ 
-                                                                            color: current?.dark, 
+                                                                        style={{
+                                                                            color: current?.dark,
                                                                             fontSize: '0.89rem',
                                                                             fontWeight: isSelected ? 500 : 400
-                                                                        }} 
+                                                                        }}
                                                                     />
-                                                                    <Text 
+                                                                    <Text
                                                                         value={`${formatFileSize(file)} • ${formatDate(file.createdAt)}`}
-                                                                        style={{ fontSize: '0.74rem', opacity: 0.6, marginTop: '0.25rem', color: current?.dark }} 
+                                                                        style={{ fontSize: '0.74rem', opacity: 0.6, marginTop: '0.25rem', color: current?.dark }}
                                                                     />
                                                                 </View>
-                                                                <Text 
+                                                                <Text
                                                                     value={formatFileSize(file)}
-                                                                    style={{ 
-                                                                        color: current?.dark, 
+                                                                    style={{
+                                                                        color: current?.dark,
                                                                         fontSize: '0.89rem',
                                                                         fontWeight: 500,
                                                                         minWidth: '80px',
                                                                         textAlign: 'right'
-                                                                    }} 
+                                                                    }}
                                                                 />
                                                             </motion.div>
                                                         )
@@ -487,14 +487,14 @@ const StorageReductionWorkflow = () => {
                                                 disabled={selectedFiles.size === 0 || needsMoreDeletion || isDeleting}
                                                 className="px-4 py-2 flex items-center gap-2"
                                                 style={{
-                                                    backgroundColor: (selectedFiles.size > 0 && !needsMoreDeletion && !isDeleting) 
-                                                        ? (current?.error || "#ef4444") 
+                                                    backgroundColor: (selectedFiles.size > 0 && !needsMoreDeletion && !isDeleting)
+                                                        ? (current?.error || "#ef4444")
                                                         : `${current?.error || "#ef4444"}60`,
                                                     color: '#ffffff',
                                                     borderRadius: '0.25rem',
                                                     border: 'none',
-                                                    cursor: (selectedFiles.size > 0 && !needsMoreDeletion && !isDeleting) 
-                                                        ? 'pointer' 
+                                                    cursor: (selectedFiles.size > 0 && !needsMoreDeletion && !isDeleting)
+                                                        ? 'pointer'
                                                         : 'not-allowed',
                                                     fontSize: '1rem',
                                                     opacity: (selectedFiles.size > 0 && !needsMoreDeletion && !isDeleting) ? 1 : 0.6

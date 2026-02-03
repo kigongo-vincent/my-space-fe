@@ -69,18 +69,18 @@ const UserDetails = () => {
     }
 
     const primaryColors = getPrimaryColorVariations(current?.primary || "#EE7E06")
-    
+
     // Activity data for the user - should be fetched from API
     const activityData: { month: string; uploads: number; downloads: number }[] = []
 
-    const storagePercentage = user.storage && user.storage.total > 0 
-        ? (user.storage.used / user.storage.total) * 100 
+    const storagePercentage = user.storage && user.storage.total > 0
+        ? (user.storage.used / user.storage.total) * 100
         : 0
 
     const { name } = useTheme()
     // Calculate secondary color (20%) - a muted complementary color
     const secondaryColor = name === 'dark' ? '#2a2a2a' : '#e8e8e8'
-    
+
     return (
         <View className="flex flex-col">
             {/* Header */}
@@ -221,9 +221,9 @@ const UserDetails = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="Storage Usage" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3.5rem',
                                 height: '3.5rem',
                                 borderRadius: '50%',
@@ -234,13 +234,13 @@ const UserDetails = () => {
                             <HardDrive size={18} color={current?.primary} />
                         </View>
                     </View>
-                    <Text 
-                        value={user.storage ? `${user.storage.used} / ${user.storage.total} ${user.storage.unit}` : "N/A"} 
-                        style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }} 
+                    <Text
+                        value={user.storage ? `${user.storage.used} / ${user.storage.total} ${user.storage.unit}` : "N/A"}
+                        style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }}
                     />
-                    <Text 
-                        value={`${storagePercentage.toFixed(1)}% used`} 
-                        style={{ fontSize: '0.815rem', opacity: 0.6, marginTop: '0.5rem', color: current?.dark }} 
+                    <Text
+                        value={`${storagePercentage.toFixed(1)}% used`}
+                        style={{ fontSize: '0.815rem', opacity: 0.6, marginTop: '0.5rem', color: current?.dark }}
                     />
                 </View>
 
@@ -255,9 +255,9 @@ const UserDetails = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="Account Status" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3.5rem',
                                 height: '3.5rem',
                                 borderRadius: '50%',
@@ -272,14 +272,14 @@ const UserDetails = () => {
                             )}
                         </View>
                     </View>
-                    <Text 
-                        value={user.suspended ? "Suspended" : "Active"} 
-                        style={{ 
-                            color: user.suspended ? (current?.error || "#ef4444") : "#10b981", 
-                            fontSize: '1rem', 
-                            fontWeight: 400, 
-                            lineHeight: '1.2' 
-                        }} 
+                    <Text
+                        value={user.suspended ? "Suspended" : "Active"}
+                        style={{
+                            color: user.suspended ? (current?.error || "#ef4444") : "#10b981",
+                            fontSize: '1rem',
+                            fontWeight: 400,
+                            lineHeight: '1.2'
+                        }}
                     />
                 </View>
 
@@ -294,9 +294,9 @@ const UserDetails = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="User Role" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3.5rem',
                                 height: '3.5rem',
                                 borderRadius: '50%',
@@ -307,9 +307,9 @@ const UserDetails = () => {
                             <Users size={18} color={current?.primary} />
                         </View>
                     </View>
-                    <Text 
-                        value={user.role === "admin" ? "Administrator" : "User"} 
-                        style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }} 
+                    <Text
+                        value={user.role === "admin" ? "Administrator" : "User"}
+                        style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400, lineHeight: '1.2' }}
                     />
                 </View>
             </View>
@@ -327,9 +327,9 @@ const UserDetails = () => {
                 >
                     <View className="flex items-center justify-between mb-3">
                         <Text value="Storage Usage" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
-                        <Text 
-                            value={`${storagePercentage.toFixed(1)}%`} 
-                            style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} 
+                        <Text
+                            value={`${storagePercentage.toFixed(1)}%`}
+                            style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }}
                         />
                     </View>
                     <View
@@ -381,7 +381,7 @@ const UserDetails = () => {
                         <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
                         <XAxis dataKey="month" stroke={current?.dark} style={{ fontSize: '0.815rem', opacity: 0.7 }} />
                         <YAxis stroke={current?.dark} style={{ fontSize: '0.815rem', opacity: 0.7 }} />
-                        <Tooltip 
+                        <Tooltip
                             contentStyle={{
                                 backgroundColor: current?.foreground,
                                 border: 'none',

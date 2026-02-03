@@ -38,7 +38,7 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
                 mode="foreground"
                 className="p-6 rounded-lg min-w-[500px] max-w-[600px] flex flex-col gap-5"
                 style={{
-                    boxShadow: name === "dark" 
+                    boxShadow: name === "dark"
                         ? `0 25px 50px -12px rgba(0, 0, 0, 0.4)`
                         : `0 25px 50px -12px ${current?.dark}15`
                 }}
@@ -60,10 +60,10 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
                                     <HardDrive size={20} color={current?.dark} style={{ opacity: 0.6 }} />
                                     <View className="flex-1">
                                         <Text value={sourceDisk.name} className="font-semibold" />
-                                        <Text 
-                                            value={`${sourceDisk.usage.used.toFixed(2)}${sourceDisk.usage.unit} used of ${sourceDisk.usage.total.toFixed(2)}${sourceDisk.usage.unit}`} 
-                                            size="sm" 
-                                            className="opacity-60" 
+                                        <Text
+                                            value={`${sourceDisk.usage.used.toFixed(2)}${sourceDisk.usage.unit} used of ${sourceDisk.usage.total.toFixed(2)}${sourceDisk.usage.unit}`}
+                                            size="sm"
+                                            className="opacity-60"
                                         />
                                     </View>
                                 </View>
@@ -94,7 +94,7 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
                             </View>
 
                             {selectedTargetDisk && (
-                                <View className="p-4 rounded-lg" style={{ 
+                                <View className="p-4 rounded-lg" style={{
                                     backgroundColor: current?.dark + "06"
                                 }}>
                                     <Text value="Merge Preview" className="font-medium mb-2" size="sm" />
@@ -117,9 +117,9 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
 
                             <View className="p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: current?.dark + "08" }}>
                                 <AlertTriangle size={16} color={current?.dark} style={{ opacity: 0.6 }} className="mt-0.5 flex-shrink-0" />
-                                <Text 
-                                    value="All files from the source disk will be moved to the target disk. The source disk will be deleted after merging." 
-                                    size="sm" 
+                                <Text
+                                    value="All files from the source disk will be moved to the target disk. The source disk will be deleted after merging."
+                                    size="sm"
                                     className="opacity-70"
                                 />
                             </View>
@@ -164,10 +164,10 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
                         <View className="flex flex-col gap-4">
                             <View className="p-4 rounded-lg" style={{ backgroundColor: current?.error || "#ef4444" + "15" }}>
                                 <Text value="Are you sure you want to merge these disks?" className="font-medium mb-2" />
-                                <Text 
-                                    value={`All files from "${sourceDisk.name}" will be moved to "${selectedTargetDisk?.name}". The source disk will be permanently deleted.`} 
-                                    size="sm" 
-                                    className="opacity-70" 
+                                <Text
+                                    value={`All files from "${sourceDisk.name}" will be moved to "${selectedTargetDisk?.name}". The source disk will be permanently deleted.`}
+                                    size="sm"
+                                    className="opacity-70"
                                 />
                             </View>
 

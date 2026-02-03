@@ -27,7 +27,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
         setFilter,
         resetFilters
     } = useAdminFilterStore()
-    
+
     const handleApply = () => {
         setFilter('activityType', tempActivityType)
         setFilter('userRole', tempUserRole)
@@ -37,7 +37,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
         setFilter('storageRange', tempStorageRange)
         onClose()
     }
-    
+
     // Local state for temp filters
     const [tempActivityType, setTempActivityType] = useState(activityType)
     const [tempUserRole, setTempUserRole] = useState(userRole)
@@ -45,7 +45,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
     const [tempDateRange, setTempDateRange] = useState(dateRange)
     const [tempAnalyticsType, setTempAnalyticsType] = useState(analyticsType)
     const [tempStorageRange, setTempStorageRange] = useState(storageRange)
-    
+
     // Sync local state when modal opens or filters change
     useEffect(() => {
         if (isOpen) {
@@ -57,7 +57,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
             setTempStorageRange(storageRange)
         }
     }, [isOpen, activityType, userRole, userStatus, dateRange, analyticsType, storageRange])
-    
+
     const handleReset = () => {
         setTempActivityType("all")
         setTempUserRole("all")
@@ -102,7 +102,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
                         </View>
                     </View>
                 )
-            
+
             case "users":
                 return (
                     <View className="flex flex-col gap-4">
@@ -134,7 +134,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
                         </View>
                     </View>
                 )
-            
+
             case "analytics":
                 return (
                     <View className="flex flex-col gap-4">
@@ -169,7 +169,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
                         </View>
                     </View>
                 )
-            
+
             case "storage":
                 return (
                     <View className="flex flex-col gap-4">
@@ -189,7 +189,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
                         </View>
                     </View>
                 )
-            
+
             default:
                 return (
                     <View>
@@ -249,7 +249,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
                 >
                     {renderFilters()}
                 </motion.div>
-                
+
                 {/* Footer with buttons */}
                 <div
                     style={{

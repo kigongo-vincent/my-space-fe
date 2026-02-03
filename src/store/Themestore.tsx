@@ -45,7 +45,7 @@ const doSync = (get: () => ThemeStoreI) => {
         fontFamily,
         reducedMotion,
         dataCollection,
-    }).catch(() => {})
+    }).catch(() => { })
 }
 const syncSettingsToBackend = (get: () => ThemeStoreI) => {
     if (!localStorage.getItem("token")) return

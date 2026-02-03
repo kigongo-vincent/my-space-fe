@@ -38,7 +38,7 @@ const AdminLayout = (props: Props) => {
             <View className="flex-shrink-0">
                 <Navbar />
             </View>
-            
+
             {/* Main Container with Sidebar and Content - matches dashboard gap-4 */}
             <View mode="background" className="flex-1 flex overflow-hidden py-4">
                 <View className="h-full flex w-full gap-4 px-4">
@@ -46,9 +46,9 @@ const AdminLayout = (props: Props) => {
                     <View className="flex-shrink-0 w-[240px] h-full" style={{ zIndex: 1 }}>
                         <AdminSidebar />
                     </View>
-                    
+
                     {/* Scrollable Main Content - background so cards (foreground) split out as distinct blocks */}
-                    <View 
+                    <View
                         className="flex-1 overflow-y-auto min-w-0"
                     >
                         <View mode="background" className="min-h-full p-4 rounded-xl">

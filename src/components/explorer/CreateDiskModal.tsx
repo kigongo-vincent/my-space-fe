@@ -17,7 +17,7 @@ interface Props {
 const CreateDiskModal = ({ onClose }: Props) => {
     const { usage } = useUser()
     const { disks } = useFileStore()
-    
+
     // Calculate total allocated storage across all disks
     const calculateTotalAllocatedGB = (): number => {
         let totalAllocatedGB = 0
@@ -26,19 +26,19 @@ const CreateDiskModal = ({ onClose }: Props) => {
         })
         return totalAllocatedGB
     }
-    
+
     // Calculate available space for new disk creation
     // Available = User's total storage limit - Total allocated across all disks
     const getUserTotalGB = (): number => {
         if (!usage) return 0
         return convertToGB(usage.total, usage.unit)
     }
-    
+
     // Use useMemo to recalculate when disks array changes
     const totalAllocatedGB = useMemo(() => calculateTotalAllocatedGB(), [disks])
     const userTotalGB = useMemo(() => getUserTotalGB(), [usage])
     const availableForNewDiskGB = useMemo(() => Math.max(0, userTotalGB - totalAllocatedGB), [userTotalGB, totalAllocatedGB])
-    
+
     // Convert available space to the selected unit for default/max values
     const getAvailableInUnit = (unit: "GB" | "MB" | "TB"): number => {
         switch (unit) {
@@ -52,10 +52,10 @@ const CreateDiskModal = ({ onClose }: Props) => {
                 return availableForNewDiskGB
         }
     }
-    
+
     const [unit, setUnit] = useState<"GB" | "MB" | "TB">("GB")
     const defaultStorage = getAvailableInUnit(unit)
-    
+
     const [diskName, setDiskName] = useState("")
     const [totalStorage, setTotalStorage] = useState(defaultStorage > 0 ? defaultStorage.toFixed(2) : "")
     const [errors, setErrors] = useState<{ name?: string; size?: string }>({})
@@ -66,7 +66,7 @@ const CreateDiskModal = ({ onClose }: Props) => {
     })
     const { createDisk } = useFileStore()
     const { current, name } = useTheme()
-    
+
     // Update default value when unit changes
     useEffect(() => {
         const newDefault = getAvailableInUnit(unit)
@@ -100,14 +100,14 @@ const CreateDiskModal = ({ onClose }: Props) => {
         if (isNaN(numSize) || numSize <= 0) {
             return "Storage size must be a positive number"
         }
-        
+
         // Check against available space
         const maxAvailable = getAvailableInUnit(unit)
         if (numSize > maxAvailable) {
             const maxFormatted = maxAvailable.toFixed(2)
             return `Storage size cannot exceed available space (${maxFormatted} ${unit})`
         }
-        
+
         if (numSize < 0.1 && unit === "GB") {
             return "Minimum storage size is 0.1 GB"
         }
@@ -143,7 +143,7 @@ const CreateDiskModal = ({ onClose }: Props) => {
     const handleCreate = async () => {
         const nameError = validateName(diskName)
         const sizeError = validateSize(totalStorage, unit)
-        
+
         if (nameError || sizeError) {
             setErrors({ name: nameError, size: sizeError })
             return
@@ -155,7 +155,7 @@ const CreateDiskModal = ({ onClose }: Props) => {
             onClose()
         } catch (error: any) {
             let errorMessage = error?.message || "Failed to create disk"
-            
+
             // Parse error message if it's a JSON string
             if (typeof errorMessage === 'string' && errorMessage.includes('{')) {
                 try {
@@ -169,12 +169,12 @@ const CreateDiskModal = ({ onClose }: Props) => {
                     }
                 }
             }
-            
+
             // Handle specific error messages
             if (errorMessage.toLowerCase().includes('insufficient storage') || errorMessage.toLowerCase().includes('exceed')) {
                 // Keep the backend error message as it contains available space info
             }
-            
+
             setAlertModal({
                 isOpen: true,
                 message: errorMessage,
@@ -191,7 +191,7 @@ const CreateDiskModal = ({ onClose }: Props) => {
                 mode="foreground"
                 className="p-6 rounded-lg min-w-[450px] max-w-[500px] flex flex-col gap-5"
                 style={{
-                    boxShadow: name === "dark" 
+                    boxShadow: name === "dark"
                         ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
                         : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
                 }}
@@ -280,29 +280,29 @@ const CreateDiskModal = ({ onClose }: Props) => {
                         </View>
                     )}
                     {!errors.size && totalStorage && (
-                        <Text 
-                            value={`Available: ${getAvailableInUnit(unit).toFixed(2)} ${unit}`} 
-                            size="sm" 
-                            className="opacity-50" 
+                        <Text
+                            value={`Available: ${getAvailableInUnit(unit).toFixed(2)} ${unit}`}
+                            size="sm"
+                            className="opacity-50"
                         />
                     )}
                 </View>
 
                 {/* Info Box */}
-                <View 
+                <View
                     className="p-3 rounded-lg flex items-start gap-2"
                     style={{ backgroundColor: current?.primary + "10" }}
                 >
                     <Info size={16} color={current?.primary} className="mt-0.5 flex-shrink-0" />
                     <View className="flex flex-col gap-1">
-                        <Text 
+                        <Text
                             value={`Allocated: ${totalAllocatedGB.toFixed(2)} GB / ${userTotalGB.toFixed(2)} GB`}
-                            size="sm" 
+                            size="sm"
                             className="opacity-80"
                         />
-                        <Text 
-                            value="Creating additional disks partitions your storage. Total allocated across all disks cannot exceed your storage limit." 
-                            size="sm" 
+                        <Text
+                            value="Creating additional disks partitions your storage. Total allocated across all disks cannot exceed your storage limit."
+                            size="sm"
                             className="opacity-80"
                         />
                     </View>

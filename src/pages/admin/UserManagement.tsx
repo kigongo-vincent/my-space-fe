@@ -32,7 +32,7 @@ const UserManagement = () => {
     const { searchQuery } = useAdminSearchStore()
     const { userRole, userStatus } = useAdminFilterStore()
     const [editingUserId, setEditingUserId] = useState<number | null>(null)
-    
+
     // Reset to page 1 when search changes
     useEffect(() => {
         setCurrentPage(1)
@@ -56,21 +56,21 @@ const UserManagement = () => {
 
     const filteredUsers = useMemo(() => {
         let filtered = users
-        
+
         // Apply search filter
         if (searchQuery.trim()) {
-            filtered = filtered.filter(user => 
+            filtered = filtered.filter(user =>
                 user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 user.role?.toLowerCase().includes(searchQuery.toLowerCase())
             )
         }
-        
+
         // Apply role filter
         if (userRole !== "all") {
             filtered = filtered.filter(user => user.role === userRole)
         }
-        
+
         // Apply status filter
         if (userStatus !== "all") {
             if (userStatus === "active") {
@@ -79,7 +79,7 @@ const UserManagement = () => {
                 filtered = filtered.filter(user => user.suspended)
             }
         }
-        
+
         return filtered
     }, [users, searchQuery, userRole, userStatus])
 
@@ -99,7 +99,7 @@ const UserManagement = () => {
 
     // Chart colors - use primary color variations
     const primaryColors = getPrimaryColorVariations(current?.primary || "#EE7E06")
-    
+
     // Chart data
     const userStatusData = [
         { name: "Active", value: activeUsers, color: primaryColors[0] },
@@ -133,17 +133,17 @@ const UserManagement = () => {
         if (!isNaN(total) && total > 0) {
             const currentUser = users.find(u => u.id === userId)
             if (!currentUser || !currentUser.storage) return
-            
+
             const currentUsage = currentUser.storage
             const newStorage: UsageI = {
                 total,
                 unit: storageUnit,
                 used: currentUsage.used
             }
-            
+
             // Check if downsizing (new limit is less than current usage)
             const excessStorage = calculateExcessStorage(currentUsage, newStorage)
-            
+
             if (excessStorage > 0) {
                 // Show downsize modal to allow user to delete files
                 setDownsizeModal({
@@ -163,26 +163,26 @@ const UserManagement = () => {
 
     const handleDownsizeConfirm = (_deletedFileIds: string[]) => {
         if (!downsizeModal.userId || !downsizeModal.newLimit) return
-        
+
         const newLimit = downsizeModal.newLimit
         const userId = downsizeModal.userId
-        
+
         // Wait a bit more for storage sync to complete, then get updated usage
         setTimeout(() => {
             // Get updated storage from disks (after deletion)
             const updatedStorage = calculateTotalStorage(disks)
-            
+
             // Convert updated usage to match the new limit's unit
             const updatedUsedGB = convertToGB(updatedStorage.used, updatedStorage.unit)
             const newLimitGB = convertToGB(newLimit.total, newLimit.unit)
-            
+
             // Update user storage with new limit and updated usage (in the new limit's unit)
             const updatedStorageLimit: UsageI = {
                 total: newLimit.total,
                 unit: newLimit.unit,
                 used: Math.min(updatedUsedGB, newLimitGB) // Cap used at the new limit
             }
-            
+
             // Convert back to the limit's unit if needed
             if (newLimit.unit !== updatedStorage.unit) {
                 if (newLimit.unit === "GB") {
@@ -194,9 +194,9 @@ const UserManagement = () => {
                 }
                 updatedStorageLimit.used = Math.min(updatedStorageLimit.used, newLimit.total)
             }
-            
+
             updateUserStorage(userId, updatedStorageLimit)
-            
+
             setDownsizeModal({ isOpen: false, userId: null, currentUsage: null, newLimit: null })
             setEditingUserId(null)
             setStorageValue("")
@@ -239,13 +239,13 @@ const UserManagement = () => {
 
     const handleConfirmAction = () => {
         if (!confirmModal.userId) return
-        
+
         if (confirmModal.type === 'suspend') {
             suspendUser(confirmModal.userId)
         } else if (confirmModal.type === 'delete') {
             deleteUser(confirmModal.userId)
         }
-        
+
         setConfirmModal({ isOpen: false, type: null, userId: null })
     }
 
@@ -271,9 +271,9 @@ const UserManagement = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="Total Users" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3.5rem',
                                 height: '3.5rem',
                                 borderRadius: '50%',
@@ -293,9 +293,9 @@ const UserManagement = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="Active Users" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3rem',
                                 height: '3rem',
                                 borderRadius: '50%',
@@ -315,9 +315,9 @@ const UserManagement = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="Suspended" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3rem',
                                 height: '3rem',
                                 borderRadius: '50%',
@@ -337,9 +337,9 @@ const UserManagement = () => {
                 >
                     <View className="flex items-start justify-between mb-3">
                         <Text value="Total Storage" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
-                        <View 
+                        <View
                             className="flex items-center justify-center"
-                            style={{ 
+                            style={{
                                 width: '3rem',
                                 height: '3rem',
                                 borderRadius: '50%',
@@ -393,7 +393,7 @@ const UserManagement = () => {
                             <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
                             <XAxis dataKey="name" stroke={current?.dark} style={{ fontSize: '0.89rem' }} />
                             <YAxis stroke={current?.dark} style={{ fontSize: '0.89rem' }} />
-                            <Tooltip 
+                            <Tooltip
                                 contentStyle={{
                                     backgroundColor: current?.foreground,
                                     border: 'none',
@@ -414,7 +414,7 @@ const UserManagement = () => {
                 mode="foreground"
                 className="overflow-hidden rounded-xl"
             >
-                <View 
+                <View
                     className="grid grid-cols-12 gap-4 p-3"
                     style={{
                         backgroundColor: current?.foreground
@@ -469,9 +469,9 @@ const UserManagement = () => {
                                             )}
                                         </View>
                                         {user.email && (
-                                            <Text 
-                                                value={user.email} 
-                                                style={{ fontSize: '0.815rem', opacity: 0.6, color: current?.dark }} 
+                                            <Text
+                                                value={user.email}
+                                                style={{ fontSize: '0.815rem', opacity: 0.6, color: current?.dark }}
                                             />
                                         )}
                                     </View>
@@ -509,7 +509,7 @@ const UserManagement = () => {
                                             />
                                         </View>
                                     ) : (
-                                        <Text 
+                                        <Text
                                             value={`${user.storage?.total || 0} ${user.storage?.unit || "GB"}`}
                                             style={{ color: current?.dark, fontSize: '1rem' }}
                                         />
@@ -541,11 +541,11 @@ const UserManagement = () => {
                                     ) : (
                                         <View>
                                             <View className="flex items-center justify-between mb-1">
-                                                <Text 
+                                                <Text
                                                     value={formatStorage(user.storage)}
                                                     style={{ fontSize: '0.815rem', opacity: 0.7 }}
                                                 />
-                                                <Text 
+                                                <Text
                                                     value={`${getStoragePercentage(user.storage).toFixed(1)}%`}
                                                     style={{ fontSize: '0.815rem', opacity: 0.7 }}
                                                 />

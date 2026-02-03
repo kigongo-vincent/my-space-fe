@@ -87,7 +87,7 @@ const ContextMenu = ({ x, y, items, onClose }: Props) => {
                     left: `${x}px`,
                     top: `${y}px`,
                     backgroundColor: current?.foreground,
-                    boxShadow: name === "dark" 
+                    boxShadow: name === "dark"
                         ? `0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 12px 24px -8px rgba(0, 0, 0, 0.35)`
                         : `0 25px 50px -12px ${current?.dark}25, 0 12px 24px -8px ${current?.dark}15`
                 }}
@@ -113,9 +113,8 @@ const ContextMenu = ({ x, y, items, onClose }: Props) => {
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.02 }}
-                            className={`flex items-center gap-3 px-4 py-2 cursor-pointer ${
-                                item.disabled ? "opacity-40 cursor-not-allowed" : ""
-                            }`}
+                            className={`flex items-center gap-3 px-4 py-2 cursor-pointer ${item.disabled ? "opacity-40 cursor-not-allowed" : ""
+                                }`}
                             style={{
                                 backgroundColor: item.disabled ? "transparent" : undefined
                             }}

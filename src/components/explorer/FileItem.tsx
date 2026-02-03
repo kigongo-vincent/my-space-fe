@@ -23,10 +23,10 @@ interface Props {
     isHighlighted?: boolean
 }
 
-const FileItem = ({ 
-    file, 
-    viewMode, 
-    onClick, 
+const FileItem = ({
+    file,
+    viewMode,
+    onClick,
     onContextMenu,
     onDragStart,
     onDragEnd,
@@ -122,9 +122,8 @@ const FileItem = ({
         const listItem = (
             <View
                 data-file-id={file.id}
-                className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:opacity-80 transition-all ${
-                    isDragging ? "opacity-50" : ""
-                } ${isDragOver ? "ring-2 ring-offset-2" : ""} ${isHighlighted ? "ring-2" : ""}`}
+                className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:opacity-80 transition-all ${isDragging ? "opacity-50" : ""
+                    } ${isDragOver ? "ring-2 ring-offset-2" : ""} ${isHighlighted ? "ring-2" : ""}`}
                 mode="background"
                 style={{
                     ...(isDragOver ? {
@@ -153,9 +152,9 @@ const FileItem = ({
                         {!thumbnailLoaded && !thumbnailError && (
                             <Skeleton width="32px" height="32px" rounded className="absolute" />
                         )}
-                        <img 
-                            src={getImageUrl()} 
-                            alt={file.name} 
+                        <img
+                            src={getImageUrl()}
+                            alt={file.name}
                             className={`w-8 h-8 object-cover rounded ${thumbnailLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity`}
                             onLoad={() => setThumbnailLoaded(true)}
                             onError={() => {
@@ -168,9 +167,9 @@ const FileItem = ({
                     <img src={getImageByFileType(file.type)} alt="" className="w-8 h-8 object-contain" />
                 )}
                 <View className="flex-1 min-w-0">
-                    <Text 
-                        value={file.name} 
-                        className="font-medium line-clamp-2" 
+                    <Text
+                        value={file.name}
+                        className="font-medium line-clamp-2"
                         style={{
                             display: "-webkit-box",
                             WebkitLineClamp: 2,
@@ -193,7 +192,7 @@ const FileItem = ({
                 )}
             </View>
         )
-        
+
         if (isHighlighted) {
             return (
                 <motion.div
@@ -205,16 +204,15 @@ const FileItem = ({
                 </motion.div>
             )
         }
-        
+
         return listItem
     }
 
     return (
         <View
             data-file-id={file.id}
-            className={`flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-all ${
-                isDragging ? "opacity-50" : ""
-            } ${isDragOver ? "ring-2 ring-offset-2" : ""}`}
+            className={`flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-all ${isDragging ? "opacity-50" : ""
+                } ${isDragOver ? "ring-2 ring-offset-2" : ""}`}
             style={{
                 ...(isDragOver ? {
                     borderColor: current?.primary,

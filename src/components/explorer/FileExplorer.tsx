@@ -1109,102 +1109,102 @@ const FileExplorer = () => {
 
                 {/* File Grid/List */}
                 <View
-                        className={`flex-1 overflow-auto ${isDragging ? "opacity-50" : ""}`}
-                        style={{
-                            border: isDragging ? `2px dashed ${current?.primary}` : "2px dashed transparent",
-                            borderRadius: "8px",
-                            transition: "all 0.2s",
-                            backgroundColor: isDragging ? current?.primary + "05" : "transparent",
-                            position: "relative"
-                        }}
-                        onContextMenu={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            // Prevent default browser menu
-                            if (e.nativeEvent) {
-                                e.nativeEvent.preventDefault()
-                                e.nativeEvent.stopPropagation()
-                            }
-                            // Show empty space menu when not clicking on a file item
-                            const target = e.target as HTMLElement
-                            const clickedOnFile = target.closest("[data-file-id]")
-                            if (!clickedOnFile) {
-                                const targetFolderId = currentPath.length > 0 ? currentPath[currentPath.length - 1] : null
-                                setContextMenu({
-                                    x: e.clientX,
-                                    y: e.clientY,
-                                    file: {
-                                        id: "",
-                                        name: "",
-                                        type: "folder",
-                                        isFolder: true,
-                                        parentId: targetFolderId,
-                                        diskId: currentDiskId || "",
-                                        createdAt: new Date(),
-                                        modifiedAt: new Date()
-                                    } as FileItem
-                                })
-                            }
-                        }}
-                    >
-                        {isDragging && !isDraggingFolder && (
+                    className={`flex-1 overflow-auto ${isDragging ? "opacity-50" : ""}`}
+                    style={{
+                        border: isDragging ? `2px dashed ${current?.primary}` : "2px dashed transparent",
+                        borderRadius: "8px",
+                        transition: "all 0.2s",
+                        backgroundColor: isDragging ? current?.primary + "05" : "transparent",
+                        position: "relative"
+                    }}
+                    onContextMenu={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        // Prevent default browser menu
+                        if (e.nativeEvent) {
+                            e.nativeEvent.preventDefault()
+                            e.nativeEvent.stopPropagation()
+                        }
+                        // Show empty space menu when not clicking on a file item
+                        const target = e.target as HTMLElement
+                        const clickedOnFile = target.closest("[data-file-id]")
+                        if (!clickedOnFile) {
+                            const targetFolderId = currentPath.length > 0 ? currentPath[currentPath.length - 1] : null
+                            setContextMenu({
+                                x: e.clientX,
+                                y: e.clientY,
+                                file: {
+                                    id: "",
+                                    name: "",
+                                    type: "folder",
+                                    isFolder: true,
+                                    parentId: targetFolderId,
+                                    diskId: currentDiskId || "",
+                                    createdAt: new Date(),
+                                    modifiedAt: new Date()
+                                } as FileItem
+                            })
+                        }
+                    }}
+                >
+                    {isDragging && !isDraggingFolder && (
+                        <View
+                            className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
+                            style={{ backgroundColor: current?.primary + "08" }}
+                        >
                             <View
-                                className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
-                                style={{ backgroundColor: current?.primary + "08" }}
+                                className="flex flex-col items-center gap-3 p-6 rounded-lg"
+                                style={{ backgroundColor: current?.foreground }}
                             >
-                                <View
-                                    className="flex flex-col items-center gap-3 p-6 rounded-lg"
-                                    style={{ backgroundColor: current?.foreground }}
-                                >
-                                    <Upload size={32} color={current?.primary} />
-                                    <Text value="Drop files here to upload" className="font-medium" style={{ color: current?.primary }} />
-                                </View>
+                                <Upload size={32} color={current?.primary} />
+                                <Text value="Drop files here to upload" className="font-medium" style={{ color: current?.primary }} />
                             </View>
-                        )}
-                        {isLoading ? (
-                            <View className={viewMode === "grid" ? "grid grid-cols-6 gap-4 p-2" : "flex flex-col gap-1 p-2"}>
-                                {viewMode === "grid"
-                                    ? Array.from({ length: 12 }).map((_, i) => (
-                                        <FileItemSkeleton key={i} />
-                                    ))
-                                    : Array.from({ length: 8 }).map((_, i) => (
-                                        <ListItemSkeleton key={i} />
-                                    ))}
-                            </View>
-                        ) : files.length === 0 ? (
-                            <View className="h-full flex items-center justify-center empty-space">
-                                <Text value="This folder is empty" className="opacity-60" />
-                            </View>
-                        ) : (
-                            <View className={viewMode === "grid" ? "grid grid-cols-6 gap-4 p-2" : "flex flex-col gap-1"}>
-                                {(() => {
-                                    // Separate highlighted file from others
-                                    const highlightedFile = highlightedFileId ? files.find(f => f.id === highlightedFileId) : null
-                                    const otherFiles = files.filter(f => f.id !== highlightedFileId)
+                        </View>
+                    )}
+                    {isLoading ? (
+                        <View className={viewMode === "grid" ? "grid grid-cols-6 gap-4 p-2" : "flex flex-col gap-1 p-2"}>
+                            {viewMode === "grid"
+                                ? Array.from({ length: 12 }).map((_, i) => (
+                                    <FileItemSkeleton key={i} />
+                                ))
+                                : Array.from({ length: 8 }).map((_, i) => (
+                                    <ListItemSkeleton key={i} />
+                                ))}
+                        </View>
+                    ) : files.length === 0 ? (
+                        <View className="h-full flex items-center justify-center empty-space">
+                            <Text value="This folder is empty" className="opacity-60" />
+                        </View>
+                    ) : (
+                        <View className={viewMode === "grid" ? "grid grid-cols-6 gap-4 p-2" : "flex flex-col gap-1"}>
+                            {(() => {
+                                // Separate highlighted file from others
+                                const highlightedFile = highlightedFileId ? files.find(f => f.id === highlightedFileId) : null
+                                const otherFiles = files.filter(f => f.id !== highlightedFileId)
 
-                                    // Sort: highlighted file first, then others
-                                    const sortedFiles = highlightedFile ? [highlightedFile, ...otherFiles] : files
+                                // Sort: highlighted file first, then others
+                                const sortedFiles = highlightedFile ? [highlightedFile, ...otherFiles] : files
 
-                                    return sortedFiles.map((file) => (
-                                        <FileItemComponent
-                                            key={file.id}
-                                            file={file}
-                                            viewMode={viewMode}
-                                            onClick={() => handleFileClick(file.id, file.isFolder)}
-                                            onContextMenu={handleContextMenu}
-                                            onDragStart={handleFolderDragStart}
-                                            onDragEnd={handleFolderDragEnd}
-                                            onDragOver={handleFolderDragOver}
-                                            onDragLeave={handleFolderDragLeave}
-                                            onDrop={handleFolderDrop}
-                                            isDragOver={dragOverFolderId === file.id}
-                                            isHighlighted={highlightedFileId === file.id}
-                                        />
-                                    ))
-                                })()}
-                            </View>
-                        )}
-                    </View>
+                                return sortedFiles.map((file) => (
+                                    <FileItemComponent
+                                        key={file.id}
+                                        file={file}
+                                        viewMode={viewMode}
+                                        onClick={() => handleFileClick(file.id, file.isFolder)}
+                                        onContextMenu={handleContextMenu}
+                                        onDragStart={handleFolderDragStart}
+                                        onDragEnd={handleFolderDragEnd}
+                                        onDragOver={handleFolderDragOver}
+                                        onDragLeave={handleFolderDragLeave}
+                                        onDrop={handleFolderDrop}
+                                        isDragOver={dragOverFolderId === file.id}
+                                        isHighlighted={highlightedFileId === file.id}
+                                    />
+                                ))
+                            })()}
+                        </View>
+                    )}
+                </View>
 
                 {/* Hidden file input */}
                 <input

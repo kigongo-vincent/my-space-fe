@@ -19,7 +19,7 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
     const { disks, resizeDisk } = useFileStore()
     const { usage } = useUser()
     const { current, name } = useTheme()
-    
+
     const disk = disks.find(d => d.id === diskId)
     if (!disk) return null
 
@@ -34,21 +34,21 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
         })
         return totalAllocatedGB
     }
-    
+
     // Calculate available space for resizing this disk
     const getUserTotalGB = (): number => {
         if (!usage) return 0
         return convertToGB(usage.total, usage.unit)
     }
-    
+
     // Use useMemo to recalculate when disks array changes
     const totalAllocatedGB = useMemo(() => calculateTotalAllocatedGB(), [disks, diskId])
     const userTotalGB = useMemo(() => getUserTotalGB(), [usage])
     const availableForResizeGB = useMemo(() => Math.max(0, userTotalGB - totalAllocatedGB), [userTotalGB, totalAllocatedGB])
-    
+
     // Current disk used storage in GB
     const currentUsedGB = convertToGB(disk.usage.used, disk.usage.unit)
-    
+
     // Convert available space to the selected unit
     const getAvailableInUnit = (unit: "GB" | "MB" | "TB"): number => {
         switch (unit) {
@@ -62,7 +62,7 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
                 return availableForResizeGB
         }
     }
-    
+
     // Convert used storage to the selected unit
     const getUsedInUnit = (unit: "GB" | "MB" | "TB"): number => {
         switch (unit) {
@@ -76,7 +76,7 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
                 return currentUsedGB
         }
     }
-    
+
     const [unit, setUnit] = useState<"GB" | "MB" | "TB">(disk.usage.unit as "GB" | "MB" | "TB" || "GB")
     const currentTotal = convertToGB(disk.usage.total, disk.usage.unit)
     const currentTotalInUnit = unit === "MB" ? currentTotal * 1024 : unit === "TB" ? currentTotal / 1024 : currentTotal
@@ -87,7 +87,7 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
         message: "",
         type: "error"
     })
-    
+
     // Update value when unit changes
     useEffect(() => {
         const newValue = unit === "MB" ? currentTotal * 1024 : unit === "TB" ? currentTotal / 1024 : currentTotal
@@ -103,21 +103,21 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
         if (isNaN(numSize) || numSize <= 0) {
             return "Storage size must be a positive number"
         }
-        
+
         const usedInUnit = getUsedInUnit(unit)
         const maxAvailable = getAvailableInUnit(unit) + currentTotalInUnit
-        
+
         // Check: new size must be >= used storage
         if (numSize < usedInUnit) {
             return `Storage size cannot be less than used storage (${usedInUnit.toFixed(2)} ${unit})`
         }
-        
+
         // Check: new size must not exceed available space + current disk size
         if (numSize > maxAvailable) {
             const maxFormatted = maxAvailable.toFixed(2)
             return `Storage size cannot exceed available space (${maxFormatted} ${unit})`
         }
-        
+
         return undefined
     }
 
@@ -137,7 +137,7 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
 
     const handleResize = async () => {
         const sizeError = validateSize(totalStorage, unit)
-        
+
         if (sizeError) {
             setErrors({ size: sizeError })
             return
@@ -151,7 +151,7 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
             onClose()
         } catch (error: any) {
             let errorMessage = error?.message || "Failed to resize disk"
-            
+
             // Parse error message if it's a JSON string
             if (typeof errorMessage === 'string' && errorMessage.includes('{')) {
                 try {
@@ -164,7 +164,7 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
                     }
                 }
             }
-            
+
             setAlertModal({
                 isOpen: true,
                 message: errorMessage,
@@ -183,7 +183,7 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
                 mode="foreground"
                 className="p-6 rounded-lg min-w-[450px] max-w-[500px] flex flex-col gap-5"
                 style={{
-                    boxShadow: name === "dark" 
+                    boxShadow: name === "dark"
                         ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
                         : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
                 }}
@@ -194,7 +194,7 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
                 </View>
 
                 {/* Current Disk Info */}
-                <View 
+                <View
                     className="p-4 rounded-lg"
                     style={{ backgroundColor: current?.primary + "10" }}
                 >
@@ -261,35 +261,35 @@ const ResizeDiskModal = ({ diskId, onClose }: Props) => {
                     )}
                     {!errors.size && totalStorage && (
                         <View className="flex flex-col gap-1">
-                            <Text 
-                                value={`Minimum: ${usedInUnit.toFixed(2)} ${unit} (used storage)`} 
-                                size="sm" 
-                                className="opacity-50" 
+                            <Text
+                                value={`Minimum: ${usedInUnit.toFixed(2)} ${unit} (used storage)`}
+                                size="sm"
+                                className="opacity-50"
                             />
-                            <Text 
-                                value={`Maximum: ${maxAvailable.toFixed(2)} ${unit} (available + current)`} 
-                                size="sm" 
-                                className="opacity-50" 
+                            <Text
+                                value={`Maximum: ${maxAvailable.toFixed(2)} ${unit} (available + current)`}
+                                size="sm"
+                                className="opacity-50"
                             />
                         </View>
                     )}
                 </View>
 
                 {/* Info Box */}
-                <View 
+                <View
                     className="p-3 rounded-lg flex items-start gap-2"
                     style={{ backgroundColor: current?.primary + "10" }}
                 >
                     <Info size={16} color={current?.primary} className="mt-0.5 flex-shrink-0" />
                     <View className="flex flex-col gap-1">
-                        <Text 
-                            value="You cannot resize a disk smaller than its used storage." 
-                            size="sm" 
+                        <Text
+                            value="You cannot resize a disk smaller than its used storage."
+                            size="sm"
                             className="opacity-80"
                         />
-                        <Text 
+                        <Text
                             value={`Total allocated: ${totalAllocatedGB.toFixed(2)} GB / ${userTotalGB.toFixed(2)} GB`}
-                            size="sm" 
+                            size="sm"
                             className="opacity-80"
                         />
                     </View>

@@ -213,3 +213,47 @@ html {
     opacity: 0.5;
   }
 }
+
+/* Document viewer - restore scrollbars and add formatting */
+.document-viewer-content {
+  scrollbar-width: thin;
+  -ms-overflow-style: auto;
+}
+.document-viewer-content::-webkit-scrollbar {
+  display: block;
+  width: 8px;
+  height: 8px;
+}
+.document-viewer-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.document-viewer-content::-webkit-scrollbar-thumb {
+  background: oklch(0.5 0 0 / 0.3);
+  border-radius: 4px;
+}
+.document-viewer-content::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.5 0 0 / 0.5);
+}
+
+/* docx content - typography */
+.docx-content h1 { font-size: 1.75rem; font-weight: 700; margin: 1.5em 0 0.5em; }
+.docx-content h2 { font-size: 1.375rem; font-weight: 600; margin: 1.25em 0 0.5em; }
+.docx-content h3 { font-size: 1.125rem; font-weight: 600; margin: 1em 0 0.5em; }
+.docx-content p { margin: 0.75em 0; }
+.docx-content ul, .docx-content ol { margin: 0.75em 0; padding-left: 1.5em; }
+.docx-content li { margin: 0.25em 0; }
+.docx-content table { border-collapse: collapse; margin: 1em 0; width: 100%; }
+.docx-content th, .docx-content td { border: 1px solid oklch(0.5 0 0 / 0.2); padding: 0.5em 0.75em; text-align: left; }
+
+/* excel content - spreadsheet styling */
+.excel-content table { border: 1px solid oklch(0.5 0 0 / 0.15); }
+.excel-content th {
+  background: color-mix(in oklch, var(--primary) 12%, transparent);
+  border-color: oklch(0.5 0 0 / 0.2);
+}
+.excel-content tr:nth-child(even) td {
+  background: oklch(0.5 0 0 / 0.04);
+}
+.dark .excel-content tr:nth-child(even) td {
+  background: oklch(1 0 0 / 0.04);
+}

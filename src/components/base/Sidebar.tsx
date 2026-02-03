@@ -118,7 +118,7 @@ const Sidebar = ({ className }: Props) => {
             <View className='grid grid-cols-2 gap-2'>
                 {
                     links?.map((l, i) => {
-                        const isActive = 
+                        const isActive =
                             (l.label === "My Computer" && filterByType === null) ||
                             (l.label === "Audio" && filterByType === "audio") ||
                             (l.label === "Documents" && filterByType === "document") ||

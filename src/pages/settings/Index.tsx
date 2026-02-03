@@ -6,11 +6,11 @@ import Navbar from "../../components/base/Navbar"
 import { useTheme, type FontSizePreset } from "../../store/Themestore"
 import { useUser } from "../../store/Userstore"
 import Avatar from "../../components/base/Avatar"
-import { 
+import {
     ArrowLeft,
-    User, 
-    Shield, 
-    Palette, 
+    User,
+    Shield,
+    Palette,
     Lock,
     Key,
     Trash2,
@@ -665,9 +665,9 @@ const Settings = () => {
                 <Navbar />
                 <View className="flex-1 flex flex-row min-h-0">
                     {/* Sidebar – admin-style typography & spacing, full-length labels */}
-                    <View 
+                    <View
                         className="min-w-[200px] w-[280px] flex-shrink-0 border-r flex flex-col overflow-auto"
-                        style={{ 
+                        style={{
                             backgroundColor: current?.foreground,
                             borderColor: current?.dark + "10",
                             padding: '1.5rem'
@@ -739,7 +739,7 @@ const Settings = () => {
                             <UploadIcon size={18} color={current?.primary} />
                             <Text value="Change Profile Picture" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                         </View>
-                        <input type="file" accept="image/*" className="w-full" style={{ color: current?.dark, fontSize: '0.9375rem' }} onChange={() => {}} />
+                        <input type="file" accept="image/*" className="w-full" style={{ color: current?.dark, fontSize: '0.9375rem' }} onChange={() => { }} />
                         <Text value="Photo upload will be available when the backend supports profile photo updates." style={{ fontSize: '0.815rem', opacity: 0.6 }} />
                         <View className="flex justify-end pt-2">
                             <Button title="Close" action={() => setShowChangePhoto(false)} />

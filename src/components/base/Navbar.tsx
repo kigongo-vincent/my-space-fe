@@ -103,13 +103,13 @@ const Navbar = () => {
                         />
                         <IconButton icon={<Settings color={current?.dark} size={18} />} action={handleSettingsClick} title="Settings" />
                         <View className="relative" ref={menuRef}>
-                            <View 
-                                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} 
+                            <View
+                                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                                 className="cursor-pointer"
                             >
                                 <Avatar path={user?.current?.photo} fallback={{ text: user.getInitials(user?.current?.username || "") }} />
                             </View>
-                            
+
                             <AnimatePresence>
                                 {isUserMenuOpen && (
                                     <motion.div

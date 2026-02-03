@@ -10,23 +10,23 @@ const ViewSettingsBar = () => {
     const { viewMode, setViewMode } = useFileStore()
 
     return (
-        <View 
+        <View
             className="flex items-center justify-between px-4 py-2.5 border-b"
             mode="background"
-            style={{ 
+            style={{
                 borderColor: current?.dark + "20",
                 minHeight: "52px"
             }}
         >
             <View className="flex items-center gap-2">
                 <Settings size={16} color={current?.dark} style={{ opacity: 0.6 }} />
-                <Text 
-                    value="View Settings" 
+                <Text
+                    value="View Settings"
                     className="text-sm font-medium opacity-70"
                     style={{ letterSpacing: "0.02em" }}
                 />
             </View>
-            
+
             <View className="flex items-center gap-1" mode="background">
                 <IconButton
                     icon={<Grid size={18} color={viewMode === "grid" ? current?.primary : current?.dark} />}
