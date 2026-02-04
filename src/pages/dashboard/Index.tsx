@@ -10,7 +10,6 @@ import { useFileStore } from "../../store/Filestore"
 import DraggableModal from "../../components/explorer/DraggableModal"
 import { useTheme } from "../../store/Themestore"
 import AudioFilesView from "../../components/explorer/AudioFilesView"
-import BackgroundPlayer from "../../components/explorer/BackgroundPlayer"
 import CreateDiskModal from "../../components/explorer/CreateDiskModal"
 import DiskDetailsModal from "../../components/explorer/DiskDetailsModal"
 import RenameDiskModal from "../../components/explorer/RenameDiskModal"
@@ -286,9 +285,6 @@ const Index = () => {
                         onClose={() => closeFileModal(modal.id)}
                     />
                 ))}
-
-                {/* Background Player */}
-                <BackgroundPlayer />
             </motion.div>
         )
     }
@@ -314,9 +310,6 @@ const Index = () => {
                         onClose={() => closeFileModal(modal.id)}
                     />
                 ))}
-
-                {/* Background Player */}
-                <BackgroundPlayer />
             </motion.div>
         )
     }
@@ -721,9 +714,6 @@ const Index = () => {
                     onClose={() => closeFileModal(modal.id)}
                 />
             ))}
-
-            {/* Background Player */}
-            <BackgroundPlayer />
 
             {/* Create Disk Modal */}
             {showCreateDisk && <CreateDiskModal onClose={() => setShowCreateDisk(false)} />}

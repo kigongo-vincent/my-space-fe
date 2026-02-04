@@ -3,21 +3,20 @@ import View from "../base/View"
 import Text from "../base/Text"
 import { useFileStore } from "../../store/Filestore"
 import { useTheme } from "../../store/Themestore"
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, Maximize2 } from "lucide-react"
+import { Play, Pause, SkipBack, SkipForward, X, Maximize2 } from "lucide-react"
 import IconButton from "../base/IconButton"
 import RangeInput from "../base/RangeInput"
 import { FileItem } from "../../store/Filestore"
 
 const BackgroundPlayer = () => {
-    const { backgroundPlayerFileId, getFileById, setBackgroundPlayer, openFileModal, getCurrentFolderFiles } = useFileStore()
+    const { backgroundPlayerFileId, backgroundPlayerAutoPlay, getFileById, setBackgroundPlayer, getCurrentFolderFiles, refreshFileURL, openFileModal, fetchDisks } = useFileStore()
     const { current, name } = useTheme()
     const audioRef = useRef<HTMLAudioElement>(null)
     const [isPlaying, setIsPlaying] = useState(false)
     const [currentTime, setCurrentTime] = useState(0)
     const [duration, setDuration] = useState(0)
-    const [volume, setVolume] = useState(1)
-    const [isMuted, setIsMuted] = useState(false)
     const [isBuffering, setIsBuffering] = useState(false)
+    const [audioErrorRetryCount, setAudioErrorRetryCount] = useState(0)
     const [networkSpeed, setNetworkSpeed] = useState<'slow' | 'medium' | 'fast'>('medium')
     const [preloadStrategy, setPreloadStrategy] = useState<'none' | 'metadata' | 'auto'>('metadata')
     const nextTrackPreloadRef = useRef<HTMLAudioElement | null>(null)
@@ -52,6 +51,18 @@ const BackgroundPlayer = () => {
             document.head.appendChild(link)
         }
     }
+
+    // Reset retry count when switching tracks
+    useEffect(() => {
+        setAudioErrorRetryCount(0)
+    }, [backgroundPlayerFileId])
+
+    // Fetch disks on mount if we have a restored player but no file (e.g. after refresh)
+    useEffect(() => {
+        if (backgroundPlayerFileId && !file) {
+            fetchDisks()
+        }
+    }, [backgroundPlayerFileId, file, fetchDisks])
 
     // Detect network speed
     useEffect(() => {
@@ -156,11 +167,23 @@ const BackgroundPlayer = () => {
 
         // Throttled time update for better performance
         let lastTimeUpdate = 0
+        let lastPersistTime = 0
         const updateTime = () => {
             const now = Date.now()
             if (now - lastTimeUpdate >= 100) { // Update every 100ms
                 setCurrentTime(audio.currentTime)
                 lastTimeUpdate = now
+                // Persist position every 2s when playing (for refresh restore)
+                if (now - lastPersistTime >= 2000) {
+                    lastPersistTime = now
+                    try {
+                        localStorage.setItem('backgroundPlayerState', JSON.stringify({
+                            fileId: file.id,
+                            position: audio.currentTime,
+                            wasPlaying: isPlaying
+                        }))
+                    } catch (_) {}
+                }
             }
         }
 
@@ -208,7 +231,16 @@ const BackgroundPlayer = () => {
             }
         }
         
-        const handlePause = () => setIsPlaying(false)
+        const handlePause = () => {
+            setIsPlaying(false)
+            try {
+                localStorage.setItem('backgroundPlayerState', JSON.stringify({
+                    fileId: file.id,
+                    position: audio.currentTime,
+                    wasPlaying: false
+                }))
+            } catch (_) {}
+        }
         
         const handleWaiting = () => {
             setIsBuffering(true)
@@ -218,10 +250,37 @@ const BackgroundPlayer = () => {
             }
         }
         
-        // Spotify-style: Start playing on canplay (minimal buffer), not canplaythrough
+        // Restore saved position and auto-play (from refresh or "Play in background")
+        const restoreAndPlay = () => {
+            const store = useFileStore.getState()
+            if (!store.backgroundPlayerAutoPlay) return
+            store.setBackgroundPlayer(backgroundPlayerFileId, false)
+            try {
+                const saved = localStorage.getItem('backgroundPlayerState')
+                const parsed = saved ? JSON.parse(saved) : null
+                const pos = parsed?.fileId === backgroundPlayerFileId && parsed?.position
+                    ? parseFloat(String(parsed.position)) : 0
+                if (pos > 0 && (isNaN(audio.duration) || pos < audio.duration)) {
+                    audio.currentTime = pos
+                    setCurrentTime(pos)
+                }
+                if (parsed?.wasPlaying !== false) {
+                    audio.play().catch(() => setIsPlaying(false))
+                }
+            } catch {
+                audio.play().catch(() => setIsPlaying(false))
+            }
+        }
+
         const handleCanPlay = () => {
             setIsBuffering(false)
-            // Audio is ready to play with minimal buffer
+            restoreAndPlay()
+        }
+
+        // If audio is already loaded when we set up (e.g. cached), play immediately
+        const storeState = useFileStore.getState()
+        if (audio.readyState >= 2 && storeState.backgroundPlayerAutoPlay) {
+            restoreAndPlay()
         }
         
         const handleCanPlayThrough = () => {
@@ -302,8 +361,8 @@ const BackgroundPlayer = () => {
     useEffect(() => {
         const audio = audioRef.current
         if (!audio) return
-        audio.volume = isMuted ? 0 : volume
-    }, [volume, isMuted])
+        audio.volume = 1
+    }, [file])
 
     if (!file || file.type !== "audio") return null
 
@@ -347,20 +406,6 @@ const BackgroundPlayer = () => {
         setCurrentTime(newTime)
     }
 
-    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const audio = audioRef.current
-        if (!audio) return
-
-        const newVolume = parseFloat(e.target.value)
-        setVolume(newVolume)
-        audio.volume = newVolume
-        setIsMuted(newVolume === 0)
-    }
-
-    const toggleMute = () => {
-        setIsMuted(!isMuted)
-    }
-
     const formatTime = (seconds: number) => {
         if (isNaN(seconds)) return "0:00"
         const mins = Math.floor(seconds / 60)
@@ -372,42 +417,44 @@ const BackgroundPlayer = () => {
 
     return (
         <View
-            className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3"
+            className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-4"
             style={{
                 backgroundColor: current?.foreground || current?.background,
                 boxShadow: name === "dark" 
-                    ? `0 -2px 8px rgba(0, 0, 0, 0.3)`
-                    : `0 -2px 8px ${current?.dark}10`
+                    ? `0 -4px 20px rgba(0, 0, 0, 0.25), 0 1px 0 ${current?.dark}10`
+                    : `0 -4px 20px ${current?.dark}08, 0 1px 0 ${current?.dark}05`,
+                borderTop: `1px solid ${current?.dark}08`
             }}
         >
-            {/* Left: Album Art and Song Info */}
-            <View className="flex items-center gap-3 flex-1 min-w-0">
-                <View
-                    className="w-14 h-14 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 media-glow-small"
+            {/* Left: Upscale button + Title (desktop only) */}
+            <View className="flex items-center gap-4 flex-1 min-w-0 justify-start">
+                <button
+                    onClick={() => file && openFileModal(file.id)}
+                    title="Expand player"
+                    className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center hover:opacity-80 transition-opacity"
                     style={{
-                        backgroundColor: current?.dark + "20",
-                        backgroundImage: file.thumbnail ? `url(${file.thumbnail})` : undefined,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center"
+                        backgroundColor: current?.dark + "0a",
+                        color: current?.dark
                     }}
                 >
-                    {!file.thumbnail && <Text value="🎵" className="text-2xl" />}
-                </View>
-                <View className="flex-1 min-w-0">
+                    <Maximize2 size={20} color={current?.dark} />
+                </button>
+                <View className="hidden md:flex flex-col min-w-0 flex-1">
                     <Text
                         value={file.name.replace(/\.[^/.]+$/, "")}
-                        className="font-semibold truncate mb-0.5"
+                        className="font-semibold truncate"
                         style={{
-                            letterSpacing: "-0.01em",
+                            letterSpacing: "-0.02em",
                             fontSize: "14px",
-                            lineHeight: "1.3"
+                            lineHeight: "1.3",
+                            color: current?.dark
                         }}
                     />
                     <Text
                         value={formatTime(currentTime)}
                         size="sm"
-                        className="opacity-65"
-                        style={{ letterSpacing: "0.02em" }}
+                        className="opacity-60"
+                        style={{ letterSpacing: "0.03em", fontWeight: 500 }}
                     />
                 </View>
             </View>
@@ -425,27 +472,15 @@ const BackgroundPlayer = () => {
                         <SkipBack size={22} />
                     </button>
                     <button
-                        onClick={() => {
-                            const audio = audioRef.current
-                            if (audio) {
-                                audio.currentTime = Math.max(0, audio.currentTime - 10)
-                            }
-                        }}
-                        className="p-2 hover:opacity-80 transition-opacity"
-                        style={{ color: current?.dark }}
-                        title="Skip back 10s"
-                    >
-                        <SkipBack size={18} />
-                    </button>
-                    <button
                         onClick={togglePlay}
                         disabled={isBuffering}
-                        className="rounded-full hover:opacity-90 transition-opacity flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="rounded-full hover:opacity-90 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
                         style={{
                             backgroundColor: current?.primary,
                             color: "white",
-                            width: "40px",
-                            height: "40px"
+                            width: "44px",
+                            height: "44px",
+                            boxShadow: `0 2px 12px ${current?.primary}40`
                         }}
                         title={isPlaying ? "Pause" : "Play"}
                     >
@@ -454,23 +489,10 @@ const BackgroundPlayer = () => {
                                 className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"
                             />
                         ) : isPlaying ? (
-                            <Pause size={20} fill="white" />
+                            <Pause size={22} fill="white" />
                         ) : (
-                            <Play size={20} fill="white" />
+                            <Play size={22} fill="white" />
                         )}
-                    </button>
-                    <button
-                        onClick={() => {
-                            const audio = audioRef.current
-                            if (audio) {
-                                audio.currentTime = Math.min(duration, audio.currentTime + 10)
-                            }
-                        }}
-                        className="p-2 hover:opacity-80 transition-opacity"
-                        style={{ color: current?.dark }}
-                        title="Skip forward 10s"
-                    >
-                        <SkipForward size={18} />
                     </button>
                     <button
                         onClick={playNext}
@@ -497,35 +519,8 @@ const BackgroundPlayer = () => {
                 </View>
             </View>
 
-            {/* Right: Volume and Actions */}
+            {/* Right: Close */}
             <View className="flex items-center gap-3 flex-1 justify-end">
-                <View className="flex items-center gap-2">
-                    <button
-                        onClick={toggleMute}
-                        className="p-2 hover:opacity-80 transition-opacity"
-                        style={{ color: current?.dark }}
-                    >
-                        {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                    </button>
-                    <RangeInput
-                        min={0}
-                        max={1}
-                        value={isMuted ? 0 : volume}
-                        onChange={handleVolumeChange}
-                        fillPercentage={(isMuted ? 0 : volume) * 100}
-                        height="4px"
-                        className="w-24"
-                    />
-                </View>
-                <IconButton
-                    icon={<Maximize2 size={16} color={current?.dark} />}
-                    action={() => {
-                        if (file) {
-                            openFileModal(file.id)
-                        }
-                    }}
-                    title="Expand"
-                />
                 <IconButton
                     icon={<X size={16} color={current?.dark} />}
                     action={() => {
@@ -553,7 +548,20 @@ const BackgroundPlayer = () => {
                     onCanPlay={() => setIsBuffering(false)}
                     onCanPlayThrough={() => setIsBuffering(false)}
                     onLoadStart={() => setIsBuffering(true)}
-                    // Spotify-style: Optimize for low latency
+                    onError={async () => {
+                        if (audioErrorRetryCount < 2 && file?.id) {
+                            try {
+                                await refreshFileURL(file.id)
+                                setAudioErrorRetryCount(prev => prev + 1)
+                                setIsBuffering(false)
+                            } catch (err) {
+                                console.error("Failed to refresh audio URL:", err)
+                                setIsBuffering(false)
+                            }
+                        } else {
+                            setIsBuffering(false)
+                        }
+                    }}
                     style={{
                         display: 'block'
                     }}

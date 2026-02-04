@@ -90,24 +90,12 @@ const AnimatedModal = ({ isOpen, onClose, children, size = "md", position = "cen
                         onClick={onClose}
                     />
                     
-                    {/* Container for center positioning using flexbox */}
+                    {/* Container for center positioning - responsive padding, proper centering */}
                     {position === "center" ? (
                         <div
+                            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto overflow-x-hidden"
                             style={{
-                                position: 'fixed',
-                                top: '0px',
-                                left: '0px',
-                                right: '0px',
-                                bottom: '0px',
-                                width: '100%',
-                                height: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                zIndex: 9999,
                                 pointerEvents: 'none',
-                                margin: 0,
-                                padding: 0,
                                 boxSizing: 'border-box'
                             }}
                         >
@@ -116,16 +104,11 @@ const AnimatedModal = ({ isOpen, onClose, children, size = "md", position = "cen
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                                className={`${sizeClasses[size]} w-full max-h-[90vh] overflow-auto mx-4 sm:mx-6`}
+                                className={`${sizeClasses[size]} w-full min-w-[280px] flex-shrink-0 max-h-[90vh] overflow-auto`}
                                 style={{
-                                    width: 'auto',
-                                    minWidth: 0,
-                                    maxWidth: 'calc(100vw - 2rem)',
                                     pointerEvents: 'auto',
                                     backgroundColor: current?.foreground,
                                     borderRadius: '0.5rem',
-                                    margin: '0 auto',
-                                    padding: 0,
                                     boxSizing: 'border-box',
                                     boxShadow: name === "dark"
                                         ? `0 25px 50px -12px rgba(0, 0, 0, 0.4)`

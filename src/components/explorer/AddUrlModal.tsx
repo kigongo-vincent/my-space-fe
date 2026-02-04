@@ -47,10 +47,10 @@ const AddUrlModal = ({ onClose, parentId, diskId }: Props) => {
     }
 
     return (
-        <View className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6 overflow-auto" style={{ backdropFilter: 'blur(2px)' }}>
+        <View className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6 md:p-8 min-h-screen overflow-y-auto overflow-x-hidden" style={{ backdropFilter: 'blur(2px)' }}>
             <View
                 mode="foreground"
-                className="p-4 sm:p-6 md:p-8 rounded-xl w-full max-w-[650px] min-w-0 flex flex-col gap-6"
+                className="p-4 sm:p-6 md:p-8 rounded-xl w-full max-w-[650px] min-w-[280px] flex flex-col gap-6 flex-shrink-0 max-h-[90vh] overflow-y-auto"
                 style={{
                     border: `1px solid ${current?.dark}10`,
                     boxShadow: name === "dark" 

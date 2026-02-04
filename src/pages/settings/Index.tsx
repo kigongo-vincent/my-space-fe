@@ -140,16 +140,16 @@ const Settings = () => {
             case "account":
                 return (
                     <View>
-                        <View className="mb-8">
+                        <View className="mb-4 sm:mb-8">
                             <Text value="Account" style={{ color: current?.dark, fontSize: '1.11rem', fontWeight: 500 }} />
-                            <Text value="Manage your profile and account details" style={{ fontSize: '1rem', opacity: 0.6, marginTop: '0.5rem' }} />
+                            <Text value="Manage your profile and account details" style={{ fontSize: '0.9375rem', opacity: 0.6, marginTop: '0.5rem' }} />
                         </View>
-                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem', marginBottom: '2rem' }}>
-                            <View className="flex items-center gap-2 mb-6">
+                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem', marginBottom: '1.5rem' }} className="sm:p-6 sm:mb-8">
+                            <View className="flex items-center gap-2 mb-4 sm:mb-6">
                                 <User size={18} color={current?.primary} />
                                 <Text value="Account Information" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                             </View>
-                            <View className="flex items-center gap-4 p-4 rounded-lg" style={{ backgroundColor: current?.background }}>
+                            <View className="flex flex-col sm:flex-row items-center gap-4 p-3 sm:p-4 rounded-lg" style={{ backgroundColor: current?.background }}>
                                 <Avatar path={user?.photo} fallback={{ text: user?.username || "" }} />
                                 <View className="flex-1">
                                     <Text value={user?.username || "User"} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
@@ -162,8 +162,8 @@ const Settings = () => {
                                 </View>
                             </View>
                         </View>
-                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem', marginBottom: '2rem' }}>
-                            <View className="flex items-center gap-2 mb-6">
+                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem', marginBottom: '1.5rem' }} className="sm:p-6 sm:mb-8">
+                            <View className="flex items-center gap-2 mb-4 sm:mb-6">
                                 <User size={18} color={current?.primary} />
                                 <Text value="Profile Settings" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                             </View>
@@ -184,8 +184,8 @@ const Settings = () => {
                                 </button>
                             </View>
                         </View>
-                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem' }}>
-                            <View className="flex items-center gap-2 mb-6">
+                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem' }} className="sm:p-6">
+                            <View className="flex items-center gap-2 mb-4 sm:mb-6">
                                 <LogOut size={18} color={current?.error || "#ef4444"} />
                                 <Text value="Account Actions" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                             </View>
@@ -203,12 +203,12 @@ const Settings = () => {
             case "security":
                 return (
                     <View>
-                        <View className="mb-8">
+                        <View className="mb-4 sm:mb-8">
                             <Text value="Security" style={{ color: current?.dark, fontSize: '1.11rem', fontWeight: 500 }} />
-                            <Text value="Manage your password" style={{ fontSize: '1rem', opacity: 0.6, marginTop: '0.5rem' }} />
+                            <Text value="Manage your password" style={{ fontSize: '0.9375rem', opacity: 0.6, marginTop: '0.5rem' }} />
                         </View>
-                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem' }}>
-                            <View className="flex items-center gap-2 mb-6">
+                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem' }} className="sm:p-6">
+                            <View className="flex items-center gap-2 mb-4 sm:mb-6">
                                 <Shield size={18} color={current?.primary} />
                                 <Text value="Security Settings" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                             </View>
@@ -265,14 +265,14 @@ const Settings = () => {
 
                 return (
                     <View>
-                        <View className="mb-8">
+                        <View className="mb-4 sm:mb-8">
                             <Text value="Request management" style={{ color: current?.dark, fontSize: '1.11rem', fontWeight: 500 }} />
-                            <Text value="Request more or reduce storage. Track your requests below." style={{ fontSize: '1rem', opacity: 0.6, marginTop: '0.5rem' }} />
+                            <Text value="Request more or reduce storage. Track your requests below." style={{ fontSize: '0.9375rem', opacity: 0.6, marginTop: '0.5rem' }} />
                         </View>
-                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                            <View className="flex items-center justify-between mb-4">
+                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem', marginBottom: '1.5rem' }} className="sm:p-6">
+                            <View className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                                 <Text value="Storage" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
-                                <View className="w-24">
+                                <View className="w-full sm:w-24">
                                     <Select
                                         value={storageDisplayUnit}
                                         onChange={(v) => setStorageDisplayUnit(v as "GB" | "MB" | "TB")}
@@ -299,8 +299,8 @@ const Settings = () => {
                                 <Text value="Loading storage..." style={{ fontSize: '0.9375rem', opacity: 0.6 }} />
                             )}
                         </View>
-                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem', marginBottom: '2rem' }}>
-                            <View className="flex items-center gap-2 mb-6">
+                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem', marginBottom: '1.5rem' }} className="sm:p-6 sm:mb-8">
+                            <View className="flex items-center gap-2 mb-4 sm:mb-6">
                                 <FileStack size={18} color={current?.primary} />
                                 <Text value="Actions" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                             </View>
@@ -313,22 +313,22 @@ const Settings = () => {
                                 </button>
                             </View>
                         </View>
-                        <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        <View className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-8">
                             {[
                                 { label: "Total", value: total },
                                 { label: "Pending", value: pending },
                                 { label: "Approved", value: approved },
                                 { label: "Denied", value: denied },
                             ].map((card) => (
-                                <View key={card.label} style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem' }}>
+                                <View key={card.label} style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem' }} className="sm:p-6">
                                     <Text value={card.label} style={{ fontSize: '0.815rem', opacity: 0.6 }} />
                                     <Text value={String(card.value)} style={{ color: current?.dark, fontSize: '1.25rem', fontWeight: 500, marginTop: '0.25rem' }} />
                                 </View>
                             ))}
                         </View>
                         {chartData.length > 0 && (
-                            <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem', marginBottom: '2rem' }}>
-                                <View className="flex items-center gap-2 mb-6">
+                            <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem', marginBottom: '1.5rem' }} className="sm:p-6 sm:mb-8">
+                                <View className="flex items-center gap-2 mb-4 sm:mb-6">
                                     <FileStack size={18} color={current?.primary} />
                                     <Text value="Requests by status" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                                 </View>
@@ -349,8 +349,8 @@ const Settings = () => {
                                 </View>
                             </View>
                         )}
-                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem' }}>
-                            <View className="flex items-center gap-2 mb-6">
+                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem' }} className="sm:p-6">
+                            <View className="flex items-center gap-2 mb-4 sm:mb-6">
                                 <FileStack size={18} color={current?.primary} />
                                 <Text value="Your requests" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                             </View>
@@ -364,14 +364,14 @@ const Settings = () => {
                                 </View>
                             ) : (
                                 <View className="overflow-x-auto rounded-lg">
-                                    <table className="w-full text-left" style={{ borderCollapse: "collapse", fontSize: '0.9375rem' }}>
+                                    <table className="w-full min-w-[480px] text-left" style={{ borderCollapse: "collapse", fontSize: '0.9375rem' }}>
                                         <thead>
                                             <tr style={{ backgroundColor: current?.background }}>
-                                                <th className="py-3 px-4" style={{ color: current?.dark, fontWeight: 500 }}>Type</th>
-                                                <th className="py-3 px-4" style={{ color: current?.dark, fontWeight: 500 }}>Requested</th>
-                                                <th className="py-3 px-4" style={{ color: current?.dark, fontWeight: 500 }}>Status</th>
-                                                <th className="py-3 px-4" style={{ color: current?.dark, fontWeight: 500 }}>Date</th>
-                                                <th className="py-3 px-4" style={{ color: current?.dark, fontWeight: 500 }}>Actions</th>
+                                                <th className="py-2 px-2 sm:py-3 sm:px-4" style={{ color: current?.dark, fontWeight: 500, fontSize: '0.8125rem' }}>Type</th>
+                                                <th className="py-2 px-2 sm:py-3 sm:px-4" style={{ color: current?.dark, fontWeight: 500, fontSize: '0.8125rem' }}>Requested</th>
+                                                <th className="py-2 px-2 sm:py-3 sm:px-4" style={{ color: current?.dark, fontWeight: 500, fontSize: '0.8125rem' }}>Status</th>
+                                                <th className="py-2 px-2 sm:py-3 sm:px-4" style={{ color: current?.dark, fontWeight: 500, fontSize: '0.8125rem' }}>Date</th>
+                                                <th className="py-2 px-2 sm:py-3 sm:px-4" style={{ color: current?.dark, fontWeight: 500, fontSize: '0.8125rem' }}>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -379,16 +379,16 @@ const Settings = () => {
                                                 const st = getStatusStyle(r.status)
                                                 return (
                                                     <tr key={r.id}>
-                                                        <td className="py-3 px-4" style={{ color: current?.dark }}>{r.type === "increment" ? `+${r.requestedGB} GB` : `−${r.requestedGB} GB`}</td>
-                                                        <td className="py-3 px-4" style={{ color: current?.dark }}>{r.requestedGB} GB</td>
-                                                        <td className="py-3 px-4">
+                                                        <td className="py-2 px-2 sm:py-3 sm:px-4" style={{ color: current?.dark, fontSize: '0.8125rem' }}>{r.type === "increment" ? `+${r.requestedGB} GB` : `−${r.requestedGB} GB`}</td>
+                                                        <td className="py-2 px-2 sm:py-3 sm:px-4" style={{ color: current?.dark, fontSize: '0.8125rem' }}>{r.requestedGB} GB</td>
+                                                        <td className="py-2 px-2 sm:py-3 sm:px-4">
                                                             <View className="flex items-center gap-1.5" style={{ color: st.color }}>
                                                                 {st.icon}
                                                                 <span style={{ fontSize: '0.9375rem', textTransform: 'capitalize' }}>{r.status}</span>
                                                             </View>
                                                         </td>
-                                                        <td className="py-3 px-4" style={{ color: current?.dark, fontSize: '0.815rem' }}>{formatDate(r.createdAt)}</td>
-                                                        <td className="py-3 px-4">
+                                                        <td className="py-2 px-2 sm:py-3 sm:px-4" style={{ color: current?.dark, fontSize: '0.8125rem' }}>{formatDate(r.createdAt)}</td>
+                                                        <td className="py-2 px-2 sm:py-3 sm:px-4">
                                                             {r.status === "pending" && (
                                                                 <button
                                                                     onClick={() => setCancelRequestId(r.id)}
@@ -429,19 +429,19 @@ const Settings = () => {
                 const DARK_THEME_IMAGE = "https://images.pexels.com/photos/10088308/pexels-photo-10088308.jpeg"
                 return (
                     <View>
-                        <View className="mb-8">
+                        <View className="mb-4 sm:mb-8">
                             <Text value="Appearance" style={{ color: current?.dark, fontSize: '1.11rem', fontWeight: 500 }} />
-                            <Text value="Theme, accent color, font size, and display preferences" style={{ fontSize: '1rem', opacity: 0.6, marginTop: '0.5rem' }} />
+                            <Text value="Theme, accent color, font size, and display preferences" style={{ fontSize: '0.9375rem', opacity: 0.6, marginTop: '0.5rem' }} />
                         </View>
 
-                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem', marginBottom: '2rem' }}>
-                            <View className="flex items-center gap-2 mb-6">
+                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem', marginBottom: '1.5rem' }} className="sm:p-6 sm:mb-8">
+                            <View className="flex items-center gap-2 mb-4 sm:mb-6">
                                 <Type size={18} color={current?.primary} />
                                 <Text value="Typography" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                             </View>
                             <Text value="Font style and size for the entire app" style={{ fontSize: '0.815rem', opacity: 0.6, marginBottom: '1rem' }} />
 
-                            <View className="mb-4 relative" ref={fontDropdownRef} style={{ width: 'max-content', minWidth: 220 }}>
+                            <View className="mb-4 relative w-full sm:w-max" ref={fontDropdownRef} style={{ minWidth: 220 }}>
                                 <Text value="Font style" style={{ color: current?.dark, fontSize: '0.9375rem', fontWeight: 500, marginBottom: '0.5rem' }} />
                                 <button
                                     onClick={() => setFontDropdownOpen(!fontDropdownOpen)}
@@ -494,7 +494,7 @@ const Settings = () => {
                                         <button
                                             key={id}
                                             onClick={() => setBaseFontSize(id)}
-                                            className="py-8 px-4 rounded-lg transition-all text-center flex flex-col items-center gap-1"
+                                            className="py-5 sm:py-8 px-3 sm:px-4 rounded-lg transition-all text-center flex flex-col items-center gap-1"
                                             style={{
                                                 backgroundColor: baseFontSize === id ? current?.primary + "15" : current?.background,
                                                 color: current?.dark,
@@ -510,48 +510,48 @@ const Settings = () => {
                             </View>
                         </View>
 
-                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem', marginBottom: '2rem' }}>
-                            <View className="flex items-center gap-2 mb-6">
+                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem', marginBottom: '1.5rem' }} className="sm:p-6 sm:mb-8">
+                            <View className="flex items-center gap-2 mb-4 sm:mb-6">
                                 <Sun size={18} color={current?.primary} />
                                 <Text value="Theme" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                             </View>
                             <Text value="Choose light or dark mode for the interface" style={{ fontSize: '0.815rem', opacity: 0.6, marginBottom: '1rem' }} />
-                            <View className="flex gap-6" style={{ width: 'max-content' }}>
+                            <View className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full sm:w-max">
                                 <button
                                     onClick={() => name !== "light" && toggleTheme()}
-                                    className="flex flex-col items-center gap-4 p-2 rounded-xl transition-all overflow-hidden"
+                                    className="flex flex-col items-center gap-3 sm:gap-4 p-3 sm:p-2 rounded transition-all overflow-hidden w-full sm:w-auto border-2"
                                     style={{
                                         backgroundColor: name === "light" ? current?.primary + "12" : current?.background,
+                                        borderColor: name === "light" ? current?.primary : current?.dark + "20",
                                     }}
                                 >
                                     <img
                                         src={LIGHT_THEME_IMAGE}
                                         alt="Light theme"
-                                        className="rounded-lg object-cover"
-                                        style={{ width: 140, height: 100 }}
+                                        className="rounded-sm object-cover w-full sm:w-[140px] h-20 sm:h-[100px]"
                                     />
                                     <Text value="Light" style={{ color: current?.dark, fontSize: '1.125rem' }} />
                                 </button>
                                 <button
                                     onClick={() => name !== "dark" && toggleTheme()}
-                                    className="flex flex-col items-center gap-4 p-2 rounded-xl transition-all overflow-hidden"
+                                    className="flex flex-col items-center gap-3 sm:gap-4 p-3 sm:p-2 rounded transition-all overflow-hidden w-full sm:w-auto border-2"
                                     style={{
                                         backgroundColor: name === "dark" ? current?.primary + "12" : current?.background,
+                                        borderColor: name === "dark" ? current?.primary : current?.dark + "20",
                                     }}
                                 >
                                     <img
                                         src={DARK_THEME_IMAGE}
                                         alt="Dark theme"
-                                        className="rounded-lg object-cover"
-                                        style={{ width: 140, height: 100 }}
+                                        className="rounded-sm object-cover w-full sm:w-[140px] h-20 sm:h-[100px]"
                                     />
                                     <Text value="Dark" style={{ color: current?.dark, fontSize: '1.125rem' }} />
                                 </button>
                             </View>
                         </View>
 
-                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem', marginBottom: '2rem' }}>
-                            <View className="flex items-center gap-2 mb-6">
+                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem', marginBottom: '1.5rem' }} className="sm:p-6 sm:mb-8">
+                            <View className="flex items-center gap-2 mb-4 sm:mb-6">
                                 <Palette size={18} color={current?.primary} />
                                 <Text value="Accent Color" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                             </View>
@@ -574,8 +574,8 @@ const Settings = () => {
                             </View>
                         </View>
 
-                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem' }}>
-                            <View className="flex items-center gap-2 mb-6">
+                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem' }} className="sm:p-6">
+                            <View className="flex items-center gap-2 mb-4 sm:mb-6">
                                 <Sparkles size={18} color={current?.primary} />
                                 <Text value="Display" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                             </View>
@@ -597,12 +597,12 @@ const Settings = () => {
             case "privacy":
                 return (
                     <View>
-                        <View className="mb-8">
+                        <View className="mb-4 sm:mb-8">
                             <Text value="Privacy & Data" style={{ color: current?.dark, fontSize: '1.11rem', fontWeight: 500 }} />
-                            <Text value="Policy and account deletion" style={{ fontSize: '1rem', opacity: 0.6, marginTop: '0.5rem' }} />
+                            <Text value="Policy and account deletion" style={{ fontSize: '0.9375rem', opacity: 0.6, marginTop: '0.5rem' }} />
                         </View>
-                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1.5rem' }}>
-                            <View className="flex items-center gap-2 mb-6">
+                        <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem' }} className="sm:p-6">
+                            <View className="flex items-center gap-2 mb-4 sm:mb-6">
                                 <Lock size={18} color={current?.primary} />
                                 <Text value="Privacy & Data" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                             </View>
@@ -663,44 +663,45 @@ const Settings = () => {
         <>
             <View className="flex flex-col h-screen" style={{ backgroundColor: current?.background }}>
                 <Navbar />
-                <View className="flex-1 flex flex-row min-h-0">
-                    {/* Sidebar – admin-style typography & spacing, full-length labels */}
+                <View className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
+                    {/* Mobile: horizontal scroll tabs. Desktop: vertical sidebar */}
                     <View
-                        className="min-w-[200px] w-[280px] flex-shrink-0 border-r flex flex-col overflow-auto"
+                        className="md:min-w-[200px] md:w-[280px] flex-shrink-0 md:border-r flex flex-col overflow-hidden"
                         style={{
                             backgroundColor: current?.foreground,
                             borderColor: current?.dark + "10",
-                            padding: '1.5rem'
                         }}
                     >
-                        <View className="flex items-center gap-3 mb-8">
-                            <IconButton icon={<ArrowLeft size={18} color={current?.dark} />} action={() => navigate(user?.role === "admin" ? "/admin" : "/dashboard")} title={user?.role === "admin" ? "Back to admin" : "Back to dashboard"} />
-                            <Text value="Settings" style={{ color: current?.dark, fontSize: '1.11rem', fontWeight: 500 }} />
-                        </View>
-                        <View className="flex flex-col gap-1">
-                            {categories.map((category) => (
-                                <button
-                                    key={category.id}
-                                    onClick={() => setActiveCategory(category.id)}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left w-full min-w-0"
-                                    style={{
-                                        backgroundColor: activeCategory === category.id ? current?.primary + "15" : "transparent",
-                                        color: activeCategory === category.id ? current?.primary : current?.dark,
-                                    }}
-                                >
-                                    <span className="flex-shrink-0" style={{ color: activeCategory === category.id ? current?.primary : current?.dark + "80" }}>
-                                        {category.icon}
-                                    </span>
-                                    <span className="flex-1 min-w-0 break-words text-left" style={{ fontSize: '0.9375rem', fontWeight: activeCategory === category.id ? 500 : 400, lineHeight: 1.4 }}>
-                                        {category.label}
-                                    </span>
-                                </button>
-                            ))}
+                        <View className="flex flex-row md:flex-col items-center md:items-stretch gap-2 md:gap-1 p-3 md:p-6 md:overflow-auto">
+                            <View className="flex items-center gap-2 md:gap-3 mb-0 md:mb-8 flex-shrink-0 md:w-full">
+                                <IconButton icon={<ArrowLeft size={18} color={current?.dark} />} action={() => navigate(user?.role === "admin" ? "/admin" : "/dashboard")} title={user?.role === "admin" ? "Back to admin" : "Back to dashboard"} />
+                                <Text value="Settings" className="md:block hidden" style={{ color: current?.dark, fontSize: '1.11rem', fontWeight: 500 }} />
+                            </View>
+                            <View className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-1 md:pb-0 scrollbar-hide w-full md:w-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                {categories.map((category) => (
+                                    <button
+                                        key={category.id}
+                                        onClick={() => setActiveCategory(category.id)}
+                                        className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 rounded-lg transition-all text-left flex-shrink-0 md:flex-shrink md:w-full min-w-0"
+                                        style={{
+                                            backgroundColor: activeCategory === category.id ? current?.primary + "15" : "transparent",
+                                            color: activeCategory === category.id ? current?.primary : current?.dark,
+                                        }}
+                                    >
+                                        <span className="flex-shrink-0" style={{ color: activeCategory === category.id ? current?.primary : current?.dark + "80" }}>
+                                            {category.icon}
+                                        </span>
+                                        <span className="flex-1 min-w-0 break-words text-left whitespace-nowrap hidden sm:inline" style={{ fontSize: '0.9375rem', fontWeight: activeCategory === category.id ? 500 : 400, lineHeight: 1.4 }}>
+                                            {category.label}
+                                        </span>
+                                    </button>
+                                ))}
+                            </View>
                         </View>
                     </View>
 
-                    {/* Main Content – admin-style spacing & typography */}
-                    <View className="flex-1 overflow-auto px-8 pt-8 pb-8" style={{ backgroundColor: current?.background }}>
+                    {/* Main Content – responsive padding */}
+                    <View className="flex-1 overflow-auto px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 md:pt-8 pb-6 md:pb-8" style={{ backgroundColor: current?.background }}>
                         {renderContent()}
                     </View>
                 </View>

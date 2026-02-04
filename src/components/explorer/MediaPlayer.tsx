@@ -12,6 +12,8 @@ interface Props {
     file: FileItem
     audioUrl?: string
     videoUrl?: string
+    onClose?: () => void
+    isMobile?: boolean
 }
 
 const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HTMLAudioElement | null>, isPlaying: boolean }) => {
@@ -194,9 +196,9 @@ const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HT
     )
 }
 
-const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
+const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => {
     const { current, name } = useTheme()
-    const { setBackgroundPlayer, getFileById, getCurrentFolderFiles, openFileModal, updateFileModal, findModalByFileId } = useFileStore()
+    const { setBackgroundPlayer, getFileById, getCurrentFolderFiles, openFileModal, updateFileModal, findModalByFileId, refreshFileURL } = useFileStore()
     const audioRef = useRef<HTMLAudioElement>(null)
     const videoRef = useRef<HTMLVideoElement>(null)
     const videoContainerRef = useRef<HTMLDivElement>(null)
@@ -209,6 +211,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
     const [showVolumeSlider, setShowVolumeSlider] = useState(false)
     const [isBuffering, setIsBuffering] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+    const [audioErrorRetryCount, setAudioErrorRetryCount] = useState(0)
     const [isFullscreen, setIsFullscreen] = useState(false)
     const [networkSpeed, setNetworkSpeed] = useState<'slow' | 'medium' | 'fast'>('medium')
     const [preloadStrategy, setPreloadStrategy] = useState<'none' | 'metadata' | 'auto'>('metadata')
@@ -219,6 +222,11 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
     const prefetchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const playStartTimeRef = useRef<number>(0)
     const nextTrackPreloadRef = useRef<HTMLAudioElement | null>(null)
+
+    // Reset retry count when switching tracks
+    useEffect(() => {
+        setAudioErrorRetryCount(0)
+    }, [file.id])
 
     // Detect network speed
     useEffect(() => {
@@ -1002,16 +1010,23 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                 <View className="mt-4">
                     <button
                         onClick={() => {
-                            setBackgroundPlayer(file.id)
+                            const audio = audioRef.current
+                            if (audio) {
+                                audio.pause()
+                            }
+                            setBackgroundPlayer(file.id, true)
+                            if (isMobile && onClose) {
+                                onClose()
+                            }
                         }}
-                        className="px-5 py-2.5 rounded-md hover:opacity-90 transition-all text-sm flex items-center gap-2 font-medium"
+                        className="px-5 py-2.5 rounded-lg hover:opacity-90 transition-all text-sm flex items-center justify-center gap-2 font-medium w-full"
                         style={{
-                            backgroundColor: current?.dark + "08",
-                            color: current?.dark,
+                            backgroundColor: current?.primary + "15",
+                            color: current?.primary,
                             letterSpacing: "0.02em"
                         }}
                     >
-                        <Minimize2 size={16} color={current?.dark} />
+                        <Minimize2 size={18} color={current?.primary} />
                         <span>Play in background</span>
                     </button>
                 </View>
@@ -1039,9 +1054,23 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
                         setIsLoading(true)
                         setIsBuffering(true)
                     }}
-                    // Spotify-style: Optimize for low latency
+                    onError={async () => {
+                        if (audioErrorRetryCount < 2 && file.id) {
+                            try {
+                                await refreshFileURL(file.id)
+                                setAudioErrorRetryCount(prev => prev + 1)
+                                setIsLoading(false)
+                                setIsBuffering(false)
+                            } catch (err) {
+                                console.error("Failed to refresh audio URL:", err)
+                                setIsLoading(false)
+                            }
+                        } else {
+                            setIsLoading(false)
+                            setIsBuffering(false)
+                        }
+                    }}
                     style={{
-                        // Ensure audio element is ready
                         display: 'block'
                     }}
                 />

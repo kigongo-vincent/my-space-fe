@@ -63,10 +63,10 @@ const RenameDiskModal = ({ diskId, currentName, onClose }: Props) => {
     const isFormValid = !error && newName.trim() && newName.trim() !== currentName
 
     return (
-        <View className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 sm:p-6 overflow-auto">
+        <View className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 sm:p-6 md:p-8 min-h-screen overflow-y-auto overflow-x-hidden">
             <View
                 mode="foreground"
-                className="p-4 sm:p-6 rounded-lg w-full max-w-[500px] min-w-0 flex flex-col gap-5"
+                className="p-4 sm:p-6 rounded-lg w-full max-w-[500px] min-w-[280px] flex flex-col gap-5 flex-shrink-0 max-h-[90vh] overflow-y-auto"
                 style={{
                     boxShadow: name === "dark" 
                         ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`

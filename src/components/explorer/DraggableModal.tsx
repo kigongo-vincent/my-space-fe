@@ -145,6 +145,8 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
                     <MediaPlayer
                         file={file}
                         audioUrl={resolvedAudioUrl || file.thumbnail || file.url}
+                        onClose={onClose}
+                        isMobile={isMobile}
                     />
                 )
             case "video":

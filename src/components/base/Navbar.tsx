@@ -182,7 +182,7 @@ const Navbar = ({ onMenuClick, showMenuButton }: NavbarProps) => {
                     initial={{ opacity: 0, scale: 0.95, y: -10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ duration: 0.15 }}
-                    className="fixed z-[9999] min-w-[200px]"
+                    className="fixed z-[9999] min-w-[200px] max-w-[90vw]"
                         style={{
                             top: menuPosition.top,
                             right: menuPosition.right,
@@ -222,7 +222,7 @@ const Navbar = ({ onMenuClick, showMenuButton }: NavbarProps) => {
                     initial={{ opacity: 0, scale: 0.95, y: -10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ duration: 0.15 }}
-                    className="fixed z-[9999] min-w-[280px]"
+                    className="fixed z-[9999] min-w-[200px] max-w-[90vw]"
                         style={{
                             top: notificationsPosition.top,
                             right: notificationsPosition.right,

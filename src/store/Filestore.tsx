@@ -55,6 +55,7 @@ export interface FileStoreI {
     clipboard: { files: string[]; operation: "copy" | "cut" | null }
     pinnedFiles: string[]
     backgroundPlayerFileId: string | null
+    backgroundPlayerAutoPlay: boolean
     isLoading: boolean
     visitedPaths: string[] // Array of full path strings (e.g., "DiskName\Folder1\Folder2")
     addVisitedPath: (path: string) => void
@@ -107,7 +108,7 @@ export interface FileStoreI {
     togglePin: (fileId: string) => void
     isPinned: (fileId: string) => boolean
     getAllFilesByType: (type: fileType) => FileItem[]
-    setBackgroundPlayer: (fileId: string | null) => void
+    setBackgroundPlayer: (fileId: string | null, autoPlay?: boolean) => void
     refreshFileURL: (fileId: string) => Promise<void>
     refreshCurrentDisk: () => Promise<void>
 }
@@ -295,14 +296,17 @@ const loadPersistedState = () => {
     try {
         const savedDiskId = localStorage.getItem('currentDiskId')
         const savedPath = localStorage.getItem('currentPath')
+        const savedPlayerFileId = localStorage.getItem('backgroundPlayerFileId')
         return {
             currentDiskId: savedDiskId || null,
-            currentPath: savedPath ? JSON.parse(savedPath) : []
+            currentPath: savedPath ? JSON.parse(savedPath) : [],
+            backgroundPlayerFileId: savedPlayerFileId || null,
         }
     } catch (error) {
         return {
             currentDiskId: null,
-            currentPath: []
+            currentPath: [],
+            backgroundPlayerFileId: null,
         }
     }
 }
@@ -321,7 +325,8 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
     openModals: [],
     clipboard: { files: [], operation: null },
     pinnedFiles: [],
-    backgroundPlayerFileId: null,
+    backgroundPlayerFileId: persistedState.backgroundPlayerFileId,
+    backgroundPlayerAutoPlay: !!persistedState.backgroundPlayerFileId,
     isLoading: false,
     visitedPaths: (() => {
         try {
@@ -381,7 +386,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
     fetchDisks: async () => {
         try {
             set({ isLoading: true })
-            const backendDisks = await api.get<any[]>("/disks/")
+            const backendDisks = await api.get<any[]>("/disks/", true)
 
             // Check if we need to restore a path - if so, fetch all files for that disk
             const { currentDiskId, currentPath } = get()
@@ -397,7 +402,8 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                         const files = await api.get<any[]>(
                             shouldFetchAll
                                 ? `/files/disk/${d.id}/all`
-                                : `/files/disk/${d.id}`
+                                : `/files/disk/${d.id}`,
+                            true
                         )
                         const mappedFiles: FileItem[] = files.map((f: any) => ({
                             id: f.id.toString(),
@@ -767,9 +773,8 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             set({ currentPath: newPath })
             localStorage.setItem('currentPath', JSON.stringify(newPath))
 
-            if (newPath.length === 0) {
-                get().refreshCurrentDisk()
-            }
+            // Always refresh to ensure newly created folders and other changes are visible
+            get().refreshCurrentDisk()
         }
     },
 
@@ -2179,7 +2184,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
     refreshDiskSilently: async (diskId: string) => {
         try {
             get().clearFolderCache(diskId)
-            const files = await api.get<any[]>(`/files/disk/${diskId}/all`)
+            const files = await api.get<any[]>(`/files/disk/${diskId}/all`, true)
             const mappedFiles: FileItem[] = files.map((f: any) => ({
                 id: f.id.toString(),
                 name: f.name,
@@ -2277,8 +2282,17 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         return results
     },
 
-    setBackgroundPlayer: (fileId: string | null) => {
-        set({ backgroundPlayerFileId: fileId })
+    setBackgroundPlayer: (fileId: string | null, autoPlay?: boolean) => {
+        if (fileId) {
+            localStorage.setItem('backgroundPlayerFileId', fileId)
+        } else {
+            localStorage.removeItem('backgroundPlayerFileId')
+            localStorage.removeItem('backgroundPlayerState')
+        }
+        set({
+            backgroundPlayerFileId: fileId,
+            backgroundPlayerAutoPlay: fileId != null && autoPlay === true,
+        })
     },
 
     refreshFileURL: async (fileId: string) => {
@@ -2319,7 +2333,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             get().clearFolderCache(currentDiskId)
 
             await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
-            const files = await api.get<any[]>(`/files/disk/${currentDiskId}/all`)
+            const files = await api.get<any[]>(`/files/disk/${currentDiskId}/all`, true)
             const mappedFiles: FileItem[] = files.map((f: any) => ({
                 id: f.id.toString(),
                 name: f.name,
