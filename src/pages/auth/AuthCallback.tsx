@@ -1,34 +1,62 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router"
+import { useUser } from "../../store/Userstore"
+import api from "../../utils/api"
 
 /**
- * Handles OAuth callback: backend redirects here with #token=... or ?error=...
- * Stores token, fetches user, redirects admins to /admin and others to /dashboard.
+ * Handles OAuth callback. Backend redirects with:
+ * - ?code=xxx (prod: avoids hash loss in cross-origin redirects)
+ * - #token=xxx (legacy/dev)
+ * - ?error=xxx (on failure)
  */
 const AuthCallback = () => {
     const navigate = useNavigate()
+    const { fetchCurrentUser } = useUser()
     const [searchParams] = useSearchParams()
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         const run = async () => {
-            const hash = window.location.hash.slice(1)
-            const params = new URLSearchParams(hash)
-            const token = params.get("token")
-            const role = params.get("role")
             const urlError = searchParams.get("error")
-
             if (urlError) {
                 setError(decodeURIComponent(urlError))
                 setLoading(false)
                 return
             }
 
+            let token: string | null = null
+            let role: string | null = null
+
+            const code = searchParams.get("code")
+            if (code) {
+                try {
+                    const res = await api.post<{ token: string; role?: string }>("/auth/exchange", { code })
+                    token = res.token
+                    role = res.role || null
+                } catch {
+                    setError("Failed to complete sign-in. Please try again.")
+                    setLoading(false)
+                    return
+                }
+            } else {
+                const hash = window.location.hash.slice(1)
+                const params = new URLSearchParams(hash)
+                token = params.get("token")
+                role = params.get("role")
+            }
+
             if (token) {
                 localStorage.setItem("token", token)
-                const target = role === "admin" ? "/admin" : "/dashboard"
-                window.location.replace(target)
+                await fetchCurrentUser()
+                const { isAuthenticated } = useUser.getState()
+                if (isAuthenticated) {
+                    const target = role === "admin" ? "/admin" : "/dashboard"
+                    navigate(target, { replace: true })
+                } else {
+                    setError("Failed to load user. Please try again.")
+                    setLoading(false)
+                }
                 return
             }
 
@@ -36,7 +64,7 @@ const AuthCallback = () => {
             setLoading(false)
         }
         run()
-    }, [searchParams])
+    }, [searchParams, fetchCurrentUser, navigate])
 
     const goToLogin = () => {
         navigate("/login", { replace: true })

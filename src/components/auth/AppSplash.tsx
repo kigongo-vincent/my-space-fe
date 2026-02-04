@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react"
+import { useLocation } from "react-router"
 import { useUser } from "../../store/Userstore"
 import LoadingScreen from "../base/LoadingScreen"
 import ServerErrorScreen from "../base/ServerErrorScreen"
 import { checkHealth, HealthStatus } from "../../utils/healthCheck"
 
 export const AppSplash = ({ children }: { children: React.ReactNode }) => {
+    const { pathname } = useLocation()
     const { fetchCurrentUser, isLoading } = useUser()
     const [initializing, setInitializing] = useState(true)
     const [progress, setProgress] = useState(0)
@@ -109,6 +111,11 @@ export const AppSplash = ({ children }: { children: React.ReactNode }) => {
             if (progressInterval) clearInterval(progressInterval)
         }
     }, [fetchCurrentUser])
+
+    // OAuth callback must render immediately so it can process token from URL hash
+    if (pathname === '/auth/callback') {
+        return <>{children}</>
+    }
 
     // Show error screen if health check failed (and not currently retrying or initializing)
     if (healthStatus.status === 'unhealthy' && !isRetrying && !initializing) {
