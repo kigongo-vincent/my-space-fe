@@ -9,7 +9,7 @@ import RangeInput from "../base/RangeInput"
 import { FileItem } from "../../store/Filestore"
 
 const BackgroundPlayer = () => {
-    const { backgroundPlayerFileId, backgroundPlayerAutoPlay, getFileById, setBackgroundPlayer, getCurrentFolderFiles, refreshFileURL, openFileModal, fetchDisks } = useFileStore()
+    const { backgroundPlayerFileId, getFileById, setBackgroundPlayer, getCurrentFolderFiles, refreshFileURL, openFileModal, fetchDisks } = useFileStore()
     const { current, name } = useTheme()
     const audioRef = useRef<HTMLAudioElement>(null)
     const [isPlaying, setIsPlaying] = useState(false)

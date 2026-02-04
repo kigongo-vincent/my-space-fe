@@ -105,6 +105,9 @@ export interface FileStoreI {
     copyFiles: (fileIds: string[]) => void
     cutFiles: (fileIds: string[]) => void
     pasteFiles: (targetFolderId: string | null, targetDiskId: string) => Promise<void>
+    applyMoveOptimistic: (fileIds: number[], targetFolderId: string | null, targetDiskId: string) => void
+    applyCopyOptimistic: (fileIds: number[], targetFolderId: string | null, targetDiskId: string) => void
+    refreshDiskSilently: (diskId: string) => Promise<void>
     togglePin: (fileId: string) => void
     isPinned: (fileId: string) => boolean
     getAllFilesByType: (type: fileType) => FileItem[]
