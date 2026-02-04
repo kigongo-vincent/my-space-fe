@@ -264,7 +264,7 @@ const UserManagement = () => {
             <AdminPageHeader title="User Management" subtitle="Manage users and their storage allocations" />
 
             {/* Summary Cards */}
-            <View className="grid grid-cols-4 gap-6 mb-6">
+            <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
                 <View
                     className="rounded-xl p-4"
                     style={{ backgroundColor: current?.foreground }}
@@ -355,7 +355,7 @@ const UserManagement = () => {
             </View>
 
             {/* Charts */}
-            <View className="grid grid-cols-2 gap-6 mb-6">
+            <View className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
                 <View
                     className="rounded-xl p-4"
                     style={{ backgroundColor: current?.foreground }}
@@ -412,10 +412,10 @@ const UserManagement = () => {
             {/* Table */}
             <View
                 mode="foreground"
-                className="overflow-hidden rounded-xl"
+                className="overflow-x-auto overflow-hidden rounded-xl"
             >
                 <View
-                    className="grid grid-cols-12 gap-4 p-3"
+                    className="grid grid-cols-12 gap-4 p-3 min-w-[600px]"
                     style={{
                         backgroundColor: current?.foreground
                     }}
@@ -443,7 +443,7 @@ const UserManagement = () => {
                         {paginatedUsers.map((user, index) => (
                             <View
                                 key={user.id}
-                                className="grid grid-cols-12 gap-4 p-3 items-center"
+                                className="grid grid-cols-12 gap-4 p-3 items-center min-w-[600px]"
                                 style={{
                                     backgroundColor: current?.foreground,
                                     borderBottom: index < paginatedUsers.length - 1 ? `1px solid ${current?.dark}12` : 'none'

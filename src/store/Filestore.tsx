@@ -8,6 +8,7 @@ import { useAlertStore } from "./AlertStore"
 import { getFileTypeFromExtension, isAllowedUploadExtension } from "../utils/fileTypes"
 import { getDeviceId } from "../utils/deviceFingerprint"
 import { storeLocalFile } from "../utils/localFileStorage"
+import { compressImageLossless, isCompressibleImage } from "../utils/imageCompression"
 
 export interface FileItem {
     id: string
@@ -43,6 +44,7 @@ export interface Disk {
 
 export interface FileStoreI {
     disks: Disk[]
+    treeVersion: number
     currentDiskId: string | null
     currentPath: string[]
     selectedFiles: string[]
@@ -63,6 +65,7 @@ export interface FileStoreI {
     getCachedFiles: (diskId: string, parentId: string | null) => FileItem[] | null
     setCachedFiles: (diskId: string, parentId: string | null, files: FileItem[]) => void
     clearFolderCache: (diskId?: string) => void
+    invalidateTree: () => void
 
     // Actions
     fetchDisks: () => Promise<void>
@@ -100,7 +103,7 @@ export interface FileStoreI {
     searchFilesBackend: (query: string) => Promise<void>
     copyFiles: (fileIds: string[]) => void
     cutFiles: (fileIds: string[]) => void
-    pasteFiles: (targetFolderId: string | null, targetDiskId: string) => void
+    pasteFiles: (targetFolderId: string | null, targetDiskId: string) => Promise<void>
     togglePin: (fileId: string) => void
     isPinned: (fileId: string) => boolean
     getAllFilesByType: (type: fileType) => FileItem[]
@@ -308,6 +311,7 @@ const persistedState = loadPersistedState()
 
 export const useFileStore = create<FileStoreI>((set, get) => ({
     disks: [],
+    treeVersion: 0,
     currentDiskId: persistedState.currentDiskId,
     currentPath: persistedState.currentPath,
     selectedFiles: [],
@@ -349,7 +353,6 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
     clearFolderCache: (diskId?: string) => {
         const { folderCache } = get()
         if (diskId) {
-            // Clear cache for specific disk
             const updatedCache = new Map(folderCache)
             for (const [key] of updatedCache.entries()) {
                 if (key.startsWith(`${diskId}:`)) {
@@ -358,9 +361,13 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             }
             set({ folderCache: updatedCache })
         } else {
-            // Clear all cache
             set({ folderCache: new Map() })
         }
+    },
+
+    invalidateTree: () => {
+        get().clearFolderCache()
+        set(state => ({ treeVersion: state.treeVersion + 1 }))
     },
 
     addVisitedPath: (path: string) => {
@@ -449,6 +456,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             )
 
             set({ disks: disksWithFiles, pinnedFiles: pinnedIds, isLoading: false })
+            get().invalidateTree()
 
             // Restore persisted path if we have a currentDiskId
             // Get fresh state after setting disks
@@ -586,6 +594,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                     return d
                 })
                 set({ disks: updatedDisks })
+                get().invalidateTree()
                 return
             }
 
@@ -621,6 +630,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 })
 
                 set({ disks: updatedDisks })
+                get().invalidateTree()
             } catch (error) {
                 console.error("Failed to fetch files for disk:", error)
             }
@@ -688,6 +698,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                     return d
                 })
                 set({ disks: updatedDisks })
+                get().invalidateTree()
                 return
             }
 
@@ -742,6 +753,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 })
 
                 set({ disks: updatedDisks })
+                get().invalidateTree()
             } catch (error) {
                 console.error("Failed to fetch folder files:", error)
             }
@@ -784,8 +796,8 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
 
             const updatedDisks = [...get().disks, newDisk]
             set({ disks: updatedDisks })
+            get().invalidateTree()
 
-            // Sync user storage
             syncUserStorage(updatedDisks)
         } catch (error: any) {
             alert(error.message || "Failed to create disk")
@@ -801,12 +813,11 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             const updatedDisks = disks.filter(d => d.id !== diskId)
             set({
                 disks: updatedDisks,
-                // Clear current disk if it was deleted
                 currentDiskId: currentDiskId === diskId ? null : currentDiskId,
                 currentPath: currentDiskId === diskId ? [] : get().currentPath
             })
+            get().invalidateTree()
 
-            // Sync user storage
             syncUserStorage(updatedDisks)
         } catch (error: any) {
             alert(error.message || "Failed to delete disk")
@@ -854,8 +865,8 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             })
 
             set({ disks: updatedDisks })
+            get().invalidateTree()
 
-            // Sync user storage
             syncUserStorage(updatedDisks)
         } catch (error: any) {
             alert(error.message || "Failed to format disk")
@@ -874,6 +885,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                     : d
             )
             set({ disks: updatedDisks })
+            get().invalidateTree()
         } catch (error: any) {
             alert(error.message || "Failed to rename disk")
             throw error
@@ -1025,12 +1037,11 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
 
             set({
                 disks: mappedDisks,
-                // Clear current disk if it was the source disk
                 currentDiskId: get().currentDiskId === sourceDiskId ? targetDiskId : get().currentDiskId,
                 currentPath: get().currentDiskId === sourceDiskId ? [] : get().currentPath
             })
+            get().invalidateTree()
 
-            // Sync user storage
             syncUserStorage(mappedDisks)
         } catch (error: any) {
             alert(error.message || "Failed to merge disks")
@@ -1071,6 +1082,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             return d
         })
         set({ disks: [...updatedDisksOptimistic] })
+        get().invalidateTree()
 
         // Create background job to track the operation
         const jobId = Date.now()
@@ -1130,7 +1142,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
 
             const disksWithUsage = updateDisksUsage(updatedDisks)
             set({ disks: disksWithUsage })
-            get().clearFolderCache(diskId)
+            get().invalidateTree()
 
             const { currentPath: currentPathState } = get()
             if (currentPathState.length > 0) {
@@ -1212,7 +1224,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 parentId: parentIdNum,
             })
 
-            get().clearFolderCache(diskId)
+            get().invalidateTree()
             await get().refreshCurrentDisk()
         } catch (error: any) {
             alert(error.message || "Failed to create note")
@@ -1285,7 +1297,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 parentId: parentIdNum,
             })
 
-            get().clearFolderCache(diskId)
+            get().invalidateTree()
             await get().refreshCurrentDisk()
         } catch (error: any) {
             alert(error.message || "Failed to create URL")
@@ -1318,14 +1330,27 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             return
         }
 
+        // Lossless compression for images (reduces size without quality loss)
+        const fileExtension = file.name.split('.').pop() || ''
+        const fileToUpload = isCompressibleImage(fileExtension)
+            ? await compressImageLossless(file)
+            : file
+
         // Generate temporary ID for optimistic update
         const tempId = `temp-upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
-        // Get file extension for type detection
-        const fileExtension = file.name.split('.').pop() || ''
         const fileType = getFileTypeFromExtension(fileExtension)
 
-        // Create optimistic file
+        // Size for display (use actual upload size after compression)
+        const uploadSizeMB = fileToUpload.size / (1024 * 1024)
+        const uploadSizeUnit: "KB" | "MB" | "GB" = uploadSizeMB < 1 ? "KB" : uploadSizeMB < 1024 ? "MB" : "GB"
+        const uploadSize = uploadSizeMB < 1 ? fileToUpload.size / 1024 : uploadSizeMB < 1024 ? uploadSizeMB : uploadSizeMB / 1024
+
+        // Preview during upload: use object URL for images so thumbnail shows immediately
+        const previewThumbnail =
+            fileType === "picture" ? URL.createObjectURL(fileToUpload) : undefined
+
+        // Create optimistic file with preview
         const optimisticFile: FileItem = {
             id: tempId,
             name: file.name,
@@ -1335,8 +1360,9 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             diskId: diskId,
             createdAt: new Date(),
             modifiedAt: new Date(),
-            size: size,
-            sizeUnit: sizeUnit,
+            size: uploadSize,
+            sizeUnit: uploadSizeUnit,
+            thumbnail: previewThumbnail,
         }
 
         // OPTIMISTIC UPDATE: Add file to UI immediately
@@ -1354,8 +1380,8 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         })
         set({ disks: [...updatedDisksOptimistic] })
 
-        // Add to upload store
-        const uploadId = useUploadStore.getState().addUpload(file, diskId, parentId)
+        // Add to upload store (use fileToUpload for accurate progress)
+        const uploadId = useUploadStore.getState().addUpload(fileToUpload, diskId, parentId)
 
         // Create background job to track the operation
         const jobId = Date.now()
@@ -1375,9 +1401,9 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             // Get device ID for tracking
             const deviceId = getDeviceId()
 
-            // Upload to backend with progress tracking
+            // Upload to backend with progress tracking (use compressed file for images)
             const result = await api.uploadWithPresignedURL(
-                file,
+                fileToUpload,
                 diskId,
                 parentId,
                 (progress, uploadedBytes) => {
@@ -1400,7 +1426,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 result.fileId.toString(),
                 file.name,
                 fileType,
-                file
+                fileToUpload
             ).catch(() => {
                 // Ignore errors - this is a performance optimization
             })
@@ -1432,6 +1458,13 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 deviceId: newFile.deviceId,
             }
 
+            // Revoke preview object URL to avoid memory leaks
+            const disk = get().disks.find(d => d.id === diskId)
+            const optimistic = disk ? flattenFiles(disk.files).find(f => f.id === tempId) : undefined
+            if (optimistic?.thumbnail?.startsWith("blob:")) {
+                URL.revokeObjectURL(optimistic.thumbnail)
+            }
+
             // Update disk by merging the new file into existing files (replace optimistic, add real)
             const updatedDisks = get().disks.map(d => {
                 if (d.id === diskId) {
@@ -1456,7 +1489,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             // Update disk usage from files, then persist
             const disksWithUsage = updateDisksUsage(updatedDisks)
             set({ disks: disksWithUsage })
-            get().clearFolderCache(diskId)
+            get().invalidateTree()
 
             // Also trigger a re-render by updating the current path (if we're in a folder)
             const { currentPath: currentPathState } = get()
@@ -1484,6 +1517,13 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 set({ filterByType: null })
             }
         } catch (error: any) {
+            // Revoke preview object URL on error
+            const errDisk = get().disks.find(d => d.id === diskId)
+            const errOptimistic = errDisk ? flattenFiles(errDisk.files).find(f => f.id === tempId) : undefined
+            if (errOptimistic?.thumbnail?.startsWith("blob:")) {
+                URL.revokeObjectURL(errOptimistic.thumbnail)
+            }
+
             // REVERT: Remove optimistic file on error
             const revertedDisks = get().disks.map(d => {
                 if (d.id === diskId) {
@@ -1526,7 +1566,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         try {
             await api.delete(`/files/${fileId}`)
 
-            get().clearFolderCache(file.diskId)
+            get().invalidateTree()
 
             const updatedDisks = get().disks.map(disk => {
                 if (disk.id === file.diskId) {
@@ -1563,7 +1603,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         try {
             await api.put(`/files/${fileId}`, { name: newName })
 
-            get().clearFolderCache(file.diskId)
+            get().invalidateTree()
 
             const updatedDisks = get().disks.map(disk => {
                 if (disk.id === file.diskId) {
@@ -1769,6 +1809,11 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         for (const disk of disks) {
             const found = findFile(disk.files)
             if (found) return found
+            // When filtering by type, files come from filteredFiles (flat list from API)
+            if (disk.filteredFiles) {
+                const filtered = disk.filteredFiles.find(f => f.id === fileId)
+                if (filtered) return filtered
+            }
         }
         return null
     },
@@ -1978,97 +2023,192 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         set({ clipboard: { files: fileIds, operation: "cut" } })
     },
 
-    pasteFiles: (targetFolderId: string | null, targetDiskId: string) => {
+    pasteFiles: async (targetFolderId: string | null, targetDiskId: string) => {
         const { clipboard, disks } = get()
         if (!clipboard.operation || clipboard.files.length === 0) return
 
         const targetDisk = disks.find(d => d.id === targetDiskId)
         if (!targetDisk) return
 
-        // Helper function for future use (commented out to avoid unused variable error)
-        // const updateFileInDisk = (disk: Disk, fileId: string, updates: Partial<FileItem>): Disk => {
-        //     const updateFile = (files: FileItem[]): FileItem[] => {
-        //         return files.map(file => {
-        //             if (file.id === fileId) {
-        //                 return { ...file, ...updates, modifiedAt: new Date() }
-        //             }
-        //             if (file.children) {
-        //                 return { ...file, children: updateFile(file.children) }
-        //             }
-        //             return file
-        //         })
-        //     }
-        //     return { ...disk, files: updateFile(disk.files) }
-        // }
+        const fileIds = clipboard.files
+            .map(id => parseInt(id, 10))
+            .filter(n => !isNaN(n) && n > 0)
+        if (fileIds.length === 0) return
 
-        const removeFileFromDisk = (disk: Disk, fileId: string): Disk => {
-            const isFileInSubtree = (file: FileItem, targetId: string): boolean => {
-                if (file.id === targetId) return true
-                if (file.children) {
-                    return file.children.some(child => isFileInSubtree(child, targetId))
+        const targetParentId = targetFolderId ? parseInt(targetFolderId, 10) : null
+        const targetDiskIdNum = parseInt(targetDiskId, 10)
+        if (isNaN(targetDiskIdNum)) return
+
+        const payload = {
+            fileIds,
+            targetDiskId: targetDiskIdNum,
+            targetParentId: targetParentId && !isNaN(targetParentId) ? targetParentId : null,
+        }
+
+        try {
+            if (clipboard.operation === "cut") {
+                const sourceDiskIds = [...new Set(
+                    get().disks.flatMap(d => flattenFiles(d.files))
+                        .filter(f => fileIds.includes(parseInt(f.id, 10)))
+                        .map(f => f.diskId)
+                )]
+                get().applyMoveOptimistic(fileIds, targetFolderId, targetDiskId)
+                try {
+                    await api.post("/files/move", payload)
+                    const disksToRefresh = new Set([targetDiskId, ...sourceDiskIds])
+                    for (const diskId of disksToRefresh) {
+                        await get().refreshDiskSilently(diskId)
+                    }
+                } catch (err) {
+                    get().refreshDiskSilently(targetDiskId)
+                    for (const diskId of sourceDiskIds) {
+                        if (diskId !== targetDiskId) get().refreshDiskSilently(diskId)
+                    }
+                    throw err
                 }
-                return false
+            } else {
+                get().applyCopyOptimistic(fileIds, targetFolderId, targetDiskId)
+                try {
+                    await api.post("/files/copy", payload)
+                    await get().refreshDiskSilently(targetDiskId)
+                } catch (err) {
+                    await get().refreshDiskSilently(targetDiskId)
+                    throw err
+                }
             }
-            return {
-                ...disk,
-                files: disk.files.filter(f => f.id !== fileId && !isFileInSubtree(f, fileId))
+            set({ clipboard: { files: [], operation: null } })
+        } catch (error: any) {
+            console.error("Paste failed:", error)
+            useAlertStore.getState().show(error?.message || "Failed to paste files", "error")
+        }
+    },
+
+    applyMoveOptimistic: (fileIds: number[], targetFolderId: string | null, targetDiskId: string) => {
+        const { disks } = get()
+        const rootIds = new Set(fileIds.map(String))
+        const idsToMove = new Set<string>(rootIds)
+        const allFlat = disks.flatMap(d => flattenFiles(d.files))
+        // Multi-pass: collect all descendants (order-independent for deep nesting)
+        let added = true
+        while (added) {
+            added = false
+            for (const f of allFlat) {
+                if (f.parentId && idsToMove.has(f.parentId) && !idsToMove.has(f.id)) {
+                    idsToMove.add(f.id)
+                    added = true
+                }
             }
         }
 
-        const copyFileRecursive = (file: FileItem, newParentId: string | null, newDiskId: string): FileItem => {
+        const updatedDisks = disks.map(disk => {
+            const flat = flattenFiles(disk.files)
+            const toMove = flat.filter(f => idsToMove.has(f.id))
+            const withoutMoved = flat.filter(f => !idsToMove.has(f.id))
+
+            if (disk.id === targetDiskId) {
+                const moved = toMove.map(f => ({
+                    ...f,
+                    parentId: rootIds.has(f.id) ? targetFolderId : f.parentId,
+                    diskId: targetDiskId,
+                    modifiedAt: new Date(),
+                }))
+                return {
+                    ...disk,
+                    files: buildFileTree([...withoutMoved, ...moved]),
+                }
+            }
+            if (toMove.length > 0) {
+                return { ...disk, files: buildFileTree(withoutMoved) }
+            }
+            return disk
+        })
+
+        const disksWithUsage = updateDisksUsage(updatedDisks)
+        get().invalidateTree()
+        set({ disks: disksWithUsage })
+        syncUserStorage(disksWithUsage)
+    },
+
+    applyCopyOptimistic: (fileIds: number[], targetFolderId: string | null, targetDiskId: string) => {
+        const { disks } = get()
+        const rootIds = new Set(fileIds.map(String))
+        const idsToCopy = new Set<string>(rootIds)
+        const allFlat = disks.flatMap(d => flattenFiles(d.files))
+        let added = true
+        while (added) {
+            added = false
+            for (const f of allFlat) {
+                if (f.parentId && idsToCopy.has(f.parentId) && !idsToCopy.has(f.id)) {
+                    idsToCopy.add(f.id)
+                    added = true
+                }
+            }
+        }
+        const toCopy = allFlat.filter(f => idsToCopy.has(f.id))
+        const idMap = new Map<string, string>()
+        toCopy.forEach(f => {
+            idMap.set(f.id, `temp-copy-${f.id}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`)
+        })
+        const copies: FileItem[] = toCopy.map(f => {
+            const newId = idMap.get(f.id)!
+            const newParentId = rootIds.has(f.id)
+                ? targetFolderId
+                : (f.parentId ? idMap.get(f.parentId) ?? f.parentId : null)
             return {
-                ...file,
-                id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                ...f,
+                id: newId,
                 parentId: newParentId,
-                diskId: newDiskId,
+                diskId: targetDiskId,
                 createdAt: new Date(),
                 modifiedAt: new Date(),
-                children: undefined
             }
+        })
+        const targetDisk = disks.find(d => d.id === targetDiskId)
+        if (!targetDisk) return
+        const flat = flattenFiles(targetDisk.files)
+        const merged = [...flat, ...copies]
+        const fileTree = buildFileTree(merged)
+        const disksWithUsage = updateDisksUsage(
+            disks.map(d => (d.id === targetDiskId ? { ...d, files: fileTree } : d))
+        )
+        get().invalidateTree()
+        set({ disks: disksWithUsage })
+        syncUserStorage(disksWithUsage)
+    },
+
+    refreshDiskSilently: async (diskId: string) => {
+        try {
+            get().clearFolderCache(diskId)
+            const files = await api.get<any[]>(`/files/disk/${diskId}/all`)
+            const mappedFiles: FileItem[] = files.map((f: any) => ({
+                id: f.id.toString(),
+                name: f.name,
+                type: f.type as fileType,
+                isFolder: f.isFolder,
+                isPinned: f.isPinned || false,
+                parentId: f.parentId ? f.parentId.toString() : null,
+                diskId,
+                createdAt: new Date(f.createdAt),
+                modifiedAt: new Date(f.updatedAt),
+                size: f.size,
+                sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
+                thumbnail: f.thumbnail,
+                url: f.url || f.content,
+                deviceId: f.deviceId,
+            }))
+            const fileTree = buildFileTree(mappedFiles)
+            get().setCachedFiles(diskId, null, mappedFiles)
+            const updatedDisks = get().disks.map(d =>
+                d.id === diskId ? { ...d, files: fileTree } : d
+            )
+            const disksWithUsage = updateDisksUsage(updatedDisks)
+            set({ disks: disksWithUsage })
+            get().invalidateTree()
+            syncUserStorage(disksWithUsage)
+        } catch (err) {
+            console.error("Silent refresh failed:", err)
+            await get().fetchDisks()
         }
-
-        let updatedDisks = [...disks]
-
-        clipboard.files.forEach(fileId => {
-            const file = get().getFileById(fileId)
-            if (!file) return
-
-            if (clipboard.operation === "cut") {
-                // Move file - update parentId and diskId
-                updatedDisks = updatedDisks.map(disk => {
-                    if (disk.id === file.diskId) {
-                        // Remove from source disk
-                        return removeFileFromDisk(disk, fileId)
-                    }
-                    if (disk.id === targetDiskId) {
-                        // Add to target disk with updated parentId
-                        const movedFile = { ...file, parentId: targetFolderId, diskId: targetDiskId, modifiedAt: new Date() }
-                        return { ...disk, files: [...disk.files, movedFile] }
-                    }
-                    return disk
-                })
-            } else {
-                // Copy file - create new file with new ID
-                const newFile = copyFileRecursive(file, targetFolderId, targetDiskId)
-                updatedDisks = updatedDisks.map(disk => {
-                    if (disk.id === targetDiskId) {
-                        return { ...disk, files: [...disk.files, newFile] }
-                    }
-                    return disk
-                })
-            }
-        })
-
-        // Update disk usage for all affected disks
-        updatedDisks = updatedDisks.map(disk => updateDiskUsage(disk))
-
-        set({
-            disks: updatedDisks,
-            clipboard: { files: [], operation: null }
-        })
-
-        // Sync user storage
-        syncUserStorage(updatedDisks)
     },
 
     togglePin: async (fileId: string) => {
@@ -2205,6 +2345,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
             )
             const disksWithUsage = updateDisksUsage(updatedDisks)
             set({ disks: disksWithUsage })
+            get().invalidateTree()
 
             if (currentPath.length > 0) {
                 set({ currentPath: [...currentPath] })

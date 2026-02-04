@@ -1,4 +1,5 @@
 import { HTMLAttributes } from 'react'
+import { X } from 'lucide-react'
 import View from './View'
 import Category, { CategoryI } from '../sidebar/Category'
 import ComputerIcon from "../../assets/categories/computer.webp"
@@ -13,6 +14,7 @@ import Usage from '../sidebar/Usage'
 import { useFileStore } from '../../store/Filestore'
 
 export interface Props extends HTMLAttributes<HTMLDivElement> {
+    onClose?: () => void
 }
 
 export type fileType = "video" | "document" | "audio" | "note" | "url" | "picture" | "folder" | "others"
@@ -38,7 +40,7 @@ export const getImageByFileType = (type: fileType): string => {
     }
 }
 
-const Sidebar = ({ className }: Props) => {
+const Sidebar = ({ className, onClose }: Props) => {
     const { setCurrentDisk, disks, setFilterByType, filterByType } = useFileStore()
 
     const links: CategoryI[] = [
@@ -46,6 +48,7 @@ const Sidebar = ({ className }: Props) => {
             thumbNail: ComputerIcon,
             label: "My Computer",
             action: () => {
+                onClose?.()
                 localStorage.removeItem('currentPath')
                 localStorage.removeItem('currentDiskId')
                 window.location.reload()
@@ -59,6 +62,7 @@ const Sidebar = ({ className }: Props) => {
                 if (disks.length > 0) {
                     setCurrentDisk(disks[0]?.id || null)
                 }
+                onClose?.()
             }
         },
         {
@@ -69,6 +73,7 @@ const Sidebar = ({ className }: Props) => {
                 if (disks.length > 0) {
                     setCurrentDisk(disks[0]?.id || null)
                 }
+                onClose?.()
             }
         },
         {
@@ -79,6 +84,7 @@ const Sidebar = ({ className }: Props) => {
                 if (disks.length > 0) {
                     setCurrentDisk(disks[0]?.id || null)
                 }
+                onClose?.()
             }
         },
         {
@@ -89,6 +95,7 @@ const Sidebar = ({ className }: Props) => {
                 if (disks.length > 0) {
                     setCurrentDisk(disks[0]?.id || null)
                 }
+                onClose?.()
             }
         },
         {
@@ -99,6 +106,7 @@ const Sidebar = ({ className }: Props) => {
                 if (disks.length > 0) {
                     setCurrentDisk(disks[0]?.id || null)
                 }
+                onClose?.()
             }
         },
         {
@@ -109,13 +117,24 @@ const Sidebar = ({ className }: Props) => {
                 if (disks.length > 0) {
                     setCurrentDisk(disks[0]?.id || null)
                 }
+                onClose?.()
             }
         }
     ]
 
     return (
-        <View className={`p-4 flex flex-col justify-between ${className}`} mode='foreground'>
-            <View className='grid grid-cols-2 gap-2'>
+        <View className={`p-4 flex flex-col justify-between relative h-full min-h-0 ${className}`} mode='foreground'>
+            {onClose && (
+                <button
+                    onClick={onClose}
+                    className="md:hidden absolute top-3 right-3 p-2 rounded-lg hover:opacity-80 z-10"
+                    style={{ backgroundColor: "var(--muted)" }}
+                    aria-label="Close menu"
+                >
+                    <X size={18} />
+                </button>
+            )}
+            <View className='grid grid-cols-2 gap-2 sm:gap-3'>
                 {
                     links?.map((l, i) => {
                         const isActive =

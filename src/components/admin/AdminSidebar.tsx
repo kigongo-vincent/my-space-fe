@@ -10,11 +10,13 @@ import {
     Settings,
     Activity,
     ChevronRight,
-    AlertCircle
+    AlertCircle,
+    X
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router'
 
 export interface Props extends HTMLAttributes<HTMLDivElement> {
+    onClose?: () => void
 }
 
 type AdminNavItem = {
@@ -24,7 +26,7 @@ type AdminNavItem = {
     path: string
 }
 
-const AdminSidebar = ({ className }: Props) => {
+const AdminSidebar = ({ className, onClose }: Props) => {
     const { current } = useTheme()
     const navigate = useNavigate()
     const location = useLocation()
@@ -85,7 +87,7 @@ const AdminSidebar = ({ className }: Props) => {
 
     return (
         <View
-            className={`flex flex-col rounded-xl ${className}`}
+            className={`flex flex-col rounded-xl relative ${className}`}
             mode='foreground'
             style={{
                 height: '100%',
@@ -94,6 +96,16 @@ const AdminSidebar = ({ className }: Props) => {
                 boxShadow: 'none'
             }}
         >
+            {onClose && (
+                <button
+                    onClick={onClose}
+                    className="md:hidden absolute top-3 right-3 p-2 rounded-lg hover:opacity-80 z-10"
+                    style={{ backgroundColor: `${current?.dark}15` }}
+                    aria-label="Close menu"
+                >
+                    <X size={18} color={current?.dark} />
+                </button>
+            )}
 
             {/* Navigation Items */}
             <View className="flex flex-col gap-1 flex-1">

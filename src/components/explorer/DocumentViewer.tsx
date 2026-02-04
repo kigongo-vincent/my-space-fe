@@ -333,13 +333,13 @@ const DocumentViewer = ({ file, hideToolbar }: Props) => {
                         <>
                             {/* PDF Controls */}
                             <View 
-                                className="px-4 py-2 border-b flex items-center justify-between"
+                                className="px-2 sm:px-4 py-2 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2"
                                 style={{ 
                                     borderColor: current?.dark + "10",
                                     backgroundColor: current?.foreground
                                 }}
                             >
-                                <View className="flex items-center gap-2">
+                                <View className="flex items-center gap-2 flex-wrap">
                                     <IconButton
                                         icon={<ChevronLeft size={18} color={current?.dark} />}
                                         action={goToPrevPage}
@@ -380,7 +380,7 @@ const DocumentViewer = ({ file, hideToolbar }: Props) => {
                             </View>
                             
                             {/* PDF Viewer */}
-                            <View className="document-viewer-content flex-1 min-h-0 overflow-auto flex items-center justify-center p-4" style={{ backgroundColor: current?.background }}>
+                            <View className="document-viewer-content flex-1 min-h-0 min-w-0 w-full overflow-auto flex items-center justify-center p-2 sm:p-4" style={{ backgroundColor: current?.background }}>
                                 <Document
                                     file={fileUrl}
                                     onLoadSuccess={onDocumentLoadSuccess}
@@ -454,9 +454,9 @@ const DocumentViewer = ({ file, hideToolbar }: Props) => {
                 }
                 if (docxHtml) {
                     return (
-                        <View className="document-viewer-content flex-1 min-h-0 overflow-auto p-6" style={{ backgroundColor: current?.background }}>
+                        <View className="document-viewer-content flex-1 min-h-0 overflow-auto p-4 sm:p-6" style={{ backgroundColor: current?.background }}>
                             <div
-                                className="docx-content max-w-3xl mx-auto text-left"
+                                className="docx-content max-w-3xl w-full mx-auto text-left"
                                 style={{
                                     color: current?.dark,
                                     fontSize: "15px",
@@ -497,9 +497,9 @@ const DocumentViewer = ({ file, hideToolbar }: Props) => {
                 }
                 if (excelHtml) {
                     return (
-                        <View className="document-viewer-content flex-1 min-h-0 overflow-auto p-6" style={{ backgroundColor: current?.background }}>
+                        <View className="document-viewer-content flex-1 min-h-0 overflow-auto p-4 sm:p-6 overflow-x-auto" style={{ backgroundColor: current?.background }}>
                             <div
-                                className="excel-content max-w-full [&_table]:border-collapse [&_table]:w-full [&_table]:min-w-max [&_table]:shadow-sm [&_th]:border [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:px-3 [&_td]:py-2"
+                                className="excel-content max-w-full [&_table]:border-collapse [&_table]:w-full [&_table]:min-w-max [&_table]:shadow-sm [&_th]:border [&_th]:px-2 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:px-2 [&_td]:py-2"
                                 style={{
                                     color: current?.dark,
                                     fontSize: "14px",

@@ -313,7 +313,7 @@ const Settings = () => {
                                 </button>
                             </View>
                         </View>
-                        <View className="grid grid-cols-4 gap-4 mb-8">
+                        <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                             {[
                                 { label: "Total", value: total },
                                 { label: "Pending", value: pending },
@@ -489,7 +489,7 @@ const Settings = () => {
 
                             <View className="mt-6 pt-6" style={{ borderTop: `1px solid ${current?.dark}10` }}>
                                 <Text value="Base font size" style={{ color: current?.dark, fontSize: '0.9375rem', fontWeight: 500, marginBottom: '0.5rem' }} />
-                                <View className="grid grid-cols-4 gap-3 mt-2">
+                                <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
                                     {FONT_SIZES.map(({ id, label, desc }) => (
                                         <button
                                             key={id}

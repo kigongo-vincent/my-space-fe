@@ -1,7 +1,7 @@
 import { SearchIcon, SlidersHorizontal } from "lucide-react"
 import View from "./View"
 import { useTheme } from "../../store/Themestore"
-import { useRef, useEffect } from "react"
+import { useRef, useEffect, useState } from "react"
 import { useFileStore } from "../../store/Filestore"
 import { useLocation } from "react-router"
 import { useAdminSearchStore } from "../../store/AdminSearchStore"
@@ -33,6 +33,12 @@ const Search = ({ onFilterClick }: SearchProps) => {
     // Use store value directly - Zustand will trigger re-renders
     const searchValue = isAdminPage ? adminSearchQuery : fileSearchQuery
     const searchRef = useRef<HTMLInputElement>(null)
+    const [isNarrow, setIsNarrow] = useState(typeof window !== "undefined" && window.innerWidth < 640)
+    useEffect(() => {
+        const handler = () => setIsNarrow(window.innerWidth < 640)
+        window.addEventListener("resize", handler)
+        return () => window.removeEventListener("resize", handler)
+    }, [])
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     
     // Check if any filters are active based on current page
@@ -96,18 +102,20 @@ const Search = ({ onFilterClick }: SearchProps) => {
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [])
 
+    const fullPlaceholder = isAdminPage ? getAdminPlaceholder(location.pathname) : "Search files..."
+    const placeholder = isNarrow && fullPlaceholder.length > 10 ? "Search…" : fullPlaceholder
+
     return (
-        <View mode="background" className="rounded-full px-6 py-3 min-w-[25vw] flex items-center gap-3 relative">
-            <SearchIcon size={18} color={`${current?.dark}70`} />
+        <View mode="background" className="rounded-full px-3 sm:px-6 py-2 sm:py-3 min-w-0 w-full max-w-full flex-1 md:flex-initial flex items-center gap-2 sm:gap-3 relative overflow-hidden">
+            <SearchIcon size={18} color={`${current?.dark}70`} className="flex-shrink-0" />
             <input 
                 ref={searchRef}
                 value={searchValue} 
                 onChange={(e) => handleChange(e.target.value)} 
-                className="outline-none flex-1 placeholder:opacity-60" 
-                placeholder={isAdminPage ? getAdminPlaceholder(location.pathname) : "Search files..."} 
+                className="outline-none flex-1 min-w-0 bg-transparent placeholder:opacity-60 overflow-hidden text-ellipsis" 
+                placeholder={placeholder}
                 style={{ 
                     color: current?.dark, 
-                    backgroundColor: "transparent",
                     fontSize: "14px",
                     letterSpacing: "0.01em"
                 }} 

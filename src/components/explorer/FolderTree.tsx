@@ -3,7 +3,7 @@ import View from "../base/View"
 import Text from "../base/Text"
 import { useFileStore, FileItem } from "../../store/Filestore"
 import { useTheme } from "../../store/Themestore"
-import { ChevronRight, ChevronDown, Folder, FolderOpen } from "lucide-react"
+import { ChevronRight, ChevronDown, Folder, FolderOpen, X } from "lucide-react"
 
 interface FolderNodeProps {
     file: FileItem
@@ -214,13 +214,15 @@ const FolderNode = ({
 
 interface Props {
     className?: string
+    onClose?: () => void
 }
 
-const FolderTree = ({ className }: Props) => {
+const FolderTree = ({ className, onClose }: Props) => {
     const {
         currentDiskId,
         currentPath,
         disks,
+        treeVersion,
         navigateToFolder,
         setCurrentPath,
         getFileById,
@@ -263,7 +265,7 @@ const FolderTree = ({ className }: Props) => {
         })
 
         return rootFiles.filter(f => f.isFolder)
-    }, [currentDiskId, disks])
+    }, [currentDiskId, disks, treeVersion])
 
     // Auto-expand folders in current path
     useEffect(() => {
@@ -377,7 +379,17 @@ const FolderTree = ({ className }: Props) => {
     const currentDisk = disks.find(d => d.id === currentDiskId)
 
     return (
-        <View className={`${className} h-full`} mode="foreground">
+        <View className={`${className} h-full relative`} mode="foreground">
+            {onClose && (
+                <button
+                    onClick={onClose}
+                    className="md:hidden absolute top-3 right-3 p-2 rounded-lg hover:opacity-80 z-10"
+                    style={{ backgroundColor: `${current?.dark}15` }}
+                    aria-label="Close folder tree"
+                >
+                    <X size={18} color={current?.dark} />
+                </button>
+            )}
             <View className="p-4 border-b flex-shrink-0" style={{ borderColor: current?.dark + "20" }}>
                 <View className="flex items-center gap-2 mb-2">
                     <Folder size={18} color={current?.primary} />

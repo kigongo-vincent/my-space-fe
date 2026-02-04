@@ -11,7 +11,7 @@ const ViewSettingsBar = () => {
 
     return (
         <View
-            className="flex items-center justify-between px-4 py-2.5 border-b"
+            className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-2.5 border-b"
             mode="background"
             style={{
                 borderColor: current?.dark + "20",

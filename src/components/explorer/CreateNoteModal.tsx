@@ -31,7 +31,7 @@ const CreateNoteModal = ({ onClose, parentId, diskId }: Props) => {
     return (
         <AnimatedModal isOpen={true} onClose={onClose} size="lg" position="center">
             <div
-                className="rounded-xl min-w-[700px] max-w-[800px] max-h-[85vh] overflow-hidden flex flex-col"
+                className="rounded-xl w-full min-w-0 max-w-[800px] max-h-[85vh] overflow-hidden flex flex-col"
                 style={{
                     border: `1px solid ${current?.dark}10`,
                     backgroundColor: current?.foreground,
@@ -40,7 +40,7 @@ const CreateNoteModal = ({ onClose, parentId, diskId }: Props) => {
             >
                 {/* Header - Apple Notes style */}
                 <View 
-                    className="px-6 py-4 border-b flex items-center justify-between"
+                    className="px-4 sm:px-6 py-3 sm:py-4 border-b flex items-center justify-between"
                     style={{ 
                         borderColor: current?.dark + "10",
                         backgroundColor: current?.foreground
@@ -55,7 +55,7 @@ const CreateNoteModal = ({ onClose, parentId, diskId }: Props) => {
 
                 {/* Title Input - Apple Notes style */}
                 <View 
-                    className="px-6 py-3 border-b"
+                    className="px-4 sm:px-6 py-3 border-b"
                     style={{ 
                         borderColor: current?.dark + "10",
                         backgroundColor: current?.foreground
@@ -85,7 +85,7 @@ const CreateNoteModal = ({ onClose, parentId, diskId }: Props) => {
 
                 {/* Content Area - Apple Notes style */}
                 <View className="flex-1 overflow-auto">
-                    <View className="p-6 max-w-3xl mx-auto h-full">
+                    <View className="p-4 sm:p-6 max-w-3xl mx-auto h-full">
                         <textarea
                             value={noteContent}
                             onChange={(e) => setNoteContent(e.target.value)}
@@ -98,7 +98,7 @@ const CreateNoteModal = ({ onClose, parentId, diskId }: Props) => {
                                 fontSize: "16px",
                                 lineHeight: "1.6",
                                 fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-                                minHeight: "400px"
+                                minHeight: "300px"
                             }}
                             onKeyDown={(e) => {
                                 if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
@@ -113,7 +113,7 @@ const CreateNoteModal = ({ onClose, parentId, diskId }: Props) => {
 
                 {/* Footer */}
                 <View 
-                    className="px-6 py-3 border-t flex items-center justify-end gap-3"
+                    className="px-4 sm:px-6 py-3 border-t flex items-center justify-end gap-3"
                     style={{ 
                         borderColor: current?.dark + "10",
                         backgroundColor: current?.foreground

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, ReactNode } from "react"
+import { createPortal } from "react-dom"
 import View from "../base/View"
 import Text from "../base/Text"
 import { X, Maximize2, Minimize2, Presentation } from "lucide-react"
@@ -47,6 +48,13 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
     const [resolvedAudioUrl, setResolvedAudioUrl] = useState<string | null>(null)
     const [resolvedVideoUrl, setResolvedVideoUrl] = useState<string | null>(null)
     const modalRef = useRef<HTMLDivElement>(null)
+
+    const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768)
+    useEffect(() => {
+        const handler = () => setIsMobile(window.innerWidth < 768)
+        window.addEventListener("resize", handler)
+        return () => window.removeEventListener("resize", handler)
+    }, [])
 
     const file = getFileById(fileId)
 
@@ -110,6 +118,7 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
     }, [isDragging, dragOffset])
 
     const handleMouseDown = (e: React.MouseEvent) => {
+        if (isMobile) return
         if (!modalRef.current) return
         const rect = modalRef.current.getBoundingClientRect()
         setDragOffset({
@@ -174,17 +183,35 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
     const isDocument = file.type === "document"
 
     const isExpanded = isFullScreen || isPresentationMode
-    const modalStyle = isExpanded
-        ? { left: 0, top: 0, width: "100vw", height: "100vh", borderRadius: 0 }
-        : {
+
+    const getModalDimensions = () => {
+        if (isExpanded) {
+            return { left: 0, top: 0, width: "100vw", height: "100vh", borderRadius: 0 }
+        }
+        if (isMobile) {
+            return {
+                left: 0,
+                top: 0,
+                right: 0,
+                bottom: 0,
+                width: "100vw",
+                height: "100vh",
+                maxWidth: "100vw",
+                maxHeight: "100vh",
+                borderRadius: 0,
+            }
+        }
+        return {
             left: `${position.x}px`,
             top: `${position.y}px`,
             width: isMinimized ? "300px" : isMediaFile ? "500px" : (file.type === "note" ? "800px" : isDocument ? "900px" : "600px"),
             height: isMinimized ? "50px" : isMediaFile ? "700px" : (file.type === "note" || isDocument ? "700px" : "500px"),
             borderRadius: 6,
         }
+    }
+    const modalStyle = getModalDimensions()
 
-    return (
+    const modalContent = (
         <View
             ref={modalRef}
             mode="foreground"
@@ -192,7 +219,7 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
             data-modal-id={modalId}
             style={{
                 ...modalStyle,
-                zIndex: isExpanded ? 9999 : 1000,
+                zIndex: isExpanded ? 9999 : 1100,
                 backgroundColor: current?.foreground || current?.background,
                 boxShadow: name === "dark"
                     ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
@@ -201,8 +228,8 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
         >
             {/* Header - hidden in presentation mode */}
             {!isPresentationMode && (
-                <View
-                    className="flex items-center justify-between px-4 py-3.5 border-b cursor-move"
+                    <View
+                        className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3.5 border-b cursor-move gap-2"
                     style={{
                         borderColor: current?.dark + "20"
                     }}
@@ -212,7 +239,7 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
                         <img src={getImageByFileType(file.type)} alt="" className="w-5 h-5 flex-shrink-0" />
                         <Text
                             value={file.name}
-                            className="font-semibold max-w-[200px]"
+                            className="font-semibold max-w-[120px] sm:max-w-[200px] line-clamp-2"
                             style={{
                                 color: current?.dark,
                                 letterSpacing: "-0.01em",
@@ -303,12 +330,14 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
 
             {/* Content */}
             {(!isMinimized || isPresentationMode) && (
-                <View className="flex-1 overflow-hidden">
+                <View className="flex-1 min-h-0 overflow-auto">
                     {renderFileContent()}
                 </View>
             )}
         </View>
     )
+
+    return createPortal(modalContent, document.body)
 }
 
 export default DraggableModal

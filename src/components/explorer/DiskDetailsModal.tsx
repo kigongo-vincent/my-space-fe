@@ -128,7 +128,7 @@ const DiskDetailsModal = ({ diskId, onClose }: Props) => {
                     {/* Statistics */}
                     <View className="border-t pt-4" style={{ borderColor: current?.dark + "20" }}>
                         <Text value="Statistics" className="font-semibold mb-3" />
-                        <View className="grid grid-cols-2 gap-4">
+                        <View className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <View className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: current?.dark + "08" }}>
                                 {/* <Folder size={20} color={current?.primary} /> */}
                                 <img src={FolderIcon} height={200} width={40} />

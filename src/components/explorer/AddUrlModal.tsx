@@ -47,10 +47,10 @@ const AddUrlModal = ({ onClose, parentId, diskId }: Props) => {
     }
 
     return (
-        <View className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={{ backdropFilter: 'blur(2px)' }}>
+        <View className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6 overflow-auto" style={{ backdropFilter: 'blur(2px)' }}>
             <View
                 mode="foreground"
-                className="p-8 rounded-xl min-w-[550px] max-w-[650px] flex flex-col gap-6"
+                className="p-4 sm:p-6 md:p-8 rounded-xl w-full max-w-[650px] min-w-0 flex flex-col gap-6"
                 style={{
                     border: `1px solid ${current?.dark}10`,
                     boxShadow: name === "dark" 
@@ -59,8 +59,8 @@ const AddUrlModal = ({ onClose, parentId, diskId }: Props) => {
                 }}
             >
                 {/* Header */}
-                <View className="flex items-center justify-between">
-                    <View className="flex items-center gap-3">
+                <View className="flex items-center justify-between gap-3">
+                    <View className="flex items-center gap-3 min-w-0 flex-1">
                         <View 
                             className="p-3 rounded-xl"
                             style={{ backgroundColor: current?.primary + "15" }}

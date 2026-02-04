@@ -108,10 +108,23 @@ export const ListItemSkeleton = () => {
 }
 
 export const DiskSkeleton = () => {
+  const { current } = useTheme()
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
-        <FileItemSkeleton key={i} />
+        <div
+          key={i}
+          className="flex items-center gap-3 p-4 rounded-lg"
+          style={{ backgroundColor: current?.background }}
+        >
+          <Skeleton width="70px" height="70px" rounded className="flex-shrink-0" />
+          <div className="flex-1 flex flex-col gap-2 min-w-0">
+            <Skeleton width="70%" height="1rem" />
+            <Skeleton width="100%" height="0.25rem" rounded />
+            <Skeleton width="85%" height="0.75rem" />
+          </div>
+        </div>
       ))}
     </div>
   )

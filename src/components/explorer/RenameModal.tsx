@@ -45,7 +45,7 @@ const RenameModal = ({ fileId, currentName, onClose }: Props) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="p-6 flex flex-col gap-4 min-w-[420px]"
+                className="p-4 sm:p-6 flex flex-col gap-4 w-full min-w-0 max-w-full"
                 style={{ backgroundColor: current?.foreground }}
             >
                 <View className="flex items-center justify-between">

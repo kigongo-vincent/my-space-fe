@@ -18,11 +18,11 @@ const Avatar = (props: Props) => {
             style={{
                 backgroundColor: current?.background
             }}
-            className="h-[5vh] overflow-hidden flex items-center justify-center w-[5vh] rounded-full">
+            className="h-9 w-9 sm:h-[5vh] sm:w-[5vh] min-h-[36px] min-w-[36px] overflow-hidden flex items-center justify-center rounded-full flex-shrink-0">
             {
                 props?.path != ""
                     ?
-                    <img src={props?.path} alt="" className="h-[5vh] w-[5vh] object-cover" />
+                    <img src={props?.path} alt="" className="h-full w-full object-cover" />
                     :
                     <Text className="uppercase font-semibold" value={props?.fallback?.text} />
             }

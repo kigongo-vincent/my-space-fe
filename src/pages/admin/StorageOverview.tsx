@@ -59,7 +59,7 @@ const StorageOverview = () => {
             <AdminPageHeader title="Storage Overview" subtitle="Monitor and manage storage allocation across all users" />
 
             {/* Summary Cards */}
-            <View className="grid grid-cols-3 gap-6 mb-6">
+            <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
                 <View
                     className="rounded-xl p-4"
                     style={{ backgroundColor: current?.foreground }}
@@ -130,7 +130,7 @@ const StorageOverview = () => {
             </View>
 
             {/* Charts */}
-            <View className="grid grid-cols-2 gap-6 mb-6">
+            <View className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
                 <View
                     className="rounded-xl p-4"
                     style={{ backgroundColor: current?.foreground }}

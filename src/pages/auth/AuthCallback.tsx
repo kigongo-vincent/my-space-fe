@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router"
-import { api } from "../../utils/api"
 
 /**
  * Handles OAuth callback: backend redirects here with #token=... or ?error=...
@@ -14,8 +13,10 @@ const AuthCallback = () => {
 
     useEffect(() => {
         const run = async () => {
-            const hash = window.location.hash
-            const tokenMatch = hash.match(/#token=(.+)/)
+            const hash = window.location.hash.slice(1)
+            const params = new URLSearchParams(hash)
+            const token = params.get("token")
+            const role = params.get("role")
             const urlError = searchParams.get("error")
 
             if (urlError) {
@@ -24,16 +25,10 @@ const AuthCallback = () => {
                 return
             }
 
-            if (tokenMatch && tokenMatch[1]) {
-                const token = tokenMatch[1].trim()
+            if (token) {
                 localStorage.setItem("token", token)
-                try {
-                    const user = await api.get<{ role?: string }>("/users/me", true)
-                    const target = user?.role === "admin" ? "/admin" : "/dashboard"
-                    window.location.replace(target)
-                } catch {
-                    window.location.replace("/dashboard")
-                }
+                const target = role === "admin" ? "/admin" : "/dashboard"
+                window.location.replace(target)
                 return
             }
 

@@ -205,12 +205,7 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100%',
-                    width: '400px'
-                }}
+                className="flex flex-col h-full w-full max-w-full sm:max-w-[400px]"
             >
                 {/* Header */}
                 <div

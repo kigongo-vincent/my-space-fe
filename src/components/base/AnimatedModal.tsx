@@ -116,10 +116,11 @@ const AnimatedModal = ({ isOpen, onClose, children, size = "md", position = "cen
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                                className={sizeClasses[size]}
+                                className={`${sizeClasses[size]} w-full max-h-[90vh] overflow-auto mx-4 sm:mx-6`}
                                 style={{
-                                    maxHeight: '90vh',
                                     width: 'auto',
+                                    minWidth: 0,
+                                    maxWidth: 'calc(100vw - 2rem)',
                                     pointerEvents: 'auto',
                                     backgroundColor: current?.foreground,
                                     borderRadius: '0.5rem',
@@ -145,14 +146,16 @@ const AnimatedModal = ({ isOpen, onClose, children, size = "md", position = "cen
                                     right: 0,
                                     top: 0,
                                     bottom: 0,
-                                    width: '400px',
+                                    width: '100%',
+                                    maxWidth: '400px',
                                     maxHeight: '100vh'
                                 }),
                                 ...(position === "left" && {
                                     left: 0,
                                     top: 0,
                                     bottom: 0,
-                                    width: '400px',
+                                    width: '100%',
+                                    maxWidth: '400px',
                                     maxHeight: '100vh'
                                 }),
                                 ...(position === "top" && {

@@ -17,6 +17,16 @@ interface Props {
 const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HTMLAudioElement | null>, isPlaying: boolean }) => {
     const { current } = useTheme()
     const canvasRef = useRef<HTMLCanvasElement>(null)
+    const [canvasSize, setCanvasSize] = useState(320)
+    useEffect(() => {
+        const updateSize = () => {
+            const size = window.innerWidth < 768 ? Math.min(280, window.innerWidth - 48) : 320
+            setCanvasSize(size)
+        }
+        updateSize()
+        window.addEventListener("resize", updateSize)
+        return () => window.removeEventListener("resize", updateSize)
+    }, [])
     const animationFrameRef = useRef<number | null>(null)
     const audioContextRef = useRef<AudioContext | null>(null)
     const analyserRef = useRef<AnalyserNode | null>(null)
@@ -166,15 +176,18 @@ const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HT
 
     return (
         <View
-            className="w-[320px] h-[320px] rounded-lg flex items-center justify-center overflow-hidden media-glow"
+            className="w-full max-w-[320px] aspect-square rounded-lg flex items-center justify-center overflow-hidden media-glow"
             style={{
-                backgroundColor: current?.dark + "10"
+                backgroundColor: current?.dark + "10",
+                width: canvasSize,
+                height: canvasSize,
+                minWidth: 0
             }}
         >
             <canvas
                 ref={canvasRef}
-                width={320}
-                height={320}
+                width={canvasSize}
+                height={canvasSize}
                 className="w-full h-full"
             />
         </View>
@@ -702,7 +715,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl }: Props) => {
     const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0
 
     return (
-        <View className={`flex flex-col ${isVideo ? 'h-full' : 'h-full'} items-center ${isVideo ? 'justify-start' : 'justify-center'} p-10 gap-8 overflow-auto`}>
+        <View className={`flex flex-col ${isVideo ? 'h-full' : 'h-full'} items-center ${isVideo ? 'justify-start' : 'justify-center'} p-4 sm:p-6 md:p-10 gap-4 sm:gap-6 md:gap-8 overflow-auto`}>
             {/* Album Art / Video Display */}
             {isVideo ? (
                 <View

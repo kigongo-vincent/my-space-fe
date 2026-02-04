@@ -89,7 +89,7 @@ const AdminDashboard = () => {
             )}
 
             {/* Summary Cards */}
-            <View className="grid grid-cols-3 gap-6 mb-6">
+            <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
                 {statCards.map((stat, index) => (
                     <button
                         key={index}
@@ -129,7 +129,7 @@ const AdminDashboard = () => {
             </View>
 
             {/* Charts */}
-            <View className="grid grid-cols-2 gap-6 mb-6">
+            <View className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
                 <View
                     className="rounded-xl p-4"
                     style={{
@@ -188,7 +188,7 @@ const AdminDashboard = () => {
             {/* Quick Actions */}
             <View>
                 <Text value="Quick Actions" className="font-medium mb-4 uppercase tracking-wider opacity-80" style={{ color: current?.dark, letterSpacing: '0.1em', fontSize: '1rem' }} />
-                <View className="grid grid-cols-4 gap-6">
+                <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     <button
                         onClick={() => navigate("/admin/users")}
                         className="text-left transition-all hover:opacity-90 rounded-xl p-4"

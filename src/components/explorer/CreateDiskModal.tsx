@@ -186,10 +186,10 @@ const CreateDiskModal = ({ onClose }: Props) => {
     const isFormValid = !errors.name && !errors.size && diskName.trim() && totalStorage.trim()
 
     return (
-        <View className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" style={{ backdropFilter: 'blur(2px)' }}>
+        <View className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6 overflow-auto" style={{ backdropFilter: 'blur(2px)' }}>
             <View
                 mode="foreground"
-                className="p-6 rounded-lg min-w-[450px] max-w-[500px] flex flex-col gap-5"
+                className="p-4 sm:p-6 rounded-lg w-full max-w-[500px] min-w-0 flex flex-col gap-5"
                 style={{
                     boxShadow: name === "dark"
                         ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
@@ -238,8 +238,8 @@ const CreateDiskModal = ({ onClose }: Props) => {
                 {/* Storage Size */}
                 <View className="flex flex-col gap-2">
                     <Text value="Storage Size" className="font-medium text-sm" />
-                    <View className="flex items-center gap-2">
-                        <div className="relative flex-1">
+                    <View className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <div className="relative flex-1 min-w-0">
                             <input
                                 type="number"
                                 value={totalStorage}

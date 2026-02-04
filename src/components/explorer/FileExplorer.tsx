@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import View from "../base/View"
 import Text from "../base/Text"
 import { useFileStore, FileItem } from "../../store/Filestore"
@@ -27,7 +28,8 @@ import {
     Clipboard,
     Info,
     Star,
-    StarOff
+    StarOff,
+    PanelLeft
 } from "lucide-react"
 
 const FileExplorer = () => {
@@ -36,6 +38,7 @@ const FileExplorer = () => {
         currentPath,
         viewMode,
         filterByType,
+        setFilterByType,
         getCurrentFolderFiles,
         navigateBack,
         navigateToFolder,
@@ -75,6 +78,7 @@ const FileExplorer = () => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; file: FileItem } | null>(null)
     const [renameFile, setRenameFile] = useState<FileItem | null>(null)
     const [propertiesFile, setPropertiesFile] = useState<string | null>(null)
+    const [folderTreeOpen, setFolderTreeOpen] = useState(false)
 
     const files = getCurrentFolderFiles()
     const currentDisk = disks.find(d => d.id === currentDiskId)
@@ -97,6 +101,11 @@ const FileExplorer = () => {
         })
         return pathParts.join("\\")
     }, [currentDisk, currentPath, getFileById])
+
+    // Close folder tree when switching to category view
+    useEffect(() => {
+        if (filterByType) setFolderTreeOpen(false)
+    }, [filterByType])
 
     // Update path input when path changes (but not when user is editing)
     useEffect(() => {
@@ -626,8 +635,20 @@ const FileExplorer = () => {
     }
 
     const getContextMenuItems = (file: FileItem): ContextMenuItem[] => {
-        // Empty space context menu
+        // Empty space context menu - no creation options on category-based pages
         if (!file.id) {
+            if (filterByType) {
+                return [
+                    {
+                        label: "Refresh",
+                        icon: <RotateCw size={16} />,
+                        action: () => {
+                            setFilterByType(filterByType)
+                            setContextMenu(null)
+                        }
+                    }
+                ]
+            }
             return [
                 {
                     label: "Refresh",
@@ -736,9 +757,10 @@ const FileExplorer = () => {
                 label: "Paste",
                 icon: <Clipboard size={16} />,
                 action: () => {
-                    const targetFolderId = currentPath.length > 0 ? currentPath[currentPath.length - 1] : null
-                    if (currentDiskId) {
-                        pasteFiles(targetFolderId, currentDiskId)
+                    const targetFolderId = file.isFolder ? file.id : (currentPath.length > 0 ? currentPath[currentPath.length - 1] : null)
+                    const targetDiskId = file.diskId || currentDiskId
+                    if (targetDiskId) {
+                        pasteFiles(targetFolderId, targetDiskId)
                     }
                 },
                 disabled: !clipboard.operation || clipboard.files.length === 0 || !file.isFolder
@@ -826,23 +848,64 @@ const FileExplorer = () => {
 
     return (
         <View
-            className="h-full flex flex-row gap-4 file-explorer-container"
+            className="h-full flex flex-col md:flex-row gap-2 md:gap-4 file-explorer-container"
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
         >
-            {/* Folder Tree Sidebar */}
-            <FolderTree className="w-64 min-w-[200px] rounded-lg flex flex-col" />
+            {/* Mobile Folder Tree overlay */}
+            <AnimatePresence>
+                {folderTreeOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/40 z-[1100] md:hidden"
+                            onClick={() => setFolderTreeOpen(false)}
+                        />
+                        <motion.div
+                            initial={{ x: "-100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "-100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                            className="fixed left-0 top-0 bottom-0 h-screen w-[280px] max-w-[85vw] z-[1150] md:hidden"
+                        >
+                            <FolderTree
+                                className="w-full h-full rounded-r-lg flex flex-col"
+                                onClose={() => setFolderTreeOpen(false)}
+                            />
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* Desktop Folder Tree - hidden on mobile and on category pages */}
+            {!filterByType && (
+                <View className="hidden md:flex w-64 min-w-[200px] max-w-[280px] rounded-lg flex-col flex-shrink-0">
+                    <FolderTree className="w-full h-full rounded-lg flex flex-col" />
+                </View>
+            )}
 
             {/* Main Content Area */}
             <View className="flex-1 flex flex-col">
                 {/* View Settings Bar */}
                 <ViewSettingsBar />
 
-                {/* Toolbar */}
-                <View className="flex items-center gap-3 mb-4 pb-3 pt-3 border-b" style={{ borderColor: current?.dark + "20" }}>
-                    {/* Left: Navigation buttons */}
-                    <View className="flex items-center gap-3 flex-shrink-0">
+                {/* Toolbar - mobile: row 1 = icons, row 2 = path. Desktop: single row */}
+                <View className="flex flex-wrap md:flex-nowrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4 pb-3 pt-3 border-b" style={{ borderColor: current?.dark + "20" }}>
+                    {/* Left: Folder tree toggle + Navigation buttons */}
+                    <View className="flex items-center gap-2 sm:gap-3 flex-shrink-0 order-1">
+                        {/* Mobile: Folder tree toggle - hidden on category pages */}
+                        {!filterByType && (
+                            <View className="md:hidden">
+                                <IconButton
+                                    icon={<PanelLeft size={18} color={current?.dark} />}
+                                    action={() => setFolderTreeOpen(true)}
+                                    title="Show folders"
+                                />
+                            </View>
+                        )}
                         <IconButton
                             icon={<Home size={18} color={current?.dark} />}
                             action={() => {
@@ -861,10 +924,76 @@ const FileExplorer = () => {
                             />
                         )}
                     </View>
-
-                    {/* Middle: Path input - takes all available space */}
+                    {/* Right: Action buttons - creation tools hidden on category-based pages */}
                     {filterByType ? (
-                        <View className="flex items-center gap-2 flex-shrink-0">
+                        <View className="flex items-center gap-1 sm:gap-2 flex-shrink-0 order-2 md:order-3">
+                            <IconButton
+                                icon={<RotateCw size={18} color={current?.dark} />}
+                                action={() => setFilterByType(filterByType)}
+                                title="Refresh"
+                            />
+                        </View>
+                    ) : (
+                        <View className="flex items-center gap-1 sm:gap-2 flex-shrink-0 order-2 md:order-3">
+                            <IconButton
+                                icon={<RotateCw size={18} color={current?.dark} />}
+                                action={() => {
+                                    if (currentDiskId) {
+                                        refreshCurrentDisk()
+                                    }
+                                }}
+                                title="Refresh"
+                            />
+                            <IconButton
+                                icon={<Upload size={18} color={current?.dark} />}
+                                action={() => {
+                                    if (currentDiskId) {
+                                        handleUploadClick()
+                                    } else {
+                                        alert("Please select a disk first")
+                                    }
+                                }}
+                                title={`Upload Files${currentPath.length > 0 ? ` to current folder` : ""}`}
+                            />
+                            <IconButton
+                                icon={<FolderPlus size={18} color={current?.dark} />}
+                                action={() => {
+                                    if (currentDiskId) {
+                                        setShowCreateFolder(true)
+                                    } else {
+                                        alert("Please select a disk first")
+                                    }
+                                }}
+                                title="New Folder"
+                            />
+                            <IconButton
+                                icon={<FileText size={18} color={current?.dark} />}
+                                action={() => {
+                                    if (currentDiskId) {
+                                        setShowCreateNote(true)
+                                    } else {
+                                        alert("Please select a disk first")
+                                    }
+                                }}
+                                title="New Note"
+                            />
+                            <IconButton
+                                icon={<Link2 size={18} color={current?.dark} />}
+                                action={() => {
+                                    if (currentDiskId) {
+                                        setShowAddUrl(true)
+                                    } else {
+                                        alert("Please select a disk first")
+                                    }
+                                }}
+                                title="Add URL"
+                            />
+                        </View>
+                    )}
+
+                    {/* Path/filter - full width row on mobile, middle on desktop */}
+                    {filterByType ? (
+                        <View className="w-full basis-full md:basis-auto md:flex-1 md:min-w-0 flex items-center gap-2 flex-shrink-0 order-3 md:order-2">
                             <Text
                                 value={`${filterByType.charAt(0).toUpperCase() + filterByType.slice(1)} Files`}
                                 className="font-semibold text-lg"
@@ -881,7 +1010,7 @@ const FileExplorer = () => {
                             />
                         </View>
                     ) : (
-                        <View className="flex-1 flex items-center min-w-0 relative">
+                        <View className="w-full basis-full md:basis-auto md:flex-1 flex items-center min-w-0 relative order-3 md:order-2">
                             {isEditingPath ? (
                                 <form onSubmit={handlePathSubmit} className="flex-1 w-full min-w-0 relative">
                                     <input
@@ -916,7 +1045,7 @@ const FileExplorer = () => {
                                                 handlePathSubmit(e)
                                             }
                                         }}
-                                        className="w-full h-[5vh] px-3 rounded border font-mono text-sm flex items-center"
+                                        className="w-full h-10 min-h-[40px] px-3 rounded border font-mono text-sm flex items-center"
                                         style={{
                                             backgroundColor: current?.background,
                                             borderColor: current?.primary,
@@ -1030,7 +1159,7 @@ const FileExplorer = () => {
                                 </form>
                             ) : (
                                 <View
-                                    className="flex-1 w-full h-[5vh] px-3 rounded cursor-text hover:bg-opacity-50 transition-colors min-w-0 flex items-center"
+                                    className="flex-1 w-full h-10 min-h-[40px] px-3 rounded cursor-text hover:bg-opacity-50 transition-colors min-w-0 flex items-center"
                                     style={{
                                         backgroundColor: current?.dark + "08",
                                     }}
@@ -1048,63 +1177,6 @@ const FileExplorer = () => {
                             )}
                         </View>
                     )}
-
-                    {/* Right: Action buttons */}
-                    <View className="flex items-center gap-2 flex-shrink-0">
-                        <IconButton
-                            icon={<RotateCw size={18} color={current?.dark} />}
-                            action={() => {
-                                if (currentDiskId) {
-                                    refreshCurrentDisk()
-                                }
-                            }}
-                            title="Refresh"
-                        />
-                        <IconButton
-                            icon={<Upload size={18} color={current?.dark} />}
-                            action={() => {
-                                if (currentDiskId) {
-                                    handleUploadClick()
-                                } else {
-                                    alert("Please select a disk first")
-                                }
-                            }}
-                            title={`Upload Files${currentPath.length > 0 ? ` to current folder` : ""}`}
-                        />
-                        <IconButton
-                            icon={<FolderPlus size={18} color={current?.dark} />}
-                            action={() => {
-                                if (currentDiskId) {
-                                    setShowCreateFolder(true)
-                                } else {
-                                    alert("Please select a disk first")
-                                }
-                            }}
-                            title="New Folder"
-                        />
-                        <IconButton
-                            icon={<FileText size={18} color={current?.dark} />}
-                            action={() => {
-                                if (currentDiskId) {
-                                    setShowCreateNote(true)
-                                } else {
-                                    alert("Please select a disk first")
-                                }
-                            }}
-                            title="New Note"
-                        />
-                        <IconButton
-                            icon={<Link2 size={18} color={current?.dark} />}
-                            action={() => {
-                                if (currentDiskId) {
-                                    setShowAddUrl(true)
-                                } else {
-                                    alert("Please select a disk first")
-                                }
-                            }}
-                            title="Add URL"
-                        />
-                    </View>
                 </View>
 
                 {/* File Grid/List */}
@@ -1162,7 +1234,7 @@ const FileExplorer = () => {
                         </View>
                     )}
                     {isLoading ? (
-                        <View className={viewMode === "grid" ? "grid grid-cols-6 gap-4 p-2" : "flex flex-col gap-1 p-2"}>
+                        <View className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4 p-2" : "flex flex-col gap-1 p-2"}>
                             {viewMode === "grid"
                                 ? Array.from({ length: 12 }).map((_, i) => (
                                     <FileItemSkeleton key={i} />
@@ -1176,7 +1248,7 @@ const FileExplorer = () => {
                             <Text value="This folder is empty" className="opacity-60" />
                         </View>
                     ) : (
-                        <View className={viewMode === "grid" ? "grid grid-cols-6 gap-4 p-2" : "flex flex-col gap-1"}>
+                        <View className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4 p-2" : "flex flex-col gap-1"}>
                             {(() => {
                                 // Separate highlighted file from others
                                 const highlightedFile = highlightedFileId ? files.find(f => f.id === highlightedFileId) : null

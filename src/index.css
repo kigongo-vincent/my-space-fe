@@ -187,6 +187,13 @@ html {
   font-size: var(--base-font-size, 13.5px);
 }
 
+/* Mobile: slightly smaller base for better fit, ensure touch targets */
+@media (max-width: 640px) {
+  html {
+    font-size: 13px;
+  }
+}
+
 .reduce-motion *,
 .reduce-motion *::before,
 .reduce-motion *::after {

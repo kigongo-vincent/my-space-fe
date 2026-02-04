@@ -120,7 +120,7 @@ const StoragePurchaseModal = ({ onClose }: Props) => {
                     <IconButton icon={<X size={18} color={current?.dark} />} action={onClose} />
                 </View>
 
-                <View className="grid grid-cols-2 gap-4">
+                <View className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {storagePlans.map((plan, index) => (
                         <motion.div
                             key={index}

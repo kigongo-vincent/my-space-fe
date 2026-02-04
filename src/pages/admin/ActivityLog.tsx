@@ -111,7 +111,7 @@ const ActivityLog = () => {
             <AdminPageHeader title="Activity Log" subtitle="Monitor all system activities and user actions" />
 
             {/* Summary Cards */}
-            <View className="grid grid-cols-4 gap-6 mb-8">
+            <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
                 <View
                     style={{
                         backgroundColor: current?.foreground,
@@ -214,7 +214,7 @@ const ActivityLog = () => {
             </View>
 
             {/* Charts */}
-            <View className="grid grid-cols-2 gap-6 mb-8">
+            <View className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
                 <View
                     style={{
                         backgroundColor: current?.foreground,
@@ -282,7 +282,7 @@ const ActivityLog = () => {
             </View>
 
             {/* Activity Summary */}
-            <View className="grid grid-cols-2 gap-6 mb-8">
+            <View className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
                 <View
                     style={{
                         backgroundColor: current?.foreground,

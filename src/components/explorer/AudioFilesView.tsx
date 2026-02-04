@@ -49,20 +49,17 @@ const ThumbnailPlaceholder = ({ file }: { file: FileItem }) => {
 }
 
 const AudioFilesView = () => {
-    const { getAllFilesByType, openFileModal, disks, setBackgroundPlayer } = useFileStore()
+    const { getCurrentFolderFiles, openFileModal, disks, setBackgroundPlayer } = useFileStore()
     const { current } = useTheme()
 
     const audioFiles = useMemo(() => {
-        // Get all audio files from all disks
-        const allAudioFiles: Array<{ file: ReturnType<typeof getAllFilesByType>[0]; diskName: string }> = []
-        disks.forEach(disk => {
-            const diskFiles = disk.files.filter(f => f.type === "audio" && !f.isFolder)
-            diskFiles.forEach(file => {
-                allAudioFiles.push({ file, diskName: disk.name })
-            })
+        // Use getCurrentFolderFiles (returns filteredFiles when filterByType is "audio")
+        const files = getCurrentFolderFiles()
+        return files.map(file => {
+            const disk = disks.find(d => d.id === file.diskId)
+            return { file, diskName: disk?.name ?? "Unknown" }
         })
-        return allAudioFiles
-    }, [disks])
+    }, [getCurrentFolderFiles, disks])
 
     const handlePlay = (fileId: string, e: React.MouseEvent) => {
         if (e.ctrlKey || e.metaKey) {

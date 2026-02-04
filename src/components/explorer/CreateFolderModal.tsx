@@ -20,15 +20,11 @@ const CreateFolderModal = ({ onClose, parentId, diskId }: Props) => {
     const { createFolder } = useFileStore()
     const { current } = useTheme()
 
-    const handleCreate = async () => {
-        if (folderName.trim()) {
-            try {
-                await createFolder(folderName.trim(), parentId, diskId)
-                onClose()
-            } catch (error) {
-                // Error is already handled in createFolder
-            }
-        }
+    const handleCreate = () => {
+        if (!folderName.trim()) return
+        const name = folderName.trim()
+        onClose() // Close modal immediately
+        queueMicrotask(() => createFolder(name, parentId, diskId)) // Defer create so close renders first
     }
 
     return (
@@ -37,7 +33,7 @@ const CreateFolderModal = ({ onClose, parentId, diskId }: Props) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="p-6 flex flex-col gap-4 min-w-[400px]"
+                className="p-4 sm:p-6 flex flex-col gap-4 w-full min-w-0 max-w-full"
                 style={{ backgroundColor: current?.foreground }}
             >
                 <View className="flex items-center justify-between">

@@ -23,7 +23,7 @@ import PropertiesModal from "../../components/explorer/PropertiesModal"
 import FileItemComponent from "../../components/explorer/FileItem"
 import { Trash2, Edit, Info, HardDrive, Plus, Star, StarOff, RefreshCw, GitMerge, Maximize2, Search, FolderOpen, Copy, Scissors } from "lucide-react"
 import { motion } from "framer-motion"
-import { Skeleton } from "../../components/base/Skeleton"
+import { Skeleton, DiskSkeleton } from "../../components/base/Skeleton"
 
 const Index = () => {
 
@@ -32,6 +32,7 @@ const Index = () => {
         currentDiskId,
         currentPath,
         disks,
+        isLoading,
         openModals,
         closeFileModal,
         searchQuery,
@@ -203,7 +204,7 @@ const Index = () => {
                             lineHeight: "1.3"
                         }}
                     />
-                    <View className="grid gap-1 grid-cols-6">
+                    <View className="grid gap-1 grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                         {Array.from({ length: 12 }).map((_, i) => (
                             <motion.div
                                 key={i}
@@ -502,8 +503,10 @@ const Index = () => {
                             <span>Add Disk</span>
                         </motion.button>
                     </View>
-                    <View className="grid gap-6 grid-cols-3">
-                        {
+                    <View className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                        {isLoading && disks.length === 0 ? (
+                            <DiskSkeleton />
+                        ) : (
                             diskComponents?.map((d, i) => {
                                 const disk = disks.find(disk => disk.name === d.label)
                                 return (
@@ -550,7 +553,7 @@ const Index = () => {
                                     </motion.div>
                                 )
                             })
-                        }
+                        )}
                     </View>
                 </motion.div>
 
@@ -565,8 +568,15 @@ const Index = () => {
                         className="mb-5 opacity-70 text-sm uppercase tracking-wider font-medium"
                         style={{ letterSpacing: "0.1em" }}
                     />
-                    <View className="grid gap-1 grid-cols-6">
-                        {
+                    <View className="grid gap-1 grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                        {isLoading && disks.length === 0 ? (
+                            Array.from({ length: 6 }).map((_, i) => (
+                                <View key={i} className="flex flex-col items-center gap-2">
+                                    <Skeleton width="10vh" height="10vh" rounded className="mb-2" />
+                                    <Skeleton width="80%" height="0.75rem" />
+                                </View>
+                            ))
+                        ) : (
                             recentlyOpened?.map((r, i) => (
                                 <motion.div
                                     key={r.fileId || i}
@@ -589,7 +599,7 @@ const Index = () => {
                                     />
                                 </motion.div>
                             ))
-                        }
+                        )}
                     </View>
                 </motion.div>
 
@@ -604,10 +614,16 @@ const Index = () => {
                         className="mb-5 opacity-70 text-sm uppercase tracking-wider font-medium"
                         style={{ letterSpacing: "0.1em" }}
                     />
-                    <View className="grid gap-1 grid-cols-6">
-                        {
-                            pinned.length > 0 ? (
-                                pinned.map((r, i) => (
+                    <View className="grid gap-1 grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                        {isLoading && disks.length === 0
+                            ? Array.from({ length: 4 }).map((_, i) => (
+                                <View key={i} className="flex flex-col items-center gap-2">
+                                    <Skeleton width="10vh" height="10vh" rounded className="mb-2" />
+                                    <Skeleton width="80%" height="0.75rem" />
+                                </View>
+                            ))
+                            : pinned.length > 0
+                                ? pinned.map((r, i) => (
                                     <motion.div
                                         key={r.fileId || i}
                                         initial={{ opacity: 0, scale: 0.8 }}
@@ -630,17 +646,16 @@ const Index = () => {
                                         />
                                     </motion.div>
                                 ))
-                            ) : (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.3, delay: 0.5 }}
-                                    className="col-span-6 py-8 flex items-center justify-center"
-                                >
-                                    <Text value="No pinned files yet. Right-click on a file to pin it." className="opacity-50 text-sm" />
-                                </motion.div>
-                            )
-                        }
+                                : (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ duration: 0.3, delay: 0.5 }}
+                                        className="col-span-2 sm:col-span-4 md:col-span-5 lg:col-span-6 py-8 flex items-center justify-center"
+                                    >
+                                        <Text value="No pinned files yet. Right-click on a file to pin it." className="opacity-50 text-sm" />
+                                    </motion.div>
+                                )}
                     </View>
                 </motion.div>
 
@@ -649,7 +664,7 @@ const Index = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3, delay: 0.6 }}
-                className="border-t flex items-center gap-2 h-14 px-4"
+                className="border-t flex items-center gap-2 min-h-14 h-14 px-2 sm:px-4 overflow-hidden"
                 style={{ borderColor: current?.dark + "20" }}
             >
                 <img src={computerIcon} height={20} width={20} alt="" />
