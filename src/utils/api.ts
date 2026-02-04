@@ -1,6 +1,7 @@
-// const PROD_API_URL = "https://myspace-apiv1.bvrdesign.africa/api";
+const PROD_API_URL = "https://myspace-apiv1.bvrdesign.africa/api";
 const DEV_API_URL = "http://localhost:3000/api";
-export const API_BASE_URL = DEV_API_URL;
+const DEV_MODE = false ? DEV_API_URL : PROD_API_URL;
+export const API_BASE_URL = DEV_MODE;
 // import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 /** Redirect user to backend Google OAuth flow (login/signup). */
