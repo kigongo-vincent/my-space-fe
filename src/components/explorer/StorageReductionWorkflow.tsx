@@ -23,7 +23,7 @@ interface StorageRequest {
 }
 
 const StorageReductionWorkflow = () => {
-    const { current } = useTheme()
+    const { current, name } = useTheme()
     const { deleteFile, disks, fetchDisks } = useFileStore()
     const { usage } = useUser()
     const [pendingRequest, setPendingRequest] = useState<StorageRequest | null>(null)
@@ -222,7 +222,7 @@ const StorageReductionWorkflow = () => {
                                 maxHeight: '90vh',
                                 backgroundColor: current?.foreground,
                                 borderRadius: '0.5rem',
-                                boxShadow: `0 25px 50px -12px rgba(0, 0, 0, 0.4)`,
+                                boxShadow: name === "dark" ? "0 4px 20px rgba(0, 0, 0, 0.25)" : `0 25px 50px -12px ${current?.dark}15`,
                                 pointerEvents: 'auto',
                                 display: 'flex',
                                 flexDirection: 'column'

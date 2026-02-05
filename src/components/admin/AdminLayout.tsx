@@ -73,9 +73,9 @@ const AdminLayout = (props: Props) => {
                         )}
                     </AnimatePresence>
 
-                    {/* Desktop Sidebar - hidden on mobile */}
-                    <View className="hidden md:flex flex-shrink-0 w-[240px] h-full" style={{ zIndex: 1 }}>
-                        <AdminSidebar />
+                    {/* Desktop Sidebar - hidden on mobile (min-width 20vw benchmarked from main Layout sidebar) */}
+                    <View className="hidden md:flex min-w-[20vw] max-w-[280px] flex-shrink-0 h-full" style={{ zIndex: 1 }}>
+                        <AdminSidebar className="rounded-xl w-full" />
                     </View>
 
                     {/* Scrollable Main Content */}

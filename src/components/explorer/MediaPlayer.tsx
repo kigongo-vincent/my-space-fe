@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react"
+import Hls from "hls.js"
 import View from "../base/View"
 import Text from "../base/Text"
 import { useTheme } from "../../store/Themestore"
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Minimize2, Maximize2, Minimize } from "lucide-react"
+import { Play, Pause, SkipBack, SkipForward, Minimize2, Maximize2, Minimize } from "lucide-react"
+import speakerIcon from "../../assets/categories/speaker.webp"
 import { FileItem } from "../../store/Filestore"
 import { useFileStore } from "../../store/Filestore"
 import RangeInput from "../base/RangeInput"
@@ -16,186 +18,6 @@ interface Props {
     isMobile?: boolean
 }
 
-const AudioVisualizer = ({ audioRef, isPlaying }: { audioRef: React.RefObject<HTMLAudioElement | null>, isPlaying: boolean }) => {
-    const { current } = useTheme()
-    const canvasRef = useRef<HTMLCanvasElement>(null)
-    const [canvasSize, setCanvasSize] = useState(320)
-    useEffect(() => {
-        const updateSize = () => {
-            const size = window.innerWidth < 768 ? Math.min(280, window.innerWidth - 48) : 320
-            setCanvasSize(size)
-        }
-        updateSize()
-        window.addEventListener("resize", updateSize)
-        return () => window.removeEventListener("resize", updateSize)
-    }, [])
-    const animationFrameRef = useRef<number | null>(null)
-    const audioContextRef = useRef<AudioContext | null>(null)
-    const analyserRef = useRef<AnalyserNode | null>(null)
-    const dataArrayRef = useRef<Uint8Array | null>(null)
-    const sourceRef = useRef<MediaElementAudioSourceNode | null>(null)
-
-    useEffect(() => {
-        const audio = audioRef.current
-        const canvas = canvasRef.current
-        if (!audio || !canvas) return
-
-        // Initialize Web Audio API
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-        const analyser = audioContext.createAnalyser()
-        analyser.fftSize = 256
-        analyser.smoothingTimeConstant = 0.8
-
-        const bufferLength = analyser.frequencyBinCount
-        const dataArray = new Uint8Array(bufferLength)
-
-        let source: MediaElementAudioSourceNode | null = null
-
-        const connectAudio = async () => {
-            if (audioContext.state === 'closed') return
-
-            // Resume audio context if suspended (browser autoplay policy)
-            if (audioContext.state === 'suspended') {
-                try {
-                    await audioContext.resume()
-                } catch (e) {
-                    console.warn('Could not resume audio context:', e)
-                }
-            }
-
-            try {
-                if (!source) {
-                    source = audioContext.createMediaElementSource(audio)
-                    source.connect(analyser)
-                    analyser.connect(audioContext.destination)
-                }
-            } catch (e) {
-                // Already connected or error
-            }
-        }
-
-        // Connect when audio is ready
-        if (audio.readyState >= 2) {
-            connectAudio()
-        } else {
-            audio.addEventListener('canplay', connectAudio, { once: true })
-        }
-
-        // Also try to connect when playing starts
-        const handlePlay = () => {
-            connectAudio()
-        }
-        audio.addEventListener('play', handlePlay)
-
-        audioContextRef.current = audioContext
-        analyserRef.current = analyser
-        dataArrayRef.current = dataArray
-        sourceRef.current = source
-
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return
-
-        const width = canvas.width
-        const height = canvas.height
-        const barCount = 64
-        const barWidth = width / barCount
-        const centerY = height / 2
-
-        const draw = () => {
-            if (!isPlaying && audio.paused) {
-                // Draw idle state - subtle pulsing bars
-                const bgGradient = ctx.createLinearGradient(0, 0, 0, height)
-                bgGradient.addColorStop(0, current?.dark + "15")
-                bgGradient.addColorStop(1, current?.dark + "08")
-                ctx.fillStyle = bgGradient
-                ctx.fillRect(0, 0, width, height)
-
-                const time = Date.now() / 1000
-                for (let i = 0; i < barCount; i++) {
-                    const barHeight = Math.sin(time + i * 0.1) * 8 + 12
-                    const x = i * barWidth + barWidth / 2 - 2
-                    const gradient = ctx.createLinearGradient(0, centerY - barHeight, 0, centerY + barHeight)
-                    gradient.addColorStop(0, current?.primary + "40")
-                    gradient.addColorStop(1, current?.primary + "20")
-                    ctx.fillStyle = gradient
-                    ctx.fillRect(x, centerY - barHeight / 2, 4, barHeight)
-                }
-            } else {
-                // Get frequency data
-                analyser.getByteFrequencyData(dataArray)
-
-                // Clear canvas with gradient background
-                const bgGradient = ctx.createLinearGradient(0, 0, 0, height)
-                bgGradient.addColorStop(0, current?.dark + "10")
-                bgGradient.addColorStop(1, current?.dark + "05")
-                ctx.fillStyle = bgGradient
-                ctx.fillRect(0, 0, width, height)
-
-                // Draw bars
-                for (let i = 0; i < barCount; i++) {
-                    const dataIndex = Math.floor((i / barCount) * bufferLength)
-                    const barHeight = (dataArray[dataIndex] / 255) * (height * 0.8)
-                    const normalizedHeight = Math.max(4, barHeight)
-
-                    const x = i * barWidth + barWidth / 2 - 2
-
-                    // Create gradient for each bar
-                    const gradient = ctx.createLinearGradient(0, centerY - normalizedHeight, 0, centerY + normalizedHeight)
-                    const opacity = Math.min(1, normalizedHeight / (height * 0.4))
-                    const alpha1 = Math.floor(opacity * 255).toString(16).padStart(2, '0')
-                    const alpha2 = Math.floor(opacity * 200).toString(16).padStart(2, '0')
-                    const alpha3 = Math.floor(opacity * 100).toString(16).padStart(2, '0')
-                    gradient.addColorStop(0, current?.primary + alpha1)
-                    gradient.addColorStop(0.5, current?.primary + alpha2)
-                    gradient.addColorStop(1, current?.primary + alpha3)
-
-                    ctx.fillStyle = gradient
-                    ctx.fillRect(x, centerY - normalizedHeight / 2, 4, normalizedHeight)
-                }
-            }
-
-            animationFrameRef.current = requestAnimationFrame(draw)
-        }
-
-        draw()
-
-        return () => {
-            if (animationFrameRef.current) {
-                cancelAnimationFrame(animationFrameRef.current)
-            }
-            audio.removeEventListener('canplay', connectAudio)
-            audio.removeEventListener('play', handlePlay)
-            if (source) {
-                try {
-                    source.disconnect()
-                } catch (e) { }
-            }
-            if (audioContext.state !== 'closed') {
-                audioContext.close().catch(() => { })
-            }
-        }
-    }, [isPlaying, current, audioRef])
-
-    return (
-        <View
-            className="w-full max-w-[320px] aspect-square rounded-lg flex items-center justify-center overflow-hidden media-glow"
-            style={{
-                backgroundColor: current?.dark + "10",
-                width: canvasSize,
-                height: canvasSize,
-                minWidth: 0
-            }}
-        >
-            <canvas
-                ref={canvasRef}
-                width={canvasSize}
-                height={canvasSize}
-                className="w-full h-full"
-            />
-        </View>
-    )
-}
-
 const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => {
     const { current, name } = useTheme()
     const { setBackgroundPlayer, getFileById, getCurrentFolderFiles, openFileModal, updateFileModal, findModalByFileId, refreshFileURL } = useFileStore()
@@ -205,10 +27,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
     const [isPlaying, setIsPlaying] = useState(false)
     const [currentTime, setCurrentTime] = useState(0)
     const [duration, setDuration] = useState(0)
-    const [volume, setVolume] = useState(1)
-    const [isMuted, setIsMuted] = useState(false)
     const [playbackRate, setPlaybackRate] = useState(1)
-    const [showVolumeSlider, setShowVolumeSlider] = useState(false)
     const [isBuffering, setIsBuffering] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [audioErrorRetryCount, setAudioErrorRetryCount] = useState(0)
@@ -219,9 +38,43 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
 
     const mediaRef = isVideo ? videoRef : audioRef
     const nextFileRef = useRef<FileItem | null>(null)
+    const hlsRef = useRef<Hls | null>(null)
+    const isHls = isVideo && videoUrl?.includes("hls-manifest")
     const prefetchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const playStartTimeRef = useRef<number>(0)
     const nextTrackPreloadRef = useRef<HTMLAudioElement | null>(null)
+    const [isSeeking, setIsSeeking] = useState(false)
+    const [wasPlayingBeforeSeek, setWasPlayingBeforeSeek] = useState(false)
+    const wasPlayingBeforeSeekRef = useRef(false)
+    const [showFullscreenControls, setShowFullscreenControls] = useState(true)
+    const fullscreenControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    // HLS setup for chunked video streaming
+    useEffect(() => {
+        if (!isHls || !videoUrl || !videoRef.current) return
+        const video = videoRef.current
+        if (Hls.isSupported()) {
+            if (hlsRef.current) {
+                hlsRef.current.destroy()
+                hlsRef.current = null
+            }
+            const hls = new Hls({
+                xhrSetup: (xhr) => {
+                    const token = localStorage.getItem("token")
+                    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`)
+                },
+            })
+            hls.loadSource(videoUrl)
+            hls.attachMedia(video)
+            hlsRef.current = hls
+            return () => {
+                hls.destroy()
+                hlsRef.current = null
+            }
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+            video.src = videoUrl
+        }
+    }, [isHls, videoUrl])
 
     // Reset retry count when switching tracks
     useEffect(() => {
@@ -403,7 +256,9 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
 
     useEffect(() => {
         const handleFullscreenChange = () => {
-            setIsFullscreen(!!document.fullscreenElement)
+            const fullscreen = !!document.fullscreenElement
+            setIsFullscreen(fullscreen)
+            if (fullscreen) setShowFullscreenControls(true)
         }
 
         document.addEventListener('fullscreenchange', handleFullscreenChange)
@@ -416,6 +271,9 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
             document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
             document.removeEventListener('mozfullscreenchange', handleFullscreenChange)
             document.removeEventListener('MSFullscreenChange', handleFullscreenChange)
+            if (fullscreenControlsTimeoutRef.current) {
+                clearTimeout(fullscreenControlsTimeoutRef.current)
+            }
         }
     }, [])
 
@@ -423,7 +281,8 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
         const media = mediaRef.current
         if (!media) return
 
-        setIsLoading(true)
+        // Only show loading when media is actually loading - not when isPlaying toggles
+        if (media.readyState < 2) setIsLoading(true)
 
         // Set preload strategy based on network
         media.preload = preloadStrategy
@@ -535,9 +394,25 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
             }
         }
 
-        const handlePause = () => setIsPlaying(false)
+        const handlePause = () => {
+            setIsPlaying(false)
+            if (!wasPlayingBeforeSeekRef.current) {
+                setIsBuffering(false)
+                setIsLoading(false)
+            }
+        }
+
+        const handleSeeked = () => {
+            const shouldResume = wasPlayingBeforeSeekRef.current
+            setIsSeeking(false)
+            wasPlayingBeforeSeekRef.current = false
+            if (shouldResume) {
+                media.play()
+            }
+        }
 
         const handleWaiting = () => {
+            if (media.paused) return
             setIsBuffering(true)
             // Aggressively try to buffer more
             if (media.readyState < 3) {
@@ -592,6 +467,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
         media.addEventListener("play", handlePlay)
         media.addEventListener("pause", handlePause)
         media.addEventListener("waiting", handleWaiting)
+        media.addEventListener("seeked", handleSeeked)
         media.addEventListener("canplay", handleCanPlay)
         media.addEventListener("canplaythrough", handleCanPlayThrough)
         media.addEventListener("loadstart", handleLoadStart)
@@ -630,6 +506,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
             media.removeEventListener("play", handlePlay)
             media.removeEventListener("pause", handlePause)
             media.removeEventListener("waiting", handleWaiting)
+            media.removeEventListener("seeked", handleSeeked)
             media.removeEventListener("canplay", handleCanPlay)
             media.removeEventListener("canplaythrough", handleCanPlayThrough)
             media.removeEventListener("loadstart", handleLoadStart)
@@ -654,19 +531,12 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
         if (isPlaying) {
             media.pause()
         } else {
-            // Spotify-style: Measure latency from click to playback
             playStartTimeRef.current = Date.now()
-
-            // Start playback immediately
             const playPromise = media.play()
-
-            // Handle promise rejection (autoplay policies)
             if (playPromise !== undefined) {
                 playPromise
                     .then(() => {
-                        // Playback started successfully
                         const latency = Date.now() - playStartTimeRef.current
-                        // Log for benchmarking (can be removed in production)
                         if (latency > 200) {
                             console.warn(`High playback latency: ${latency}ms (target: <200ms)`)
                         }
@@ -677,7 +547,7 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
                     })
             }
         }
-        setIsPlaying(!isPlaying)
+        // Rely on media onPlay/onPause for state - avoids UI desync
     }
 
     const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -685,31 +555,11 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
         if (!media) return
 
         const newTime = parseFloat(e.target.value)
+        wasPlayingBeforeSeekRef.current = isPlaying
+        setWasPlayingBeforeSeek(isPlaying)
+        setIsSeeking(true)
         media.currentTime = newTime
         setCurrentTime(newTime)
-    }
-
-    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const media = mediaRef.current
-        if (!media) return
-
-        const newVolume = parseFloat(e.target.value)
-        setVolume(newVolume)
-        media.volume = newVolume
-        setIsMuted(newVolume === 0)
-    }
-
-    const toggleMute = () => {
-        const media = mediaRef.current
-        if (!media) return
-
-        if (isMuted) {
-            media.volume = volume || 0.5
-            setIsMuted(false)
-        } else {
-            media.volume = 0
-            setIsMuted(true)
-        }
     }
 
     const handlePlaybackRateChange = (rate: number) => {
@@ -722,27 +572,46 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
 
     const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0
 
+    // Mac-style: show controls on mouse move, hide after 3s idle
+    const handleFullscreenControlsActivity = () => {
+        setShowFullscreenControls(true)
+        if (fullscreenControlsTimeoutRef.current) {
+            clearTimeout(fullscreenControlsTimeoutRef.current)
+        }
+        fullscreenControlsTimeoutRef.current = setTimeout(() => {
+            setShowFullscreenControls(false)
+            fullscreenControlsTimeoutRef.current = null
+        }, 3000)
+    }
+
     return (
         <View className={`flex flex-col ${isVideo ? 'h-full' : 'h-full'} items-center ${isVideo ? 'justify-start' : 'justify-center'} p-4 sm:p-6 md:p-10 gap-4 sm:gap-6 md:gap-8 overflow-auto`}>
             {/* Album Art / Video Display */}
             {isVideo ? (
                 <View
                     ref={videoContainerRef}
-                    className="relative rounded-lg media-glow overflow-hidden"
+                    className={`relative overflow-hidden ${isFullscreen ? 'w-full h-full' : 'rounded-lg'}`}
                     style={{
                         position: 'relative',
                         display: 'flex',
-                        width: '100%',
-                        maxWidth: '800px',
-                        justifyContent: 'center'
+                        width: isFullscreen ? '100vw' : '100%',
+                        maxWidth: isFullscreen ? 'none' : '800px',
+                        height: isFullscreen ? '100vh' : undefined,
+                        minHeight: isFullscreen ? '100vh' : undefined,
+                        margin: isFullscreen ? 0 : undefined,
+                        padding: isFullscreen ? 0 : undefined,
+                        justifyContent: 'center',
+                        alignItems: 'center'
                     }}
+                    {...(isFullscreen && { onMouseMove: handleFullscreenControlsActivity })}
                 >
                     <video
                         ref={videoRef}
-                        src={videoUrl}
-                        className="rounded-lg"
+                        src={isHls ? undefined : videoUrl}
+                        className={isFullscreen ? 'cursor-pointer' : 'rounded-lg'}
                         preload={preloadStrategy}
                         playsInline
+                        onClick={isFullscreen ? togglePlay : undefined}
                         onPlay={() => setIsPlaying(true)}
                         onPause={() => setIsPlaying(false)}
                         onWaiting={() => setIsBuffering(true)}
@@ -759,20 +628,23 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
                             setIsBuffering(true)
                         }}
                         style={{
-                            width: '100%',
-                            height: 'auto',
+                            width: isFullscreen ? '100%' : '100%',
+                            height: isFullscreen ? '100%' : 'auto',
+                            maxHeight: isFullscreen ? 'none' : '70vh',
+                            minHeight: isFullscreen ? '100%' : undefined,
                             display: 'block',
-                            maxHeight: '70vh'
+                            objectFit: isFullscreen ? 'cover' : undefined,
+                            objectPosition: isFullscreen ? 'center' : undefined
                         }}
                     />
-                    {/* Loading/Buffering overlay */}
+                    {/* Loading/Buffering overlay - hide when playing or seeking */}
                     <AnimatePresence>
-                        {(isLoading || isBuffering) && (
+                        {(isLoading || isBuffering) && !isPlaying && !isSeeking && (
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 flex items-center justify-center"
+                                className="absolute inset-0 flex items-center justify-center z-20"
                                 style={{
                                     backgroundColor: current?.dark + "40",
                                     borderRadius: "0.5rem"
@@ -797,21 +669,174 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
                             </motion.div>
                         )}
                     </AnimatePresence>
-                    {/* Fullscreen button for video */}
-                    <button
-                        onClick={toggleFullscreen}
-                        className="absolute top-2 right-2 p-2 rounded-lg hover:opacity-90 transition-opacity z-10"
-                        style={{
-                            backgroundColor: current?.dark + "60",
-                            color: "white"
-                        }}
-                        title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                    >
-                        {isFullscreen ? <Minimize size={20} /> : <Maximize2 size={20} />}
-                    </button>
+                    {/* Mac-style fullscreen controls overlay */}
+                    {isFullscreen && (
+                        <motion.div
+                            className="absolute inset-0 z-10 flex flex-col justify-between pointer-events-auto"
+                            onMouseMove={handleFullscreenControlsActivity}
+                            onMouseLeave={() => {
+                                if (fullscreenControlsTimeoutRef.current) {
+                                    clearTimeout(fullscreenControlsTimeoutRef.current)
+                                }
+                                fullscreenControlsTimeoutRef.current = setTimeout(() => {
+                                    setShowFullscreenControls(false)
+                                    fullscreenControlsTimeoutRef.current = null
+                                }, 3000)
+                            }}
+                            initial={false}
+                            animate={{ opacity: showFullscreenControls ? 1 : 0 }}
+                            transition={{ duration: 0.25 }}
+                            style={{ pointerEvents: showFullscreenControls ? "auto" : "none" }}
+                        >
+                            {/* Top bar: title + exit fullscreen (QuickTime-style flat) */}
+                            <div
+                                className="flex items-center justify-between px-4 py-3"
+                                style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+                            >
+                                <Text
+                                    value={file.name.replace(/\.[^/.]+$/, "")}
+                                    className="font-medium text-white truncate max-w-[70vw]"
+                                    style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}
+                                />
+                                <button
+                                    onClick={toggleFullscreen}
+                                    className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white"
+                                    title="Exit fullscreen"
+                                >
+                                    <Minimize size={22} />
+                                </button>
+                            </div>
+                            {/* Bottom bar: progress + controls (QuickTime-style flat) */}
+                            <div
+                                className="flex flex-col gap-3 px-4 pb-6 pt-4"
+                                style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+                            >
+                                <View className="w-full max-w-2xl mx-auto">
+                                    <RangeInput
+                                        min={0}
+                                        max={duration || 0}
+                                        value={currentTime}
+                                        onChange={handleSeek}
+                                        fillPercentage={progressPercentage}
+                                        height="6px"
+                                    />
+                                </View>
+                                <View className="flex items-center justify-center gap-6">
+                                    <button
+                                        onClick={playPrevious}
+                                        disabled={!getPreviousFile()}
+                                        className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                                        title="Previous"
+                                    >
+                                        <SkipBack size={24} />
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const m = mediaRef.current
+                                            if (m) m.currentTime = Math.max(0, m.currentTime - 10)
+                                        }}
+                                        className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white"
+                                        title="Back 10s"
+                                    >
+                                        <SkipBack size={20} />
+                                    </button>
+                                    <button
+                                        onClick={togglePlay}
+                                        disabled={isLoading && !isPlaying && !isSeeking}
+                                        className="rounded-full bg-white/90 hover:bg-white transition-all flex items-center justify-center disabled:opacity-50 w-14 h-14 text-black"
+                                        title={isPlaying ? "Pause" : "Play"}
+                                    >
+                                        {(isPlaying || (isSeeking && wasPlayingBeforeSeek)) ? (
+                                            <Pause size={28} fill="currentColor" />
+                                        ) : isLoading ? (
+                                            <motion.div
+                                                animate={{ rotate: 360 }}
+                                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                                className="w-6 h-6 rounded-full border-2 border-black border-t-transparent"
+                                            />
+                                        ) : (
+                                            <Play size={28} fill="currentColor" />
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const m = mediaRef.current
+                                            if (m) m.currentTime = Math.min(duration, m.currentTime + 10)
+                                        }}
+                                        className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white"
+                                        title="Forward 10s"
+                                    >
+                                        <SkipForward size={20} />
+                                    </button>
+                                    <button
+                                        onClick={playNext}
+                                        disabled={!getNextFile()}
+                                        className="p-2 rounded-lg hover:bg-white/20 transition-colors text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                                        title="Next"
+                                    >
+                                        <SkipForward size={24} />
+                                    </button>
+                                </View>
+                                <View className="flex items-center justify-center gap-2">
+                                    {[0.5, 1, 1.5, 2].map((rate) => (
+                                        <button
+                                            key={rate}
+                                            onClick={() => handlePlaybackRateChange(rate)}
+                                            className="px-3 py-1.5 rounded-md text-sm font-medium text-white hover:bg-white/20 transition-colors"
+                                            style={{
+                                                backgroundColor: playbackRate === rate ? "rgba(255,255,255,0.3)" : "transparent"
+                                            }}
+                                        >
+                                            {rate}x
+                                        </button>
+                                    ))}
+                                </View>
+                            </div>
+                        </motion.div>
+                    )}
+                    {/* Fullscreen button for video (non-fullscreen only) */}
+                    {!isFullscreen && (
+                        <button
+                            onClick={toggleFullscreen}
+                            className="absolute top-2 right-2 p-2 rounded-lg hover:opacity-90 transition-opacity z-10"
+                            style={{
+                                backgroundColor: current?.dark + "60",
+                                color: "white"
+                            }}
+                            title="Enter fullscreen"
+                        >
+                            <Maximize2 size={20} />
+                        </button>
+                    )}
+                </View>
+            ) : file.thumbnail ? (
+                <View
+                    className="w-full max-w-[320px] aspect-square rounded-lg overflow-hidden flex items-center justify-center"
+                    style={{
+                        backgroundColor: current?.dark + "10",
+                        minWidth: 0
+                    }}
+                >
+                    <img
+                        src={file.thumbnail}
+                        alt={file.name}
+                        className="w-full h-full object-cover"
+                    />
                 </View>
             ) : (
-                <AudioVisualizer audioRef={audioRef} isPlaying={isPlaying} />
+                <View
+                    className="w-full max-w-[320px] aspect-square rounded-lg overflow-hidden flex items-center justify-center"
+                    style={{
+                        backgroundColor: current?.dark + "10",
+                        minWidth: 0
+                    }}
+                >
+                    <img
+                        src={speakerIcon}
+                        alt="Audio"
+                        className="w-24 h-24 object-contain opacity-60"
+                    />
+                </View>
             )}
 
             {/* Song Title */}
@@ -878,11 +903,11 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
                 </button>
                 <button
                     onClick={togglePlay}
-                    disabled={isLoading}
+                    disabled={isLoading && !isPlaying && !isSeeking}
                     className="rounded-full hover:scale-105 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
                         boxShadow: name === "dark"
-                            ? `0 10px 15px -3px rgba(0, 0, 0, 0.3)`
+                            ? "0 4px 20px rgba(0, 0, 0, 0.25)"
                             : `0 10px 15px -3px ${current?.dark}10`,
                         backgroundColor: current?.primary,
                         color: "white",
@@ -891,14 +916,14 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
                     }}
                     title={isPlaying ? "Pause" : "Play"}
                 >
-                    {isLoading ? (
+                    {(isPlaying || (isSeeking && wasPlayingBeforeSeek)) ? (
+                        <Pause size={36} fill="white" />
+                    ) : isLoading ? (
                         <motion.div
                             animate={{ rotate: 360 }}
                             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                             className="w-8 h-8 rounded-full border-2 border-white border-t-transparent"
                         />
-                    ) : isPlaying ? (
-                        <Pause size={36} fill="white" />
                     ) : (
                         <Play size={36} fill="white" />
                     )}
@@ -933,75 +958,29 @@ const MediaPlayer = ({ file, audioUrl, videoUrl, onClose, isMobile }: Props) => 
                 </button>
             </View>
 
-            {/* Speed and Volume Controls */}
-            <View className="flex items-center justify-center gap-8 mt-2">
-                {/* Playback Speed */}
-                <View className="flex items-center gap-3">
-                    <Text
-                        value="Speed"
-                        size="sm"
-                        className="uppercase tracking-wider"
-                        style={{ color: current?.dark + "70", letterSpacing: "0.1em" }}
-                    />
-                    <View className="flex items-center gap-1.5">
-                        {[0.5, 1, 1.5, 2].map((rate) => (
-                            <button
-                                key={rate}
-                                onClick={() => handlePlaybackRateChange(rate)}
-                                className="px-3 py-1.5 rounded-md hover:opacity-90 transition-all text-sm font-medium"
-                                style={{
-                                    backgroundColor: playbackRate === rate ? current?.dark + "15" : current?.dark + "08",
-                                    color: current?.dark,
-                                    letterSpacing: "0.02em"
-                                }}
-                            >
-                                {rate}x
-                            </button>
-                        ))}
-                    </View>
-                </View>
-
-                {/* Volume Control */}
-                <View
-                    className="flex items-center gap-3 relative"
-                    onMouseEnter={() => setShowVolumeSlider(true)}
-                    onMouseLeave={() => setShowVolumeSlider(false)}
-                >
-                    <button
-                        onClick={toggleMute}
-                        className="p-2 hover:opacity-80 transition-opacity rounded-full hover:bg-opacity-10"
-                        style={{
-                            color: current?.dark,
-                            backgroundColor: current?.dark + "08"
-                        }}
-                        title={isMuted ? "Unmute" : "Mute"}
-                    >
-                        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                    </button>
-                    {showVolumeSlider && (
-                        <View className="absolute bottom-full mb-3 left-1/2 transform -translate-x-1/2">
-                            <View
-                                className="p-4 rounded-lg flex items-center"
-                                style={{
-                                    boxShadow: name === "dark"
-                                        ? `0 20px 25px -5px rgba(0, 0, 0, 0.3)`
-                                        : `0 20px 25px -5px ${current?.dark}10`,
-                                    backgroundColor: current?.foreground || current?.background,
-                                    border: `1px solid ${current?.dark}20`
-                                }}
-                            >
-                                <RangeInput
-                                    min={0}
-                                    max={1}
-                                    value={isMuted ? 0 : volume}
-                                    onChange={handleVolumeChange}
-                                    fillPercentage={(isMuted ? 0 : volume) * 100}
-                                    height="6px"
-                                    className="w-28"
-                                />
-                            </View>
-                        </View>
-                    )}
+            {/* Speed Controls */}
+            <View className="flex items-center justify-center gap-3 mt-2">
+                <Text
+                    value="Speed"
+                    size="sm"
+                    className="uppercase tracking-wider"
+                    style={{ color: current?.dark + "70", letterSpacing: "0.1em" }}
+                />
+                <View className="flex items-center gap-1.5">
+                    {[0.5, 1, 1.5, 2].map((rate) => (
+                        <button
+                            key={rate}
+                            onClick={() => handlePlaybackRateChange(rate)}
+                            className="px-3 py-1.5 rounded-md hover:opacity-90 transition-all text-sm font-medium"
+                            style={{
+                                backgroundColor: playbackRate === rate ? current?.dark + "15" : current?.dark + "08",
+                                color: current?.dark,
+                                letterSpacing: "0.02em"
+                            }}
+                        >
+                            {rate}x
+                        </button>
+                    ))}
                 </View>
             </View>
 

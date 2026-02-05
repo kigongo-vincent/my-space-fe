@@ -14,6 +14,7 @@ import DocumentViewer from "./DocumentViewer"
 import UrlViewer from "./UrlViewer"
 import PictureViewer from "./PictureViewer"
 import { resolveFileUrl } from "../../utils/fileUrlResolver"
+import { API_BASE_URL } from "../../utils/api"
 
 interface Props {
     modalId: string
@@ -64,18 +65,21 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
 
         if (file.type === "audio") {
             resolveFileUrl(file).then(url => {
-                setResolvedAudioUrl(url || file.thumbnail || file.url || null)
+                setResolvedAudioUrl(url || file.optimizedUrl || file.thumbnail || file.url || null)
             }).catch(() => {
-                setResolvedAudioUrl(file.thumbnail || file.url || null)
+                setResolvedAudioUrl(file.optimizedUrl || file.thumbnail || file.url || null)
             })
         } else if (file.type === "video") {
+            const hlsUrl = file.optimizedUrl === "hls" && file.id
+                ? `${API_BASE_URL}/files/${file.id}/hls-manifest`
+                : null
             resolveFileUrl(file).then(url => {
-                setResolvedVideoUrl(url || file.url || null)
+                setResolvedVideoUrl(hlsUrl || (url !== "hls" ? url : null) || file.url || null)
             }).catch(() => {
-                setResolvedVideoUrl(file.url || null)
+                setResolvedVideoUrl(hlsUrl || file.url || null)
             })
         }
-    }, [file?.id, file?.url, file?.thumbnail, file?.deviceId, file?.type])
+    }, [file?.id, file?.url, file?.optimizedUrl, file?.thumbnail, file?.deviceId, file?.type])
 
     // Update position when fileId changes (for next/prev navigation)
     useEffect(() => {
@@ -144,7 +148,7 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
                 return (
                     <MediaPlayer
                         file={file}
-                        audioUrl={resolvedAudioUrl || file.thumbnail || file.url}
+                        audioUrl={resolvedAudioUrl || file.optimizedUrl || file.thumbnail || file.url}
                         onClose={onClose}
                         isMobile={isMobile}
                     />
@@ -153,7 +157,7 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
                 return (
                     <MediaPlayer
                         file={file}
-                        videoUrl={resolvedVideoUrl || file.url}
+                        videoUrl={resolvedVideoUrl || file.optimizedUrl || file.url}
                     />
                 )
             case "picture":
@@ -224,7 +228,7 @@ const DraggableModal = ({ modalId, fileId, onClose }: Props) => {
                 zIndex: isExpanded ? 9999 : 1100,
                 backgroundColor: current?.foreground || current?.background,
                 boxShadow: name === "dark"
-                    ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
+                    ? "0 4px 20px rgba(0, 0, 0, 0.25)"
                     : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
             }}
         >

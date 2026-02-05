@@ -12,7 +12,8 @@ import { useFileStore } from "../../store/Filestore"
 import Avatar from "../../components/base/Avatar"
 import { Edit2, Ban, Eye, MoreVertical, CheckCircle, Users, HardDrive, UserCheck, UserX, Trash2 } from "lucide-react"
 import { useNavigate } from "react-router"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
+import { createPortal } from "react-dom"
 import Button from "../../components/base/Button"
 import ConfirmationModal from "../../components/base/ConfirmationModal"
 import StorageDownsizeModal from "../../components/admin/StorageDownsizeModal"
@@ -40,6 +41,7 @@ const UserManagement = () => {
     const [storageValue, setStorageValue] = useState("")
     const [storageUnit, setStorageUnit] = useState<"GB" | "MB" | "TB" | "PB">("GB")
     const [actionMenuUserId, setActionMenuUserId] = useState<number | null>(null)
+    const [actionMenuPosition, setActionMenuPosition] = useState<{ top: number; right: number } | null>(null)
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
     const [confirmModal, setConfirmModal] = useState<{
@@ -213,6 +215,17 @@ const UserManagement = () => {
         setStorageValue("")
     }
 
+    const handleActionMenuOpen = (e: React.MouseEvent, userId: number) => {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+        setActionMenuPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+        setActionMenuUserId(actionMenuUserId === userId ? null : userId)
+    }
+
+    const handleActionMenuClose = () => {
+        setActionMenuUserId(null)
+        setActionMenuPosition(null)
+    }
+
     const handleSuspendUser = (userId: number) => {
         const user = users.find(u => u.id === userId)
         if (user) {
@@ -264,12 +277,12 @@ const UserManagement = () => {
             <AdminPageHeader title="User Management" subtitle="Manage users and their storage allocations" />
 
             {/* Summary Cards */}
-            <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+            <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
                 <View
-                    className="rounded-xl p-4"
+                    className="rounded-lg p-3"
                     style={{ backgroundColor: current?.foreground }}
                 >
-                    <View className="flex items-start justify-between mb-3">
+                    <View className="flex items-start justify-between mb-2">
                         <Text value="Total Users" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                         <View
                             className="flex items-center justify-center"
@@ -288,10 +301,10 @@ const UserManagement = () => {
                 </View>
 
                 <View
-                    className="rounded-xl p-4"
+                    className="rounded-lg p-3"
                     style={{ backgroundColor: current?.foreground }}
                 >
-                    <View className="flex items-start justify-between mb-3">
+                    <View className="flex items-start justify-between mb-2">
                         <Text value="Active Users" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                         <View
                             className="flex items-center justify-center"
@@ -310,10 +323,10 @@ const UserManagement = () => {
                 </View>
 
                 <View
-                    className="rounded-xl p-4"
+                    className="rounded-lg p-3"
                     style={{ backgroundColor: current?.foreground }}
                 >
-                    <View className="flex items-start justify-between mb-3">
+                    <View className="flex items-start justify-between mb-2">
                         <Text value="Suspended" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                         <View
                             className="flex items-center justify-center"
@@ -332,10 +345,10 @@ const UserManagement = () => {
                 </View>
 
                 <View
-                    className="rounded-xl p-4"
+                    className="rounded-lg p-3"
                     style={{ backgroundColor: current?.foreground }}
                 >
-                    <View className="flex items-start justify-between mb-3">
+                    <View className="flex items-start justify-between mb-2">
                         <Text value="Total Storage" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                         <View
                             className="flex items-center justify-center"
@@ -355,12 +368,12 @@ const UserManagement = () => {
             </View>
 
             {/* Charts */}
-            <View className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+            <View className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-4">
                 <View
-                    className="rounded-xl p-4"
+                    className="rounded-lg p-3"
                     style={{ backgroundColor: current?.foreground }}
                 >
-                    <Text value="User Status Distribution" className="font-medium mb-4" style={{ color: current?.dark, fontSize: '1rem' }} />
+                    <Text value="User Status Distribution" className="font-medium mb-3" style={{ color: current?.dark, fontSize: '1rem' }} />
                     <ResponsiveContainer width="100%" height={200}>
                         <PieChart>
                             <Pie
@@ -384,10 +397,10 @@ const UserManagement = () => {
                 </View>
 
                 <View
-                    className="rounded-xl p-4"
+                    className="rounded-lg p-3"
                     style={{ backgroundColor: current?.foreground }}
                 >
-                    <Text value="Top Users by Storage" className="font-medium mb-4" style={{ color: current?.dark, fontSize: '1rem' }} />
+                    <Text value="Top Users by Storage" className="font-medium mb-3" style={{ color: current?.dark, fontSize: '1rem' }} />
                     <ResponsiveContainer width="100%" height={200}>
                         <BarChart data={storageDistributionData}>
                             <CartesianGrid strokeDasharray="3 3" stroke={`${current?.dark}0a`} />
@@ -412,10 +425,10 @@ const UserManagement = () => {
             {/* Table */}
             <View
                 mode="foreground"
-                className="overflow-x-auto overflow-hidden rounded-xl"
+                className="overflow-x-auto rounded-xl"
             >
                 <View
-                    className="grid grid-cols-12 gap-4 p-3 min-w-[600px]"
+                    className="grid grid-cols-12 gap-3 p-2 min-w-[600px]"
                     style={{
                         backgroundColor: current?.foreground
                     }}
@@ -443,7 +456,7 @@ const UserManagement = () => {
                         {paginatedUsers.map((user, index) => (
                             <View
                                 key={user.id}
-                                className="grid grid-cols-12 gap-4 p-3 items-center min-w-[600px]"
+                                className="grid grid-cols-12 gap-3 p-2 items-center min-w-[600px]"
                                 style={{
                                     backgroundColor: current?.foreground,
                                     borderBottom: index < paginatedUsers.length - 1 ? `1px solid ${current?.dark}12` : 'none'
@@ -451,7 +464,11 @@ const UserManagement = () => {
                             >
                                 {/* User Info */}
                                 <View className="col-span-3 flex items-center gap-2">
-                                    <Avatar path={user.photo} fallback={{ text: getInitials(user.username) }} />
+                                    <Avatar
+                                        path={user.photo}
+                                        fallback={{ text: getInitials(user.username) }}
+                                        badge={user.role === "admin" ? "admin" : undefined}
+                                    />
                                     <View>
                                         <View className="flex items-center gap-2">
                                             <Text value={user.username} size="md" style={{ color: current?.dark }} />
@@ -572,86 +589,16 @@ const UserManagement = () => {
                                 </View>
 
                                 {/* Actions Menu */}
-                                <View className="col-span-3 flex justify-end relative">
+                                <View className="col-span-3 flex justify-end">
                                     {editingUserId === user.id ? null : (
-                                        <View className="relative">
-                                            <IconButton
-                                                icon={<MoreVertical size={16} color={current?.dark} />}
-                                                action={() => setActionMenuUserId(actionMenuUserId === user.id ? null : user.id)}
-                                                title=""
-                                            />
-                                            <AnimatePresence>
-                                                {actionMenuUserId === user.id && (
-                                                    <motion.div
-                                                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                                        transition={{ duration: 0.15 }}
-                                                        className="absolute right-0 top-8 z-10 p-3 min-w-[160px]"
-                                                        style={{
-                                                            backgroundColor: current?.foreground,
-                                                            borderRadius: '0.25rem',
-                                                            boxShadow: `0 4px 12px ${current?.dark}15`
-                                                        }}
-                                                    >
-                                                        <motion.button
-                                                            initial={{ opacity: 0, x: -10 }}
-                                                            animate={{ opacity: 1, x: 0 }}
-                                                            transition={{ delay: 0.05 }}
-                                                            whileHover={{ backgroundColor: `${current?.dark}10` }}
-                                                            onClick={() => {
-                                                                navigate(`/admin/users/${user.id}`)
-                                                                setActionMenuUserId(null)
-                                                            }}
-                                                            className="w-full flex items-center gap-2 px-3 py-3 text-left"
-                                                            style={{ color: current?.dark, fontSize: '1rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
-                                                        >
-                                                            <Eye size={16} />
-                                                            <Text value="View Details" style={{ fontSize: '1rem' }} />
-                                                        </motion.button>
-                                                        <motion.button
-                                                            initial={{ opacity: 0, x: -10 }}
-                                                            animate={{ opacity: 1, x: 0 }}
-                                                            transition={{ delay: 0.1 }}
-                                                            whileHover={{ backgroundColor: `${current?.dark}10` }}
-                                                            onClick={() => {
-                                                                handleEditStorage(user)
-                                                                setActionMenuUserId(null)
-                                                            }}
-                                                            className="w-full flex items-center gap-2 px-3 py-3 text-left"
-                                                            style={{ color: current?.dark, fontSize: '1rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
-                                                        >
-                                                            <Edit2 size={16} />
-                                                            <Text value="Edit Storage" style={{ fontSize: '1rem' }} />
-                                                        </motion.button>
-                                                        <motion.button
-                                                            initial={{ opacity: 0, x: -10 }}
-                                                            animate={{ opacity: 1, x: 0 }}
-                                                            transition={{ delay: 0.15 }}
-                                                            whileHover={{ backgroundColor: `${current?.dark}10` }}
-                                                            onClick={() => handleSuspendUser(user.id)}
-                                                            className="w-full flex items-center gap-2 px-3 py-3 text-left"
-                                                            style={{ color: user.suspended ? "#10b981" : (current?.error || "#ef4444"), fontSize: '1rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
-                                                        >
-                                                            {user.suspended ? <CheckCircle size={16} /> : <Ban size={16} />}
-                                                            <Text value={user.suspended ? "Unsuspend" : "Suspend"} style={{ fontSize: '1rem' }} />
-                                                        </motion.button>
-                                                        <motion.button
-                                                            initial={{ opacity: 0, x: -10 }}
-                                                            animate={{ opacity: 1, x: 0 }}
-                                                            transition={{ delay: 0.2 }}
-                                                            whileHover={{ backgroundColor: `${current?.dark}10` }}
-                                                            onClick={() => handleDeleteUser(user.id)}
-                                                            className="w-full flex items-center gap-2 px-3 py-3 text-left"
-                                                            style={{ color: current?.error || "#ef4444", fontSize: '1rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
-                                                        >
-                                                            <Trash2 size={16} />
-                                                            <Text value="Delete User" style={{ fontSize: '1rem' }} />
-                                                        </motion.button>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-                                        </View>
+                                        <button
+                                            onClick={(e) => handleActionMenuOpen(e, user.id)}
+                                            className="h-9 w-9 flex items-center justify-center rounded-lg cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+                                            style={{ backgroundColor: current?.background }}
+                                            title="Actions"
+                                        >
+                                            <MoreVertical size={16} color={current?.dark} />
+                                        </button>
                                     )}
                                 </View>
                             </View>
@@ -659,6 +606,67 @@ const UserManagement = () => {
                     </>
                 )}
             </View>
+
+            {/* Action menu portal - renders above table to fix z-index */}
+            {actionMenuUserId && actionMenuPosition && (() => {
+                const menuUser = users.find(u => u.id === actionMenuUserId)
+                if (!menuUser) return null
+                return createPortal(
+                    <>
+                        <div
+                            className="fixed inset-0 z-[9998]"
+                            onClick={handleActionMenuClose}
+                            aria-hidden="true"
+                        />
+                        <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+                        className="fixed z-[9999] p-2 min-w-[140px]"
+                        style={{
+                            top: actionMenuPosition.top,
+                            right: actionMenuPosition.right,
+                            backgroundColor: current?.foreground,
+                            borderRadius: '0.375rem'
+                        }}
+                    >
+                        <button
+                            onClick={() => { navigate(`/admin/users/${menuUser.id}`); handleActionMenuClose() }}
+                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded text-left transition-opacity duration-150 hover:opacity-90"
+                            style={{ color: current?.dark, fontSize: '0.89rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                        >
+                            <Eye size={16} />
+                            <Text value="View Details" style={{ fontSize: '0.89rem' }} />
+                        </button>
+                        <button
+                            onClick={() => { handleEditStorage(menuUser); handleActionMenuClose() }}
+                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded text-left transition-opacity duration-150 hover:opacity-90"
+                            style={{ color: current?.dark, fontSize: '0.89rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                        >
+                            <Edit2 size={16} />
+                            <Text value="Edit Storage" style={{ fontSize: '0.89rem' }} />
+                        </button>
+                        <button
+                            onClick={() => { handleSuspendUser(menuUser.id); handleActionMenuClose() }}
+                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded text-left transition-opacity duration-150 hover:opacity-90"
+                            style={{ color: menuUser.suspended ? "#10b981" : (current?.error || "#ef4444"), fontSize: '0.89rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                        >
+                            {menuUser.suspended ? <CheckCircle size={16} /> : <Ban size={16} />}
+                            <Text value={menuUser.suspended ? "Unsuspend" : "Suspend"} style={{ fontSize: '0.89rem' }} />
+                        </button>
+                        <button
+                            onClick={() => { handleDeleteUser(menuUser.id); handleActionMenuClose() }}
+                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded text-left transition-opacity duration-150 hover:opacity-90"
+                            style={{ color: current?.error || "#ef4444", fontSize: '0.89rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                        >
+                            <Trash2 size={16} />
+                            <Text value="Delete User" style={{ fontSize: '0.89rem' }} />
+                        </button>
+                    </motion.div>
+                    </>,
+                    document.body
+                )
+            })()}
 
             {/* Confirmation Modal */}
             {confirmModal.isOpen && confirmModal.userId && (

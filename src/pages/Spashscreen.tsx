@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useTheme } from "../store/Themestore"
 import { useUser } from "../store/Userstore"
+import { useFileStore } from "../store/Filestore"
 import { useNavigate } from "react-router"
 import AlertModal from "../components/base/AlertModal"
 import GoogleSignInButton from "../components/auth/GoogleSignInButton"
@@ -85,9 +86,10 @@ const Spashscreen = () => {
                 setTimeout(() => {
                     const currentUser = useUser.getState().current
                     if (currentUser?.role === 'admin') {
-                        navigate("/admin")
+                        navigate("/admin", { replace: true })
                     } else {
-                        navigate("/dashboard")
+                        useFileStore.getState().setCurrentDisk(null)
+                        navigate("/dashboard", { replace: true })
                     }
                 }, 100)
             } else {

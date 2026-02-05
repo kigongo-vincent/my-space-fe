@@ -39,7 +39,7 @@ const MergeDiskModal = ({ sourceDiskId, onClose }: Props) => {
                 className="p-4 sm:p-6 rounded-lg w-full max-w-[600px] min-w-[280px] flex flex-col gap-5 flex-shrink-0 max-h-[90vh] overflow-y-auto"
                 style={{
                     boxShadow: name === "dark"
-                        ? `0 25px 50px -12px rgba(0, 0, 0, 0.4)`
+                        ? "0 4px 20px rgba(0, 0, 0, 0.25)"
                         : `0 25px 50px -12px ${current?.dark}15`
                 }}
             >

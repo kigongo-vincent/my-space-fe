@@ -1,4 +1,4 @@
-import { Settings, Moon, Sun, LogOut, User, Bell, Menu } from "lucide-react"
+import { Settings, Moon, Sun, LogOut, User, Bell, Menu, LayoutDashboard, Shield } from "lucide-react"
 import { useUser } from "../../store/Userstore"
 import Avatar from "./Avatar"
 import IconButton from "./IconButton"
@@ -8,7 +8,7 @@ import View from "./View"
 import Text from "./Text"
 import { useTheme } from "../../store/Themestore"
 import { useNavigate, useLocation } from "react-router"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useLayoutEffect } from "react"
 import { createPortal } from "react-dom"
 import FilterModal from "../admin/FilterModal"
 import { motion } from "framer-motion"
@@ -47,6 +47,17 @@ const Navbar = ({ onMenuClick, showMenuButton }: NavbarProps) => {
         setIsUserMenuOpen(false)
     }
 
+    const handleSwitchMode = () => {
+        if (isAdminPage) {
+            navigate('/dashboard', { replace: true })
+        } else {
+            navigate('/admin', { replace: true })
+        }
+        setIsUserMenuOpen(false)
+    }
+
+    const isAdmin = user?.current?.role === "admin"
+
     // Close menu when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -66,8 +77,8 @@ const Navbar = ({ onMenuClick, showMenuButton }: NavbarProps) => {
         }
     }, [isUserMenuOpen, isNotificationsOpen])
 
-    // Update popover positions when they open (for portal rendering)
-    useEffect(() => {
+    // Update popover positions when they open (useLayoutEffect = before paint, reduces flash)
+    useLayoutEffect(() => {
         if (!isUserMenuOpen) {
             setMenuPosition(null)
             return
@@ -80,7 +91,7 @@ const Navbar = ({ onMenuClick, showMenuButton }: NavbarProps) => {
         }
     }, [isUserMenuOpen])
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!isNotificationsOpen) {
             setNotificationsPosition(null)
             return
@@ -98,7 +109,13 @@ const Navbar = ({ onMenuClick, showMenuButton }: NavbarProps) => {
             <View
                 mode="foreground"
                 className="min-h-[48px] flex flex-col md:flex-row md:h-[7vh] md:items-center border-b overflow-visible py-2 md:py-0"
-                style={{ zIndex: 1000, borderColor: current?.dark + "10" }}
+                style={{
+                    zIndex: 1000,
+                    borderColor: current?.dark + "10",
+                    boxShadow: name === "dark"
+                        ? "0 4px 20px rgba(0, 0, 0, 0.25)"
+                        : `0 4px 20px ${current?.dark}08, 0 1px 0 ${current?.dark}05`
+                }}
             >
                 <View className="w-full max-w-[96vw] mx-auto flex flex-col md:flex-row md:items-center gap-2 md:gap-4 px-3 sm:px-4 overflow-visible">
                     {/* Row 1 on mobile: Logo + Icons. On desktop: Logo (left third) */}
@@ -133,9 +150,13 @@ const Navbar = ({ onMenuClick, showMenuButton }: NavbarProps) => {
                             <View className="relative" ref={menuRef}>
                                 <View
                                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                                    className="cursor-pointer"
+                                    className="cursor-pointer select-none transition-opacity duration-150 hover:opacity-90 active:opacity-80"
                                 >
-                                    <Avatar path={user?.current?.photo} fallback={{ text: user.getInitials(user?.current?.username || "") }} />
+                                    <Avatar
+                                        path={user?.current?.photo}
+                                        fallback={{ text: user.getInitials(user?.current?.username || "") }}
+                                        badge={user?.current?.role === "admin" ? "admin" : undefined}
+                                    />
                                 </View>
                             </View>
                         </View>
@@ -164,9 +185,13 @@ const Navbar = ({ onMenuClick, showMenuButton }: NavbarProps) => {
                         <View className="relative" ref={menuRefDesktop}>
                             <View
                                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                                className="cursor-pointer"
+                                className="cursor-pointer select-none transition-opacity duration-150 hover:opacity-90 active:opacity-80"
                             >
-                                <Avatar path={user?.current?.photo} fallback={{ text: user.getInitials(user?.current?.username || "") }} />
+                                <Avatar
+                                    path={user?.current?.photo}
+                                    fallback={{ text: user.getInitials(user?.current?.username || "") }}
+                                    badge={user?.current?.role === "admin" ? "admin" : undefined}
+                                />
                             </View>
                         </View>
                     </View>
@@ -179,16 +204,18 @@ const Navbar = ({ onMenuClick, showMenuButton }: NavbarProps) => {
             {isUserMenuOpen && menuPosition && createPortal(
                 <motion.div
                     ref={menuPopoverRef}
-                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ duration: 0.15 }}
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
                     className="fixed z-[9999] min-w-[200px] max-w-[90vw]"
                         style={{
                             top: menuPosition.top,
                             right: menuPosition.right,
                             backgroundColor: current?.foreground,
                             borderRadius: '0.5rem',
-                            boxShadow: `0 4px 12px ${current?.dark}20, 0 0 0 1px ${current?.dark}10`
+                            boxShadow: name === "dark"
+                                ? "0 4px 20px rgba(0, 0, 0, 0.25)"
+                                : `0 4px 12px ${current?.dark}20`
                         }}
                     >
                         <View className="p-2">
@@ -196,9 +223,28 @@ const Navbar = ({ onMenuClick, showMenuButton }: NavbarProps) => {
                                 <Text value={user?.current?.username || "User"} className="font-semibold" />
                                 <Text value={user?.current?.email || ""} size="sm" className="opacity-60" />
                             </View>
+                            {isAdmin && (
+                                <button
+                                    onClick={handleSwitchMode}
+                                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors duration-150"
+                                    style={{ backgroundColor: current?.dark + "08" }}
+                                >
+                                    {isAdminPage ? (
+                                        <>
+                                            <LayoutDashboard size={16} color={current?.primary} />
+                                            <Text value="Switch to User Mode" size="sm" />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Shield size={16} color={current?.primary} />
+                                            <Text value="Switch to Admin" size="sm" />
+                                        </>
+                                    )}
+                                </button>
+                            )}
                             <button
                                 onClick={handleSettingsClick}
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:opacity-80 transition-opacity text-left"
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left mt-1 transition-colors duration-150 hover:opacity-90"
                                 style={{ backgroundColor: current?.dark + "08" }}
                             >
                                 <User size={16} color={current?.primary} />
@@ -206,7 +252,7 @@ const Navbar = ({ onMenuClick, showMenuButton }: NavbarProps) => {
                             </button>
                             <button
                                 onClick={handleLogout}
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:opacity-80 transition-opacity text-left mt-1"
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left mt-1 transition-colors duration-150 hover:opacity-90"
                                 style={{ backgroundColor: current?.dark + "08" }}
                             >
                                 <LogOut size={16} color={current?.error || "#ef4444"} />
@@ -219,16 +265,18 @@ const Navbar = ({ onMenuClick, showMenuButton }: NavbarProps) => {
             {isNotificationsOpen && notificationsPosition && createPortal(
                 <motion.div
                     ref={notificationsPopoverRef}
-                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ duration: 0.15 }}
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
                     className="fixed z-[9999] min-w-[200px] max-w-[90vw]"
                         style={{
                             top: notificationsPosition.top,
                             right: notificationsPosition.right,
                             backgroundColor: current?.foreground,
                             borderRadius: '0.5rem',
-                            boxShadow: `0 2px 8px ${current?.dark}12`
+                            boxShadow: name === "dark"
+                                ? "0 4px 20px rgba(0, 0, 0, 0.25)"
+                                : `0 4px 12px ${current?.dark}20`
                         }}
                     >
                         <View className="p-4">

@@ -25,6 +25,7 @@ export interface FileItem {
     isPinned?: boolean
     thumbnail?: string
     url?: string
+    optimizedUrl?: string
     deviceId?: string
     path?: string[] // Array of parent folder IDs from root to parent
 }
@@ -421,6 +422,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                             size: f.size,
                             sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                             thumbnail: f.thumbnail,
+                            optimizedUrl: f.optimizedUrl,
                             url: f.url || f.content, // Use content for notes
                             deviceId: f.deviceId,
                         }))
@@ -513,6 +515,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                                         size: f.size,
                                         sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                                         thumbnail: f.thumbnail,
+                                        optimizedUrl: f.optimizedUrl,
                                         url: f.url || f.content,
                                         deviceId: f.deviceId,
                                     }))
@@ -624,6 +627,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                     size: f.size,
                     sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                     thumbnail: f.thumbnail,
+                    optimizedUrl: f.optimizedUrl,
                     url: f.url || f.content,
                     deviceId: f.deviceId,
                 }))
@@ -728,6 +732,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                     size: f.size,
                     sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                     thumbnail: f.thumbnail,
+                    optimizedUrl: f.optimizedUrl,
                     url: f.url || f.content,
                     deviceId: f.deviceId,
                 }))
@@ -856,6 +861,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                         size: f.size,
                         sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                         thumbnail: f.thumbnail,
+                        optimizedUrl: f.optimizedUrl,
                         url: f.url,
                         deviceId: f.deviceId,
                     }))
@@ -928,6 +934,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                             size: f.size,
                             sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                             thumbnail: f.thumbnail,
+                            optimizedUrl: f.optimizedUrl,
                             url: f.url || f.content,
                             deviceId: f.deviceId,
                         }))
@@ -1025,6 +1032,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                         size: f.size,
                         sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                         thumbnail: f.thumbnail,
+                        optimizedUrl: f.optimizedUrl,
                         url: f.url,
                         deviceId: f.deviceId,
                     }))
@@ -1262,6 +1270,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 size: f.size,
                 sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                 thumbnail: f.thumbnail,
+                optimizedUrl: f.optimizedUrl,
                 url: f.url || f.content,
                 deviceId: f.deviceId,
             }))
@@ -1519,6 +1528,13 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 useBackgroundJobStore.getState().removeJob(jobId)
             }, 3000)
 
+            // Thumbnails are generated async on backend - refresh disk after delay to pick them up
+            if (fileType === "video" || fileType === "audio" || fileType === "picture") {
+                setTimeout(() => {
+                    get().refreshCurrentDisk()
+                }, 4000)
+            }
+
             // Clear filter if active so uploaded file is visible
             const { filterByType } = get()
             if (filterByType) {
@@ -1700,6 +1716,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                     size: f.size,
                     sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                     thumbnail: f.thumbnail,
+                    optimizedUrl: f.optimizedUrl,
                     url: f.url || f.content,
                     deviceId: f.deviceId,
                 }))
@@ -1992,6 +2009,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                         size: f.size,
                         sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                         thumbnail: f.thumbnail,
+                        optimizedUrl: f.optimizedUrl,
                         url: f.url,
                         deviceId: f.deviceId,
                         path: f.path ? f.path.map((id: number) => id.toString()) : [],
@@ -2201,6 +2219,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 size: f.size,
                 sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                 thumbnail: f.thumbnail,
+                optimizedUrl: f.optimizedUrl,
                 url: f.url || f.content,
                 deviceId: f.deviceId,
             }))
@@ -2307,7 +2326,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 const updateFileInTree = (files: FileItem[]): FileItem[] => {
                     return files.map(file => {
                         if (file.id === fileId) {
-                            return { ...file, url: response.url, thumbnail: response.thumbnail || file.thumbnail }
+                            return { ...file, url: response.url, thumbnail: response.thumbnail || file.thumbnail, optimizedUrl: response.optimizedUrl || file.optimizedUrl }
                         }
                         if (file.children) {
                             return { ...file, children: updateFileInTree(file.children) }
@@ -2350,6 +2369,7 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 size: f.size,
                 sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
                 thumbnail: f.thumbnail,
+                optimizedUrl: f.optimizedUrl,
                 url: f.url || f.content,
                 deviceId: f.deviceId,
             }))

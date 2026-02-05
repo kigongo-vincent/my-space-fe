@@ -31,7 +31,7 @@ const ConfirmationModal = ({
     icon,
     requireTextMatch
 }: ConfirmationModalProps) => {
-    const { current } = useTheme()
+    const { current, name } = useTheme()
     const [confirmInput, setConfirmInput] = useState("")
     
     const canConfirm = requireTextMatch ? confirmInput === requireTextMatch : true
@@ -96,7 +96,7 @@ const ConfirmationModal = ({
                                 maxHeight: '90vh',
                                 backgroundColor: current?.foreground,
                                 borderRadius: '0.5rem',
-                                boxShadow: `0 25px 50px -12px rgba(0, 0, 0, 0.4)`,
+                                boxShadow: name === "dark" ? "0 4px 20px rgba(0, 0, 0, 0.25)" : `0 25px 50px -12px ${current?.dark}15`,
                                 pointerEvents: 'auto'
                             }}
                             onClick={(e) => e.stopPropagation()}

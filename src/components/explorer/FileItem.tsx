@@ -100,14 +100,19 @@ const FileItem = ({
         }
     }
 
-    // Prefer actual image (thumbnail or url) over icon for picture files
+    // Prefer actual image (thumbnail or url) over icon for picture, video, audio
     const getImageUrl = () => {
         if (file.type === "picture") {
             if (file.thumbnail) return file.thumbnail
             if (file.url) return file.url
         }
+        if ((file.type === "video" || file.type === "audio") && file.thumbnail) {
+            return file.thumbnail
+        }
         return getImageByFileType(file.type)
     }
+
+    const hasThumbnail = file.type === "picture" || ((file.type === "video" || file.type === "audio") && file.thumbnail)
 
     const dragProps = file.isFolder ? {
         draggable: true,
@@ -147,9 +152,9 @@ const FileItem = ({
                 onContextMenu={handleContextMenu}
                 {...dragProps}
             >
-                {file.type === "picture" ? (
+                {hasThumbnail && !thumbnailError ? (
                     <>
-                        {!thumbnailLoaded && !thumbnailError && (
+                        {!thumbnailLoaded && (
                             <Skeleton width="32px" height="32px" rounded className="absolute" />
                         )}
                         <img
@@ -231,9 +236,9 @@ const FileItem = ({
             {...dragProps}
         >
             <View className="relative h-[10vh] w-[10vh]">
-                {file.type === "picture" ? (
+                {hasThumbnail && !thumbnailError ? (
                     <>
-                        {!thumbnailLoaded && !thumbnailError && (
+                        {!thumbnailLoaded && (
                             <Skeleton width="100%" height="100%" rounded className="absolute inset-0" />
                         )}
                         <img

@@ -76,7 +76,7 @@ const DiskDetailsModal = ({ diskId, onClose }: Props) => {
                 className="p-6 rounded-lg min-w-[500px] max-w-[600px] max-h-[90vh] overflow-auto flex flex-col gap-6"
                 style={{
                     boxShadow: name === "dark"
-                        ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
+                        ? "0 4px 20px rgba(0, 0, 0, 0.25)"
                         : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
                 }}
             >

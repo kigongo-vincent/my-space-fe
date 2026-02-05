@@ -184,49 +184,6 @@ const AdminDashboard = () => {
                     </ResponsiveContainer>
                 </View>
             </View>
-
-            {/* Quick Actions */}
-            <View>
-                <Text value="Quick Actions" className="font-medium mb-4 uppercase tracking-wider opacity-80" style={{ color: current?.dark, letterSpacing: '0.1em', fontSize: '1rem' }} />
-                <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <button
-                        onClick={() => navigate("/admin/users")}
-                        className="text-left transition-all hover:opacity-90 rounded-xl p-4"
-                        style={{ backgroundColor: current?.foreground }}
-                    >
-                        <Users size={18} color={current?.primary} className="mb-2 block" />
-                        <Text value="Manage Users" className="font-medium" style={{ color: current?.dark, fontSize: '1rem' }} />
-                        <Text value="View and edit users" className="opacity-70 mt-1 block" style={{ fontSize: '0.89rem' }} />
-                    </button>
-                    <button
-                        onClick={() => navigate("/admin/storage")}
-                        className="text-left transition-all hover:opacity-90 rounded-xl p-4"
-                        style={{ backgroundColor: current?.foreground }}
-                    >
-                        <HardDrive size={18} color={current?.primary} className="mb-2 block" />
-                        <Text value="Storage Overview" className="font-medium" style={{ color: current?.dark, fontSize: '1rem' }} />
-                        <Text value="Monitor storage usage" className="opacity-70 mt-1 block" style={{ fontSize: '0.89rem' }} />
-                    </button>
-                    <button
-                        onClick={() => navigate("/admin/analytics")}
-                        className="text-left transition-all hover:opacity-90 rounded-xl p-4"
-                        style={{ backgroundColor: current?.foreground }}
-                    >
-                        <BarChart3 size={18} color={current?.primary} className="mb-2 block" />
-                        <Text value="Analytics" className="font-medium" style={{ color: current?.dark, fontSize: '1rem' }} />
-                        <Text value="View app analytics" className="opacity-70 mt-1 block" style={{ fontSize: '0.89rem' }} />
-                    </button>
-                    <button
-                        onClick={() => navigate("/admin/activity")}
-                        className="text-left transition-all hover:opacity-90 rounded-xl p-4"
-                        style={{ backgroundColor: current?.foreground }}
-                    >
-                        <Activity size={18} color={current?.primary} className="mb-2 block" />
-                        <Text value="Activity Log" className="font-medium" style={{ color: current?.dark, fontSize: '1rem' }} />
-                        <Text value="View system activity" className="opacity-70 mt-1 block" style={{ fontSize: '0.89rem' }} />
-                    </button>
-                </View>
-            </View>
         </View>
     )
 }

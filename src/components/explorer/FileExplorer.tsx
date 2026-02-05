@@ -66,7 +66,7 @@ const FileExplorer = () => {
         isLoading,
     } = useFileStore()
 
-    const { current } = useTheme()
+    const { current, name } = useTheme()
     const [showCreateFolder, setShowCreateFolder] = useState(false)
     const [showCreateDisk, setShowCreateDisk] = useState(false)
     const [showCreateNote, setShowCreateNote] = useState(false)
@@ -1061,7 +1061,7 @@ const FileExplorer = () => {
                                             style={{
                                                 backgroundColor: current?.foreground,
                                                 borderColor: current?.dark + "20",
-                                                boxShadow: `0 4px 12px ${current?.dark}15`,
+                                                boxShadow: name === "dark" ? "0 4px 20px rgba(0, 0, 0, 0.25)" : `0 4px 12px ${current?.dark}15`,
                                                 maxHeight: "300px",
                                                 overflowY: "auto"
                                             }}

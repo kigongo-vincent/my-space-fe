@@ -5,6 +5,7 @@ import Text from "../../components/base/Text"
 import Button from "../../components/base/Button"
 import { useTheme } from "../../store/Themestore"
 import { useUser } from "../../store/Userstore"
+import { useFileStore } from "../../store/Filestore"
 import Logo from "../../components/base/Logo"
 import AlertModal from "../../components/base/AlertModal"
 import GoogleSignInButton from "../../components/auth/GoogleSignInButton"
@@ -77,9 +78,10 @@ const Signup = () => {
                 setTimeout(() => {
                     const currentUser = useUser.getState().current
                     if (currentUser?.role === 'admin') {
-                        navigate("/admin")
+                        navigate("/admin", { replace: true })
                     } else {
-                        navigate("/dashboard")
+                        useFileStore.getState().setCurrentDisk(null)
+                        navigate("/dashboard", { replace: true })
                     }
                 }, 100)
             } else {
@@ -134,7 +136,7 @@ const Signup = () => {
                 className="w-full max-w-md p-8 rounded-lg"
                 style={{
                     boxShadow: name === "dark"
-                        ? `0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
+                        ? "0 4px 20px rgba(0, 0, 0, 0.25)"
                         : `0 20px 25px -5px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
                 }}
             >

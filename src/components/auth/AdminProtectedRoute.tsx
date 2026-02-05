@@ -23,6 +23,11 @@ export const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
         checkAuth()
     }, [isAuthenticated, fetchCurrentUser])
 
+    // Already authenticated admin: render immediately, no loading flash
+    if (isAuthenticated && current?.role === "admin") {
+        return <>{children}</>
+    }
+
     if (checking || isLoading) {
         return <LoadingScreen message="Verifying admin access..." />
     }

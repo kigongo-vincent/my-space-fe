@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Navigate } from "react-router"
 import { useUser } from "../../store/Userstore"
+import { useFileStore } from "../../store/Filestore"
 import LoadingScreen from "../base/LoadingScreen"
 
 interface PublicRouteProps {
@@ -35,6 +36,7 @@ export const PublicRoute = ({ children }: PublicRouteProps) => {
         if (current?.role === "admin") {
             return <Navigate to="/admin" replace />
         }
+        useFileStore.getState().setCurrentDisk(null)
         return <Navigate to="/dashboard" replace />
     }
 

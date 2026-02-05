@@ -25,8 +25,8 @@ export async function resolveFileUrl(file: FileItem): Promise<string | null> {
     }
   }
 
-  // Fall back to server URL
-  return file.url || file.thumbnail || null
+  // Prefer optimized URL for display (smaller, faster), fall back to original
+  return file.optimizedUrl || file.url || file.thumbnail || null
 }
 
 /**
@@ -34,5 +34,5 @@ export async function resolveFileUrl(file: FileItem): Promise<string | null> {
  * Use this when you need a URL right away and can't wait for async local check
  */
 export function resolveFileUrlSync(file: FileItem): string | null {
-  return file.url || file.thumbnail || null
+  return file.optimizedUrl || file.url || file.thumbnail || null
 }

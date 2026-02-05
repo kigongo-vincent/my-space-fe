@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router"
+import { useFileStore } from "../../store/Filestore"
 
 /**
  * Handles OAuth callback: backend redirects here with #token=... or ?error=...
@@ -28,6 +29,9 @@ const AuthCallback = () => {
             if (token) {
                 localStorage.setItem("token", token)
                 const target = role === "admin" ? "/admin" : "/dashboard"
+                if (target === "/dashboard") {
+                    useFileStore.getState().setCurrentDisk(null)
+                }
                 window.location.replace(target)
                 return
             }

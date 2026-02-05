@@ -54,7 +54,7 @@ const AddUrlModal = ({ onClose, parentId, diskId }: Props) => {
                 style={{
                     border: `1px solid ${current?.dark}10`,
                     boxShadow: name === "dark" 
-                        ? `0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
+                        ? "0 4px 20px rgba(0, 0, 0, 0.25)"
                         : `0 25px 50px -12px ${current?.dark}15, 0 0 0 1px ${current?.dark}05`
                 }}
             >
@@ -192,7 +192,7 @@ const AddUrlModal = ({ onClose, parentId, diskId }: Props) => {
                         className="px-5 py-2.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                         style={{
                             boxShadow: name === "dark" 
-                                ? `0 4px 6px -1px rgba(0, 0, 0, 0.3)`
+                                ? "0 4px 20px rgba(0, 0, 0, 0.25)"
                                 : `0 4px 6px -1px ${current?.dark}10`,
                             backgroundColor: isFormValid ? current?.primary : current?.dark + "20",
                             color: isFormValid ? "white" : current?.dark + "60",

@@ -485,7 +485,7 @@ const Index = () => {
                                 backgroundColor: current?.primary,
                                 color: "white",
                                 boxShadow: name === "dark"
-                                    ? `0 2px 4px rgba(0, 0, 0, 0.3)`
+                                    ? "0 4px 20px rgba(0, 0, 0, 0.25)"
                                     : `0 2px 4px ${current?.dark}10`
                             }}
                             whileHover={{ scale: 1.05, opacity: 0.9 }}

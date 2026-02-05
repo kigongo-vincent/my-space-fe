@@ -123,7 +123,7 @@ const AlertModal = ({
                                 className="rounded-lg p-6"
                                 style={{
                                     boxShadow: name === "dark"
-                                        ? `0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)`
+                                        ? "0 4px 20px rgba(0, 0, 0, 0.25)"
                                         : `0 20px 25px -5px ${current?.dark}20, 0 0 0 1px ${current?.dark}10`,
                                     border: `1px solid ${getBorderColor()}`
                                 }}

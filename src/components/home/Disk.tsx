@@ -16,7 +16,7 @@ export interface DiskI {
 
 const Disk = (props: DiskI) => {
 
-    const { current } = useTheme()
+    const { current, name } = useTheme()
     const [isHovered, setIsHovered] = useState(false)
 
     const handleContextMenu = (e: React.MouseEvent) => {
@@ -30,12 +30,19 @@ const Disk = (props: DiskI) => {
     return (
         <motion.div
             className="flex items-center gap-3 p-4 rounded-lg relative"
-            style={{ backgroundColor: isHovered ? current?.foreground : current?.background }}
+            style={{
+                backgroundColor: isHovered ? current?.foreground : current?.background,
+                boxShadow: name === "dark"
+                    ? "0 4px 20px rgba(0, 0, 0, 0.25)"
+                    : `0 4px 12px ${current?.dark}15`
+            }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             onContextMenu={handleContextMenu}
             whileHover={{
-                boxShadow: `0 4px 12px ${current?.dark}15`
+                boxShadow: name === "dark"
+                    ? "0 4px 20px rgba(0, 0, 0, 0.25)"
+                    : `0 4px 12px ${current?.dark}20`
             }}
             transition={{ duration: 0.2 }}
         >

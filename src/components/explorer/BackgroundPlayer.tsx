@@ -426,18 +426,31 @@ const BackgroundPlayer = () => {
                 borderTop: `1px solid ${current?.dark}08`
             }}
         >
-            {/* Left: Upscale button + Title (desktop only) */}
+            {/* Left: Cover/Art + Upscale button + Title (desktop only) */}
             <View className="flex items-center gap-4 flex-1 min-w-0 justify-start">
                 <button
                     onClick={() => file && openFileModal(file.id)}
                     title="Expand player"
-                    className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center hover:opacity-80 transition-opacity"
+                    className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center hover:opacity-90 transition-opacity overflow-hidden relative group"
                     style={{
                         backgroundColor: current?.dark + "0a",
                         color: current?.dark
                     }}
                 >
-                    <Maximize2 size={20} color={current?.dark} />
+                    {file.thumbnail ? (
+                        <>
+                            <img
+                                src={file.thumbnail}
+                                alt={file.name}
+                                className="w-full h-full object-cover"
+                            />
+                            <span className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition-colors">
+                                <Maximize2 size={16} color="white" className="opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                            </span>
+                        </>
+                    ) : (
+                        <Maximize2 size={20} color={current?.dark} />
+                    )}
                 </button>
                 <View className="hidden md:flex flex-col min-w-0 flex-1">
                     <Text

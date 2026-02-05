@@ -24,12 +24,12 @@ const Search = ({ onFilterClick }: SearchProps) => {
     const { current } = useTheme()
     const location = useLocation()
     const isAdminPage = location.pathname.startsWith('/admin')
-    
+
     // Use appropriate store based on route
     const { setSearchQuery: setFileSearchQuery, searchQuery: fileSearchQuery, searchFilesBackend } = useFileStore()
     const { searchQuery: adminSearchQuery, setSearchQuery: setAdminSearchQuery } = useAdminSearchStore()
     const { activityType, userRole, userStatus, dateRange, analyticsType, storageRange } = useAdminFilterStore()
-    
+
     // Use store value directly - Zustand will trigger re-renders
     const searchValue = isAdminPage ? adminSearchQuery : fileSearchQuery
     const searchRef = useRef<HTMLInputElement>(null)
@@ -40,7 +40,7 @@ const Search = ({ onFilterClick }: SearchProps) => {
         return () => window.removeEventListener("resize", handler)
     }, [])
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-    
+
     // Check if any filters are active based on current page
     const hasActiveFilters = isAdminPage && (() => {
         if (location.pathname.includes('/admin/activity')) {
@@ -64,12 +64,12 @@ const Search = ({ onFilterClick }: SearchProps) => {
         } else {
             // Set query immediately - this will set isSearching: true
             setFileSearchQuery(value)
-            
+
             // Debounce backend search
             if (searchTimeoutRef.current) {
                 clearTimeout(searchTimeoutRef.current)
             }
-            
+
             searchTimeoutRef.current = setTimeout(() => {
                 if (value.trim()) {
                     searchFilesBackend(value.trim())
@@ -108,17 +108,17 @@ const Search = ({ onFilterClick }: SearchProps) => {
     return (
         <View mode="background" className="rounded-full px-3 sm:px-6 py-2 sm:py-3 min-w-0 w-full max-w-full flex-1 md:flex-initial flex items-center gap-2 sm:gap-3 relative overflow-hidden">
             <SearchIcon size={18} color={`${current?.dark}70`} className="flex-shrink-0" />
-            <input 
+            <input
                 ref={searchRef}
-                value={searchValue} 
-                onChange={(e) => handleChange(e.target.value)} 
-                className="outline-none flex-1 min-w-0 bg-transparent placeholder:opacity-60 overflow-hidden text-ellipsis" 
+                value={searchValue}
+                onChange={(e) => handleChange(e.target.value)}
+                className="outline-none flex-1 min-w-0 bg-transparent placeholder:opacity-60 overflow-hidden text-ellipsis"
                 placeholder={placeholder}
-                style={{ 
-                    color: current?.dark, 
+                style={{
+                    color: current?.dark,
                     fontSize: "14px",
                     letterSpacing: "0.01em"
-                }} 
+                }}
             />
             {isAdminPage && onFilterClick && (
                 <button

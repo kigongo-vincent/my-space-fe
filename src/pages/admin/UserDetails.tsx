@@ -3,11 +3,11 @@ import { useParams, useNavigate } from "react-router"
 import View from "../../components/base/View"
 import Text from "../../components/base/Text"
 import AdminPageHeader from "../../components/admin/AdminPageHeader"
+import IconButton from "../../components/base/IconButton"
 import { useTheme } from "../../store/Themestore"
 import { useUser } from "../../store/Userstore"
 import Avatar from "../../components/base/Avatar"
 import { ArrowLeft, Ban, Trash2, CheckCircle, Users, HardDrive, Mail, Shield } from "lucide-react"
-import { motion } from "framer-motion"
 import ConfirmationModal from "../../components/base/ConfirmationModal"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { getPrimaryColorVariations } from "../../utils/chartColors"
@@ -77,59 +77,32 @@ const UserDetails = () => {
         ? (user.storage.used / user.storage.total) * 100
         : 0
 
-    const { name } = useTheme()
-    // Calculate secondary color (20%) - a muted complementary color
-    const secondaryColor = name === 'dark' ? '#2a2a2a' : '#e8e8e8'
-
     return (
         <View className="flex flex-col">
             {/* Header */}
-            <View className="mb-6 flex items-start gap-4">
-                <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate('/admin/users')}
-                    className="flex items-center justify-center rounded-lg flex-shrink-0"
-                    style={{
-                        width: '2.5rem',
-                        height: '2.5rem',
-                        backgroundColor: current?.foreground,
-                        border: 'none',
-                        cursor: 'pointer'
-                    }}
-                >
-                    <ArrowLeft size={18} color={current?.dark} />
-                </motion.button>
-                <View className="flex-1">
+            <View className="mb-4 flex items-center gap-3">
+                <IconButton
+                    icon={<ArrowLeft size={18} color={current?.dark} />}
+                    action={() => navigate('/admin/users')}
+                    title="Back to users"
+                />
+                <View className="flex-1 min-w-0">
                     <AdminPageHeader title="User Details" subtitle="View and manage user information" />
                 </View>
             </View>
 
-            {/* User Info Card - 60% neutral, 20% secondary accent, 20% primary accent */}
+            {/* User Info Card */}
             <View
-                style={{
-                    backgroundColor: current?.foreground,
-                    borderRadius: '0.5rem',
-                    padding: '2rem',
-                    marginBottom: '1.5rem',
-                    border: `1px solid ${secondaryColor}`
-                }}
+                className="rounded-lg p-3 sm:p-4 mb-4"
+                style={{ backgroundColor: current?.foreground }}
             >
-                <View className="flex items-start justify-between mb-6">
+                <View className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <View className="flex items-center gap-4">
-                        <View style={{ position: 'relative' }}>
-                            <Avatar path={user.photo} fallback={{ text: getInitials(user.username) }} />
-                            {/* Primary accent ring - 20% */}
-                            <View
-                                style={{
-                                    position: 'absolute',
-                                    inset: '-2px',
-                                    borderRadius: '50%',
-                                    border: `2px solid ${current?.primary}`,
-                                    opacity: 0.3
-                                }}
-                            />
-                        </View>
+                        <Avatar
+                            path={user.photo}
+                            fallback={{ text: getInitials(user.username) }}
+                            badge={user.role === "admin" ? "admin" : undefined}
+                        />
                         <View>
                             <View className="flex items-center gap-2 mb-1">
                                 <Text value={user.username} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 400 }} />
@@ -142,7 +115,7 @@ const UserDetails = () => {
                                         }}
                                     >
                                         <Ban size={12} color={current?.error || "#ef4444"} />
-                                        <Text value="Suspended" style={{ color: current?.error || "#ef4444", fontSize: '0.815rem' }} />
+                                        <Text value="Suspended" style={{ color: current?.error || "#ef4444", fontSize: '0.89rem' }} />
                                     </View>
                                 )}
                                 {user.role === "admin" && (
@@ -153,81 +126,69 @@ const UserDetails = () => {
                                             borderRadius: '0.25rem'
                                         }}
                                     >
-                                        <Shield size={12} color={current?.primary} />
-                                        <Text value="Admin" style={{ color: current?.primary, fontSize: '0.815rem' }} />
+                                        <Shield size={12} fill={current?.primary} strokeWidth={0} />
+                                        <Text value="Admin" style={{ color: current?.primary, fontSize: '0.89rem' }} />
                                     </View>
                                 )}
                             </View>
                             {user.email && (
                                 <View className="flex items-center gap-2">
                                     <Mail size={14} color={current?.dark} style={{ opacity: 0.6 }} />
-                                    <Text value={user.email} style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
+                                    <Text value={user.email} className="opacity-70" style={{ fontSize: '0.89rem', color: current?.dark }} />
                                 </View>
                             )}
                         </View>
                     </View>
-                    <View className="flex items-center gap-2">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                    <View className="flex items-center gap-2 flex-shrink-0">
+                        <button
                             onClick={handleSuspend}
-                            className="px-4 py-2 flex items-center gap-2"
+                            className="px-4 py-2 flex items-center gap-2 rounded-lg transition-opacity hover:opacity-90"
                             style={{
-                                backgroundColor: user.suspended ? "#10b981" : secondaryColor,
-                                color: user.suspended ? '#ffffff' : current?.dark,
-                                borderRadius: '0.25rem',
+                                backgroundColor: user.suspended ? "#10b981" : (current?.primary || "#EE7E06"),
+                                color: '#ffffff',
                                 border: 'none',
                                 cursor: 'pointer',
-                                fontSize: '1rem',
-                                transition: 'all 0.2s ease'
+                                fontSize: '0.89rem'
                             }}
                         >
                             {user.suspended ? <CheckCircle size={16} /> : <Ban size={16} />}
-                            <Text value={user.suspended ? "Unsuspend" : "Suspend"} style={{ color: user.suspended ? '#ffffff' : current?.dark, fontSize: '1rem' }} />
-                        </motion.button>
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                            <Text value={user.suspended ? "Unsuspend" : "Suspend"} style={{ color: '#ffffff', fontSize: '0.89rem' }} />
+                        </button>
+                        <button
                             onClick={handleDelete}
                             disabled={isDeleting}
-                            className="px-4 py-2 flex items-center gap-2"
+                            className="px-4 py-2 flex items-center gap-2 rounded-lg transition-opacity"
                             style={{
                                 backgroundColor: current?.error || "#ef4444",
                                 color: '#ffffff',
-                                borderRadius: '0.25rem',
                                 border: 'none',
                                 cursor: isDeleting ? 'not-allowed' : 'pointer',
-                                fontSize: '1rem',
+                                fontSize: '0.89rem',
                                 opacity: isDeleting ? 0.6 : 1
                             }}
                         >
                             <Trash2 size={16} />
-                            <Text value="Delete User" style={{ color: '#ffffff', fontSize: '1rem' }} />
-                        </motion.button>
+                            <Text value="Delete User" style={{ color: '#ffffff', fontSize: '0.89rem' }} />
+                        </button>
                     </View>
                 </View>
             </View>
 
-            {/* Summary Cards - 60% neutral, 20% secondary, 20% primary accents */}
-            <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+            {/* Summary Cards */}
+            <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
                 <View
-                    style={{
-                        backgroundColor: current?.foreground,
-                        borderRadius: '0.5rem',
-                        padding: '1.5rem',
-                        border: `1px solid ${secondaryColor}`,
-                        borderTop: `3px solid ${current?.primary}`
-                    }}
+                    className="rounded-lg p-3"
+                    style={{ backgroundColor: current?.foreground }}
                 >
-                    <View className="flex items-start justify-between mb-3">
-                        <Text value="Storage Usage" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
+                    <View className="flex items-start justify-between mb-2">
+                        <Text value="Storage Usage" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                         <View
                             className="flex items-center justify-center"
                             style={{
-                                width: '3.5rem',
-                                height: '3.5rem',
+                                width: '2.5rem',
+                                height: '2.5rem',
                                 borderRadius: '50%',
-                                padding: '1rem',
+                                padding: '0.5rem',
                                 backgroundColor: getPastelColor(current?.primary || "#EE7E06", 0.15)
                             }}
                         >
@@ -240,28 +201,24 @@ const UserDetails = () => {
                     />
                     <Text
                         value={`${storagePercentage.toFixed(1)}% used`}
-                        style={{ fontSize: '0.815rem', opacity: 0.6, marginTop: '0.5rem', color: current?.dark }}
+                        className="opacity-70 mt-0.5"
+                        style={{ fontSize: '0.89rem', color: current?.dark }}
                     />
                 </View>
 
                 <View
-                    style={{
-                        backgroundColor: current?.foreground,
-                        borderRadius: '0.5rem',
-                        padding: '1.5rem',
-                        border: `1px solid ${secondaryColor}`,
-                        borderTop: `3px solid ${user.suspended ? (current?.error || "#ef4444") : "#10b981"}`
-                    }}
+                    className="rounded-lg p-3"
+                    style={{ backgroundColor: current?.foreground }}
                 >
-                    <View className="flex items-start justify-between mb-3">
-                        <Text value="Account Status" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
+                    <View className="flex items-start justify-between mb-2">
+                        <Text value="Account Status" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                         <View
                             className="flex items-center justify-center"
                             style={{
-                                width: '3.5rem',
-                                height: '3.5rem',
+                                width: '2.5rem',
+                                height: '2.5rem',
                                 borderRadius: '50%',
-                                padding: '1rem',
+                                padding: '0.5rem',
                                 backgroundColor: getPastelColor(user.suspended ? (current?.error || "#ef4444") : "#10b981", 0.15)
                             }}
                         >
@@ -284,23 +241,18 @@ const UserDetails = () => {
                 </View>
 
                 <View
-                    style={{
-                        backgroundColor: current?.foreground,
-                        borderRadius: '0.5rem',
-                        padding: '1.5rem',
-                        border: `1px solid ${secondaryColor}`,
-                        borderTop: `3px solid ${current?.primary}`
-                    }}
+                    className="rounded-lg p-3"
+                    style={{ backgroundColor: current?.foreground }}
                 >
-                    <View className="flex items-start justify-between mb-3">
-                        <Text value="User Role" style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }} />
+                    <View className="flex items-start justify-between mb-2">
+                        <Text value="User Role" className="opacity-70" style={{ color: current?.dark, fontSize: '0.89rem' }} />
                         <View
                             className="flex items-center justify-center"
                             style={{
-                                width: '3.5rem',
-                                height: '3.5rem',
+                                width: '2.5rem',
+                                height: '2.5rem',
                                 borderRadius: '50%',
-                                padding: '1rem',
+                                padding: '0.5rem',
                                 backgroundColor: getPastelColor(current?.primary || "#EE7E06", 0.15)
                             }}
                         >
@@ -314,65 +266,50 @@ const UserDetails = () => {
                 </View>
             </View>
 
-            {/* Storage Usage Bar - 60% neutral, 20% primary accent */}
+            {/* Storage Usage Bar */}
             {user.storage && (
                 <View
-                    style={{
-                        backgroundColor: current?.foreground,
-                        borderRadius: '0.5rem',
-                        padding: '1.5rem',
-                        marginBottom: '1.5rem',
-                        border: `1px solid ${secondaryColor}`
-                    }}
+                    className="rounded-lg p-3 mb-4"
+                    style={{ backgroundColor: current?.foreground }}
                 >
-                    <View className="flex items-center justify-between mb-3">
-                        <Text value="Storage Usage" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
+                    <View className="flex items-center justify-between mb-2">
+                        <Text value="Storage Usage" className="font-medium" style={{ color: current?.dark, fontSize: '1rem' }} />
                         <Text
                             value={`${storagePercentage.toFixed(1)}%`}
-                            style={{ fontSize: '1rem', opacity: 0.6, color: current?.dark }}
+                            className="opacity-70"
+                            style={{ fontSize: '0.89rem', color: current?.dark }}
                         />
                     </View>
                     <View
-                        className="h-3"
-                        style={{
-                            backgroundColor: secondaryColor,
-                            borderRadius: '0.5rem',
-                            overflow: 'hidden'
-                        }}
+                        className="h-2 rounded-lg overflow-hidden"
+                        style={{ backgroundColor: `${current?.dark}10` }}
                     >
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.min(storagePercentage, 100)}%` }}
-                            transition={{ duration: 0.8, ease: "easeOut" }}
-                            className="h-full"
+                        <View
+                            className="h-full rounded-lg transition-all duration-500"
                             style={{
-                                background: `linear-gradient(90deg, ${current?.primary} 0%, ${current?.primary}dd 100%)`,
-                                borderRadius: '0.5rem'
+                                width: `${Math.min(storagePercentage, 100)}%`,
+                                backgroundColor: current?.primary
                             }}
                         />
                     </View>
                 </View>
             )}
 
-            {/* Activity Chart - 60% neutral, 20% primary accents */}
+            {/* Activity Chart */}
             <View
-                style={{
-                    backgroundColor: current?.foreground,
-                    borderRadius: '0.5rem',
-                    padding: '1.5rem',
-                    border: `1px solid ${secondaryColor}`
-                }}
+                className="rounded-lg p-3"
+                style={{ backgroundColor: current?.foreground }}
             >
-                <View className="flex items-center justify-between mb-4">
-                    <Text value="Activity Overview" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
-                    <View className="flex items-center gap-4">
+                <View className="flex items-center justify-between mb-3">
+                    <Text value="Activity Overview" className="font-medium" style={{ color: current?.dark, fontSize: '1rem' }} />
+                    <View className="flex items-center gap-3">
                         <View className="flex items-center gap-2">
                             <View style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: primaryColors[0] }} />
-                            <Text value="Uploads" style={{ fontSize: '0.815rem', opacity: 0.7, color: current?.dark }} />
+                            <Text value="Uploads" className="opacity-70" style={{ fontSize: '0.89rem', color: current?.dark }} />
                         </View>
                         <View className="flex items-center gap-2">
                             <View style={{ width: '12px', height: '12px', borderRadius: '2px', backgroundColor: primaryColors[1] }} />
-                            <Text value="Downloads" style={{ fontSize: '0.815rem', opacity: 0.7, color: current?.dark }} />
+                            <Text value="Downloads" className="opacity-70" style={{ fontSize: '0.89rem', color: current?.dark }} />
                         </View>
                     </View>
                 </View>
@@ -387,7 +324,7 @@ const UserDetails = () => {
                                 border: 'none',
                                 boxShadow: 'none',
                                 borderRadius: '0.5rem',
-                                fontSize: '0.815rem'
+                                fontSize: '0.89rem'
                             }}
                         />
                         <Bar dataKey="uploads" fill={primaryColors[0]} radius={[6, 6, 0, 0]} />
