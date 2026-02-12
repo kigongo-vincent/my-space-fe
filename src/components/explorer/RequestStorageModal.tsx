@@ -35,16 +35,17 @@ const RequestStorageModal = ({ onClose, onSuccess }: Props) => {
         }
 
         const gb = convertToGB(amount, requestedUnit)
-        if (gb < 1) {
-            setError("Minimum request is 1 GB")
+        if (gb <= 0) {
+            setError("Please enter a valid amount")
             return
         }
 
         setIsSubmitting(true)
         try {
+            const requestedGBWhole = Math.round(gb)
             await api.post("/storage-requests", {
                 type: "increment",
-                requestedGB: gb,
+                requestedGB: requestedGBWhole,
                 reason: reason.trim() || undefined,
             })
             onSuccess?.()
@@ -77,11 +78,11 @@ const RequestStorageModal = ({ onClose, onSuccess }: Props) => {
                         <View className="flex gap-2 items-stretch" style={{ minHeight: "2.75rem" }}>
                             <input
                                 type="number"
-                                min="0.001"
-                                step="0.1"
+                                min="1"
+                                step="1"
                                 value={requestedAmount}
-                                onChange={(e) => setRequestedAmount(e.target.value)}
-                                placeholder="e.g., 50"
+                                onChange={(e) => setRequestedAmount(e.target.value.replace(/[^\d.]/g, ""))}
+                                placeholder="e.g. 50"
                                 className="flex-1 px-4 py-2 rounded-lg min-w-0"
                                 style={{
                                     backgroundColor: current?.background,

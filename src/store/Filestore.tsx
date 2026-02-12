@@ -94,6 +94,7 @@ export interface FileStoreI {
     setSearchQuery: (query: string) => void
     setHighlightedFile: (fileId: string | null) => void
     setFilterByType: (type: fileType | null) => Promise<void>
+    refreshFilesByType: (type: fileType) => Promise<void>
     openFileModal: (fileId: string) => void
     updateFileModal: (modalId: string, fileId: string) => void
     closeFileModal: (modalId: string) => void
@@ -1694,6 +1695,38 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
         }
     },
 
+    refreshFilesByType: async (type: fileType) => {
+        try {
+            const files = await api.get<any[]>(`/files/by-type/${type}`, true)
+            const mappedFiles: FileItem[] = files.map((f: any) => ({
+                id: f.id.toString(),
+                name: f.name,
+                type: f.type as fileType,
+                isFolder: f.isFolder,
+                isPinned: f.isPinned || false,
+                parentId: f.parentId ? f.parentId.toString() : null,
+                diskId: f.diskId.toString(),
+                createdAt: new Date(f.createdAt),
+                modifiedAt: new Date(f.updatedAt),
+                size: f.size,
+                sizeUnit: f.sizeUnit as "KB" | "MB" | "GB",
+                thumbnail: f.thumbnail,
+                optimizedUrl: f.optimizedUrl,
+                url: f.url || f.content,
+                deviceId: f.deviceId,
+            }))
+            const { disks } = get()
+            const updatedDisks = disks.map(disk =>
+                disk.id === disks[0]?.id
+                    ? { ...disk, filteredFiles: mappedFiles }
+                    : disk
+            )
+            set({ disks: updatedDisks })
+        } catch (error) {
+            console.error("Failed to refresh files by type:", error)
+        }
+    },
+
     setFilterByType: async (type: fileType | null) => {
         set({ filterByType: type, currentPath: [] })
 
@@ -2103,6 +2136,10 @@ export const useFileStore = create<FileStoreI>((set, get) => ({
                 }
             }
             set({ clipboard: { files: [], operation: null } })
+            // Refresh current view so list updates without manual refresh
+            if (get().currentDiskId === targetDiskId) {
+                await get().refreshCurrentDisk()
+            }
         } catch (error: any) {
             console.error("Paste failed:", error)
             useAlertStore.getState().show(error?.message || "Failed to paste files", "error")

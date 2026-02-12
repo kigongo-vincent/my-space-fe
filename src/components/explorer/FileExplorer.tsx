@@ -643,7 +643,7 @@ const FileExplorer = () => {
                         label: "Refresh",
                         icon: <RotateCw size={16} />,
                         action: () => {
-                            setFilterByType(filterByType)
+                            useFileStore.getState().refreshFilesByType(filterByType)
                             setContextMenu(null)
                         }
                     }

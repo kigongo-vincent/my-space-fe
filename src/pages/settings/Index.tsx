@@ -36,8 +36,18 @@ import Button from "../../components/base/Button"
 import Switch from "../../components/base/Switch"
 import Select from "../../components/base/Select"
 import { convertToGB, convertFromGB } from "../../utils/storage"
+import { useSettingsSearchStore } from "../../store/SettingsSearchStore"
 
 type SettingsCategory = "account" | "security" | "requests" | "appearance" | "privacy"
+
+interface SearchableSettingItem {
+    id: string
+    title: string
+    description: string
+    category: SettingsCategory
+    keywords: string[]
+    action?: () => void
+}
 
 interface MyStorageRequest {
     id: number
@@ -59,7 +69,8 @@ const Settings = () => {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
     const { current, name, toggleTheme, setPrimary, baseFontSize, setBaseFontSize, fontFamily, setFontFamily, reducedMotion, setReducedMotion } = useTheme()
-    const { current: user, logout, usage } = useUser()
+    const { current: user, logout, usage, getInitials } = useUser()
+    const { searchQuery, clearSearch } = useSettingsSearchStore()
     const [activeCategory, setActiveCategory] = useState<SettingsCategory>(() => {
         const cat = searchParams.get("category")
         if (cat === "requests") return "requests"
@@ -72,6 +83,9 @@ const Settings = () => {
     const [requestsLoading, setRequestsLoading] = useState(false)
     const [showEditProfile, setShowEditProfile] = useState(false)
     const [showChangePhoto, setShowChangePhoto] = useState(false)
+    const [photoUploading, setPhotoUploading] = useState(false)
+    const [photoUploadProgress, setPhotoUploadProgress] = useState(0)
+    const [photoUploadError, setPhotoUploadError] = useState<string | null>(null)
     const [showChangePassword, setShowChangePassword] = useState(false)
     const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false)
     const [fontDropdownOpen, setFontDropdownOpen] = useState(false)
@@ -95,6 +109,11 @@ const Settings = () => {
         const cat = searchParams.get("category")
         if (cat === "requests") setActiveCategory("requests")
     }, [searchParams])
+
+    // Clear search when leaving settings page
+    useEffect(() => {
+        return () => clearSearch()
+    }, [clearSearch])
 
     useEffect(() => {
         if (activeCategory === "requests") fetchMyRequests()
@@ -127,6 +146,47 @@ const Settings = () => {
         }
     }
 
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            setPhotoUploadError('Please select an image file')
+            return
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            setPhotoUploadError('Image must be less than 5MB')
+            return
+        }
+
+        setPhotoUploading(true)
+        setPhotoUploadProgress(0)
+        setPhotoUploadError(null)
+
+        try {
+            const updatedUser = await api.uploadProfilePhoto(file, (progress) => {
+                setPhotoUploadProgress(progress)
+            })
+            
+            // Update user in store - the response includes the new photo URL
+            if (updatedUser.photo) {
+                // Force refresh user data
+                api.clearCache()
+                window.location.reload()
+            }
+            
+            setShowChangePhoto(false)
+        } catch (e: unknown) {
+            const msg = e && typeof e === "object" && "message" in e ? String((e as { message: string }).message) : "Failed to upload photo"
+            setPhotoUploadError(msg)
+        } finally {
+            setPhotoUploading(false)
+        }
+    }
+
     const categories: CategoryItem[] = [
         { id: "account", label: "Account", icon: <User size={20} /> },
         { id: "security", label: "Security", icon: <Shield size={20} /> },
@@ -134,6 +194,44 @@ const Settings = () => {
         { id: "appearance", label: "Appearance", icon: <Palette size={20} /> },
         { id: "privacy", label: "Privacy", icon: <Lock size={20} /> }
     ]
+
+    // Searchable settings items
+    const searchableSettings: SearchableSettingItem[] = [
+        { id: "edit-profile", title: "Edit Profile", description: "Update your username and email", category: "account", keywords: ["username", "email", "name", "profile"], action: () => setShowEditProfile(true) },
+        { id: "change-photo", title: "Change Profile Picture", description: "Upload a new avatar", category: "account", keywords: ["avatar", "photo", "picture", "image", "upload"], action: () => { setPhotoUploadError(null); setShowChangePhoto(true); } },
+        { id: "logout", title: "Logout", description: "Sign out of your account", category: "account", keywords: ["sign out", "log out", "exit"] },
+        { id: "change-password", title: "Change Password", description: "Update your account password", category: "security", keywords: ["password", "security", "credentials"] },
+        { id: "delete-account", title: "Delete Account", description: "Permanently delete your account", category: "security", keywords: ["remove", "delete", "close account"] },
+        { id: "request-storage", title: "Request Storage Increase", description: "Request more storage space", category: "requests", keywords: ["storage", "space", "upgrade", "increase"] },
+        { id: "request-decrease", title: "Request Storage Decrease", description: "Request less storage space", category: "requests", keywords: ["storage", "space", "downgrade", "decrease"] },
+        { id: "theme", title: "Theme", description: "Switch between light and dark mode", category: "appearance", keywords: ["dark mode", "light mode", "theme", "color scheme"] },
+        { id: "accent-color", title: "Accent Color", description: "Customize your accent color", category: "appearance", keywords: ["color", "accent", "primary", "theme"] },
+        { id: "font-size", title: "Font Size", description: "Adjust text size", category: "appearance", keywords: ["text", "size", "font", "accessibility"] },
+        { id: "font-family", title: "Font Family", description: "Change the display font", category: "appearance", keywords: ["font", "typeface", "text"] },
+        { id: "reduced-motion", title: "Reduced Motion", description: "Minimize animations", category: "appearance", keywords: ["animation", "motion", "accessibility"] },
+        { id: "privacy-policy", title: "Privacy Policy", description: "View our privacy policy", category: "privacy", keywords: ["privacy", "data", "policy", "terms"] },
+        { id: "data-collection", title: "Data Collection", description: "Manage data collection preferences", category: "privacy", keywords: ["data", "analytics", "tracking", "collection"] },
+    ]
+
+    // Filter settings based on search query
+    const filteredSettings = searchQuery.trim() 
+        ? searchableSettings.filter(item => {
+            const query = searchQuery.toLowerCase()
+            return item.title.toLowerCase().includes(query) ||
+                   item.description.toLowerCase().includes(query) ||
+                   item.keywords.some(k => k.toLowerCase().includes(query)) ||
+                   item.category.toLowerCase().includes(query)
+        })
+        : []
+
+    const handleSearchResultClick = (item: SearchableSettingItem) => {
+        clearSearch()
+        setActiveCategory(item.category)
+        if (item.action) {
+            // Small delay to allow category switch animation
+            setTimeout(() => item.action?.(), 100)
+        }
+    }
 
     const renderContent = () => {
         switch (activeCategory) {
@@ -150,7 +248,12 @@ const Settings = () => {
                                 <Text value="Account Information" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                             </View>
                             <View className="flex flex-col sm:flex-row items-center gap-4 p-3 sm:p-4 rounded-lg" style={{ backgroundColor: current?.background }}>
-                                <Avatar path={user?.photo} fallback={{ text: user?.username || "" }} />
+                                <Avatar 
+                                    path={user?.photo} 
+                                    fallback={{ text: getInitials(user?.username || "") }} 
+                                    backgroundColor={current?.primary}
+                                    textColor={current?.foreground}
+                                />
                                 <View className="flex-1">
                                     <Text value={user?.username || "User"} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                                     <Text value={user?.email || "user@example.com"} style={{ fontSize: '0.815rem', opacity: 0.6, marginTop: '0.25rem' }} />
@@ -175,7 +278,7 @@ const Settings = () => {
                                     </View>
                                     <User size={18} color={current?.primary} />
                                 </button>
-                                <button onClick={() => setShowChangePhoto(true)} className="flex items-center justify-between py-3 text-left w-full hover:opacity-80 transition-opacity">
+                                <button onClick={() => { setPhotoUploadError(null); setShowChangePhoto(true); }} className="flex items-center justify-between py-3 text-left w-full hover:opacity-80 transition-opacity">
                                     <View>
                                         <Text value="Change Profile Picture" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                                         <Text value="Upload a new avatar" style={{ fontSize: '0.815rem', opacity: 0.6, marginTop: '0.25rem' }} />
@@ -519,10 +622,9 @@ const Settings = () => {
                             <View className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full sm:w-max">
                                 <button
                                     onClick={() => name !== "light" && toggleTheme()}
-                                    className="flex flex-col items-center gap-3 sm:gap-4 p-3 sm:p-2 rounded transition-all overflow-hidden w-full sm:w-auto border-2"
+                                    className="flex flex-col items-center gap-3 sm:gap-4 p-3 sm:p-2 rounded transition-all overflow-hidden w-full sm:w-auto"
                                     style={{
                                         backgroundColor: name === "light" ? current?.primary + "12" : current?.background,
-                                        borderColor: name === "light" ? current?.primary : current?.dark + "20",
                                     }}
                                 >
                                     <img
@@ -534,10 +636,9 @@ const Settings = () => {
                                 </button>
                                 <button
                                     onClick={() => name !== "dark" && toggleTheme()}
-                                    className="flex flex-col items-center gap-3 sm:gap-4 p-3 sm:p-2 rounded transition-all overflow-hidden w-full sm:w-auto border-2"
+                                    className="flex flex-col items-center gap-3 sm:gap-4 p-3 sm:p-2 rounded transition-all overflow-hidden w-full sm:w-auto"
                                     style={{
                                         backgroundColor: name === "dark" ? current?.primary + "12" : current?.background,
-                                        borderColor: name === "dark" ? current?.primary : current?.dark + "20",
                                     }}
                                 >
                                     <img
@@ -702,7 +803,43 @@ const Settings = () => {
 
                     {/* Main Content – responsive padding */}
                     <View className="flex-1 overflow-auto px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 md:pt-8 pb-6 md:pb-8" style={{ backgroundColor: current?.background }}>
-                        {renderContent()}
+                        {searchQuery.trim() ? (
+                            <View>
+                                <View className="mb-4 sm:mb-8">
+                                    <Text value={`Search Results for "${searchQuery}"`} style={{ color: current?.dark, fontSize: '1.11rem', fontWeight: 500 }} />
+                                    <Text value={`${filteredSettings.length} setting${filteredSettings.length !== 1 ? 's' : ''} found`} style={{ fontSize: '0.9375rem', opacity: 0.6, marginTop: '0.5rem' }} />
+                                </View>
+                                {filteredSettings.length > 0 ? (
+                                    <View style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem', padding: '1rem' }} className="sm:p-6">
+                                        <View className="flex flex-col gap-2">
+                                            {filteredSettings.map((item) => (
+                                                <button
+                                                    key={item.id}
+                                                    onClick={() => handleSearchResultClick(item)}
+                                                    className="flex items-center justify-between p-3 sm:p-4 rounded-lg text-left w-full hover:opacity-80 transition-all"
+                                                    style={{ backgroundColor: current?.background }}
+                                                >
+                                                    <View className="flex-1">
+                                                        <Text value={item.title} style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
+                                                        <Text value={item.description} style={{ fontSize: '0.815rem', opacity: 0.6, marginTop: '0.25rem' }} />
+                                                    </View>
+                                                    <View className="px-2 py-1 rounded" style={{ backgroundColor: current?.primary + "15", color: current?.primary, fontSize: '0.75rem', fontWeight: 500 }}>
+                                                        {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
+                                                    </View>
+                                                </button>
+                                            ))}
+                                        </View>
+                                    </View>
+                                ) : (
+                                    <View className="py-12 text-center" style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem' }}>
+                                        <Text value="No settings found" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
+                                        <Text value="Try searching with different keywords" style={{ fontSize: '0.815rem', opacity: 0.6, marginTop: '0.5rem' }} />
+                                    </View>
+                                )}
+                            </View>
+                        ) : (
+                            renderContent()
+                        )}
                     </View>
                 </View>
             </View>
@@ -734,16 +871,52 @@ const Settings = () => {
             )}
 
             {showChangePhoto && (
-                <AnimatedModal isOpen={true} onClose={() => setShowChangePhoto(false)} size="md" position="center">
+                <AnimatedModal isOpen={true} onClose={() => !photoUploading && setShowChangePhoto(false)} size="md" position="center">
                     <View className="p-6 flex flex-col gap-5" style={{ backgroundColor: current?.foreground, borderRadius: '0.25rem' }}>
                         <View className="flex items-center gap-2 mb-2">
                             <UploadIcon size={18} color={current?.primary} />
                             <Text value="Change Profile Picture" style={{ color: current?.dark, fontSize: '1rem', fontWeight: 500 }} />
                         </View>
-                        <input type="file" accept="image/*" className="w-full" style={{ color: current?.dark, fontSize: '0.9375rem' }} onChange={() => { }} />
-                        <Text value="Photo upload will be available when the backend supports profile photo updates." style={{ fontSize: '0.815rem', opacity: 0.6 }} />
+                        
+                        {photoUploadError && (
+                            <View className="p-3 rounded-lg" style={{ backgroundColor: `${current?.error}20` }}>
+                                <Text value={photoUploadError} style={{ color: current?.error, fontSize: '0.875rem' }} />
+                            </View>
+                        )}
+                        
+                        {photoUploading ? (
+                            <View className="flex flex-col gap-3">
+                                <Text value="Uploading..." style={{ color: current?.dark, fontSize: '0.9375rem' }} />
+                                <View className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: current?.background }}>
+                                    <View 
+                                        className="h-full transition-all duration-300" 
+                                        style={{ 
+                                            width: `${photoUploadProgress}%`, 
+                                            backgroundColor: current?.primary 
+                                        }} 
+                                    />
+                                </View>
+                                <Text value={`${Math.round(photoUploadProgress)}%`} style={{ fontSize: '0.815rem', opacity: 0.6, textAlign: 'center' }} />
+                            </View>
+                        ) : (
+                            <>
+                                <Text value="Select an image file (max 5MB)" style={{ fontSize: '0.815rem', opacity: 0.6 }} />
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    className="w-full" 
+                                    style={{ color: current?.dark, fontSize: '0.9375rem' }} 
+                                    onChange={handlePhotoUpload} 
+                                />
+                            </>
+                        )}
+                        
                         <View className="flex justify-end pt-2">
-                            <Button title="Close" action={() => setShowChangePhoto(false)} />
+                            <Button 
+                                title="Close" 
+                                action={() => setShowChangePhoto(false)} 
+                                disabled={photoUploading}
+                            />
                         </View>
                     </View>
                 </AnimatedModal>

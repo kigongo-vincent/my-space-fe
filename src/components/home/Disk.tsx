@@ -65,7 +65,11 @@ const Disk = (props: DiskI) => {
                         transition={{ duration: 0.8, ease: "easeOut" }}
                     />
                 </View>
-                <Text size="sm" className="opacity-70" value={`${props?.usage.used.toFixed(2)}${props?.usage.unit} used of  ${props?.usage.total.toFixed(2)}${props?.usage.unit}`} />
+                <Text
+                    size="sm"
+                    className="opacity-70"
+                    value={`${Number.isInteger(props?.usage.used) ? props?.usage.used : props?.usage.used.toFixed(2)}${props?.usage.unit} used of ${Number.isInteger(props?.usage.total) ? props?.usage.total : props?.usage.total.toFixed(2)}${props?.usage.unit}`}
+                />
             </View>
         </motion.div>
     )

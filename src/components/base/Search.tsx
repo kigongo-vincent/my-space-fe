@@ -6,14 +6,17 @@ import { useFileStore } from "../../store/Filestore"
 import { useLocation } from "react-router"
 import { useAdminSearchStore } from "../../store/AdminSearchStore"
 import { useAdminFilterStore } from "../../store/AdminFilterStore"
+import { useSettingsSearchStore } from "../../store/SettingsSearchStore"
 
-const getAdminPlaceholder = (pathname: string): string => {
+const getPlaceholder = (pathname: string): string => {
+    if (pathname.startsWith('/settings')) return "Search settings..."
     if (pathname.includes('/admin/users')) return "Search users..."
     if (pathname.includes('/admin/analytics')) return "Search activities..."
     if (pathname.includes('/admin/activity')) return "Search activities..."
     if (pathname.includes('/admin/storage')) return "Search users..."
     if (pathname.includes('/admin/settings')) return "Search settings..."
-    return "Search..."
+    if (pathname.startsWith('/admin')) return "Search..."
+    return "Search files..."
 }
 
 interface SearchProps {
@@ -24,14 +27,16 @@ const Search = ({ onFilterClick }: SearchProps) => {
     const { current } = useTheme()
     const location = useLocation()
     const isAdminPage = location.pathname.startsWith('/admin')
+    const isSettingsPage = location.pathname.startsWith('/settings')
 
     // Use appropriate store based on route
     const { setSearchQuery: setFileSearchQuery, searchQuery: fileSearchQuery, searchFilesBackend } = useFileStore()
     const { searchQuery: adminSearchQuery, setSearchQuery: setAdminSearchQuery } = useAdminSearchStore()
+    const { searchQuery: settingsSearchQuery, setSearchQuery: setSettingsSearchQuery } = useSettingsSearchStore()
     const { activityType, userRole, userStatus, dateRange, analyticsType, storageRange } = useAdminFilterStore()
 
     // Use store value directly - Zustand will trigger re-renders
-    const searchValue = isAdminPage ? adminSearchQuery : fileSearchQuery
+    const searchValue = isSettingsPage ? settingsSearchQuery : isAdminPage ? adminSearchQuery : fileSearchQuery
     const searchRef = useRef<HTMLInputElement>(null)
     const [isNarrow, setIsNarrow] = useState(typeof window !== "undefined" && window.innerWidth < 640)
     useEffect(() => {
@@ -59,7 +64,9 @@ const Search = ({ onFilterClick }: SearchProps) => {
     })()
 
     const handleChange = (value: string) => {
-        if (isAdminPage) {
+        if (isSettingsPage) {
+            setSettingsSearchQuery(value)
+        } else if (isAdminPage) {
             setAdminSearchQuery(value)
         } else {
             // Set query immediately - this will set isSearching: true
@@ -102,7 +109,7 @@ const Search = ({ onFilterClick }: SearchProps) => {
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [])
 
-    const fullPlaceholder = isAdminPage ? getAdminPlaceholder(location.pathname) : "Search files..."
+    const fullPlaceholder = getPlaceholder(location.pathname)
     const placeholder = isNarrow && fullPlaceholder.length > 10 ? "Search…" : fullPlaceholder
 
     return (

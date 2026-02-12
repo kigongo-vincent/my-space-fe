@@ -516,6 +516,7 @@ const Index = () => {
                                         }}
                                         onClick={() => {
                                             if (disk) {
+                                                useFileStore.getState().setFilterByType(null)
                                                 useFileStore.getState().setCurrentDisk(disk.id)
                                                 setShowHome(false)
                                             }

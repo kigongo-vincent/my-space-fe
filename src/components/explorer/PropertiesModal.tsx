@@ -215,7 +215,7 @@ const PropertiesModal = ({ fileId, onClose }: Props) => {
                             <View className="flex flex-col gap-3">
                                 <View className="flex items-start gap-4">
                                     <View className="flex items-center gap-2 min-w-[120px]" style={{ color: current?.dark, opacity: 0.7 }}>
-                                        <File size={14} />
+                                        {file.isFolder ? <Folder size={14} /> : <File size={14} />}
                                         <Text value="Type:" size="sm" />
                                     </View>
                                     <View className="flex-1">

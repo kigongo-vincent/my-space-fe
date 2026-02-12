@@ -24,7 +24,11 @@ const Usage = () => {
             <View style={{ backgroundColor: current?.background }} className='h-1.5 relative rounded-full w-full'>
                 <div style={{ backgroundColor: current?.primary, width: getUsagePercentage(usage) }} className='absolute h-full rounded-full' />
             </View>
-            {usage && <Text value={`${usage.used.toFixed(2)}${usage.unit} used of ${usage.total.toFixed(2)}${usage.unit}`} />}
+            {usage && (
+                <Text
+                    value={`${Number.isInteger(usage.used) ? usage.used : usage.used.toFixed(2)}${usage.unit} used of ${Number.isInteger(usage.total) ? usage.total : usage.total.toFixed(2)}${usage.unit}`}
+                />
+            )}
             <button
                 onClick={() => navigate('/settings?category=requests')}
                 className='w-full px-3 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90'

@@ -115,7 +115,7 @@ export const DiskSkeleton = () => {
       {Array.from({ length: 6 }).map((_, i) => (
         <div
           key={i}
-          className="flex items-center gap-3 p-4 rounded-lg"
+          className="flex items-center gap-3 p-4 rounded-lg relative"
           style={{
             backgroundColor: current?.background,
             boxShadow: name === "dark"
@@ -123,10 +123,12 @@ export const DiskSkeleton = () => {
               : `0 4px 12px ${current?.dark}15`
           }}
         >
-          <Skeleton width="70px" height="70px" rounded className="flex-shrink-0" />
-          <div className="flex-1 flex flex-col gap-2 min-w-0">
+          {/* Disk icon placeholder - same 70x70 as Disk.tsx */}
+          <Skeleton width={70} height={70} rounded={false} className="flex-shrink-0 rounded-lg" />
+          <div className="w-full flex flex-col gap-2 flex-1 min-w-0">
             <Skeleton width="70%" height="1rem" />
-            <Skeleton width="100%" height="0.25rem" rounded />
+            {/* Progress bar - h-1 like Disk.tsx */}
+            <Skeleton width="100%" height="0.25rem" rounded className="overflow-hidden" />
             <Skeleton width="85%" height="0.75rem" />
           </div>
         </div>

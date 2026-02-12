@@ -352,6 +352,72 @@ export const api = {
   invalidateCache(pattern: string): void {
     cache.delete(pattern);
   },
+
+  async uploadProfilePhoto(
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<{
+    id: number;
+    username: string;
+    email: string;
+    photo: string;
+    role: string;
+    suspended: boolean;
+    storage: any;
+  }> {
+    // Get presigned upload URL
+    const response = await this.request<{
+      uploadUrl: string;
+      s3Key: string;
+    }>("/users/me/photo/upload-url", {
+      method: "POST",
+      skipCache: true,
+    });
+
+    // Upload to S3 with progress tracking
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable && onProgress) {
+          const progress = (e.loaded / e.total) * 100;
+          onProgress(progress);
+        }
+      });
+
+      xhr.addEventListener("load", async () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            // Complete the upload
+            const user = await this.post<{
+              id: number;
+              username: string;
+              email: string;
+              photo: string;
+              role: string;
+              suspended: boolean;
+              storage: any;
+            }>("/users/me/photo/complete", { s3Key: response.s3Key });
+            resolve(user);
+          } catch (error: any) {
+            reject(
+              new Error(error?.message || "Failed to complete photo upload")
+            );
+          }
+        } else {
+          reject(new Error(`Failed to upload photo to S3: ${xhr.status}`));
+        }
+      });
+
+      xhr.addEventListener("error", () => {
+        reject(new Error("Failed to upload photo"));
+      });
+
+      xhr.open("PUT", response.uploadUrl);
+      xhr.setRequestHeader("Content-Type", "image/jpeg");
+      xhr.send(file);
+    });
+  },
 };
 
 export default api;
